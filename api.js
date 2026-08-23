@@ -21,6 +21,20 @@ const API = {
     return await res.json();
   },
 
+  // Hàm tải ảnh trực tiếp lên Google Drive
+  async uploadImage(base64Data, fileName, mimeType) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'uploadImage',
+        base64Data: base64Data,
+        fileName: fileName,
+        mimeType: mimeType
+      })
+    });
+    return await res.json();
+  },
+
   async register(user) {
     const res = await fetch(API_URL, {
       method: 'POST',
