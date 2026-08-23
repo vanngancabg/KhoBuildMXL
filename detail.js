@@ -33,7 +33,7 @@ const DetailHandler = {
         document.title = `${b.title} - Median XL Build`;
         document.getElementById('detail-title').innerText = b.title || 'Không có tiêu đề';
         document.getElementById('detail-class').innerText = b.class_name || 'Class';
-        document.getElementById('detail-patch').innerText = b.patch_version ? `Patch ${b.patch_version}` : '';
+        document.getElementById('detail-season-patch').innerText = b.patch_version || 'Mùa giải';
         
         const authorLink = document.getElementById('detail-author');
         if (authorLink) {
@@ -43,16 +43,70 @@ const DetailHandler = {
         document.getElementById('detail-time').innerText = b.updated_at || '';
         document.getElementById('vote-count').innerText = b.votes_count || 0;
 
-        // Render toàn bộ nội dung BBCode chính
-        document.getElementById('detail-stats').innerHTML = this.parseBBCode(b.stats_desc || 'Chưa có nội dung.');
+        // Xử lý dữ liệu JSON các khối
+        let statsObj = {};
+        try {
+          statsObj = JSON.parse(b.stats_desc);
+        } catch(e) {
+          statsObj = { intro: b.stats_desc };
+        }
 
-        // Render phân bổ điểm Skill Tree
-        this.renderSkills(b.skills_desc, b.class_name);
+        document.getElementById('detail-purpose').innerText = statsObj.purpose || 'Farming';
+        document.getElementById('detail-difficulty').innerText = statsObj.difficulty || 'Bình thường';
+        document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
+        document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật.');
+        document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật.');
 
-        // Ẩn bảng gear cũ vì đã gộp vào khung BBCode
-        const gearSection = document.getElementById('detail-gear');
-        if (gearSection) {
-          gearSection.parentElement.style.display = 'none';
+        document.getElementById('detail-str').innerText = statsObj.str || 'Đủ mặc đồ';
+        document.getElementById('detail-dex').innerText = statsObj.dex || 'Max Block';
+        document.getElementById('detail-vit').innerText = statsObj.vit || 'Toàn bộ điểm';
+        document.getElementById('detail-ene').innerText = statsObj.ene || '0';
+
+        document.getElementById('detail-skills').innerHTML = this.parseBBCode(b.skills_desc || 'Chưa cập nhật kỹ năng.');
+
+        // Trang bị theo Level
+        let gearObj = {};
+        try {
+          gearObj = JSON.parse(b.gear_desc);
+        } catch(e) {
+          gearObj = { lv105: b.gear_desc };
+        }
+
+        document.getElementById('detail-gear-105').innerHTML = this.parseBBCode(gearObj.lv105 || 'Chưa cập nhật.');
+        
+        if (gearObj.lv120) {
+          document.getElementById('detail-gear-120').innerHTML = this.parseBBCode(gearObj.lv120);
+        } else {
+          document.getElementById('box-gear-120').style.display = 'none';
+        }
+
+        if (gearObj.lv130) {
+          document.getElementById('detail-gear-130').innerHTML = this.parseBBCode(gearObj.lv130);
+        } else {
+          document.getElementById('box-gear-130').style.display = 'none';
+        }
+
+        if (gearObj.lv150) {
+          document.getElementById('detail-gear-150').innerHTML = this.parseBBCode(gearObj.lv150);
+        } else {
+          document.getElementById('box-gear-150').style.display = 'none';
+        }
+
+        // Chiến thuật & Video
+        if (statsObj.strategy) {
+          document.getElementById('detail-strategy').innerHTML = this.parseBBCode(statsObj.strategy);
+        } else {
+          document.getElementById('detail-strategy').style.display = 'none';
+        }
+
+        if (b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be'))) {
+          const videoMatch = b.video_url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+          const videoId = videoMatch ? videoMatch[2] : null;
+          if (videoId && videoId.length === 11) {
+            const vContainer = document.getElementById('video-container');
+            vContainer.innerHTML = `<iframe style="position: absolute; top:0; left:0; width:100%; height:100%; border:0;" src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+            vContainer.style.display = 'block';
+          }
         }
 
         // Quyền Sửa / Xóa cho Tác giả & Admin
@@ -76,68 +130,23 @@ const DetailHandler = {
     }
   },
 
-  renderSkills(skillsRaw, className) {
-    const treeContainer = document.getElementById('detail-skills-tree');
-    const skillCard = document.getElementById('detail-skills')?.parentElement;
-
-    if (!skillsRaw) {
-      if (skillCard) skillCard.style.display = 'none';
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(skillsRaw);
-      if (parsed.tree && Object.keys(parsed.tree).length > 0) {
-        const skillList = MEDIAN_SKILLS[className] || [];
-        let badgesHtml = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">';
-        let hasPoints = false;
-
-        skillList.forEach(s => {
-          const pts = parsed.tree[s.id] || 0;
-          if (pts > 0) {
-            hasPoints = true;
-            badgesHtml += `<span style="background: #111315; border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;"><strong>${s.name}:</strong> ${pts}/${s.max}</span>`;
-          }
-        });
-        badgesHtml += '</div>';
-
-        if (hasPoints && treeContainer) {
-          treeContainer.innerHTML = badgesHtml;
-          if (skillCard) skillCard.style.display = 'block';
-        } else if (skillCard) {
-          skillCard.style.display = 'none';
-        }
-      } else if (skillCard) {
-        skillCard.style.display = 'none';
-      }
-    } catch (e) {
-      if (skillCard) skillCard.style.display = 'none';
-    }
-  },
-
   exportBuildCode() {
     if (!this.currentBuild) return;
     const b = this.currentBuild;
-
-    let skillTree = {};
-    try {
-      const s = JSON.parse(b.skills_desc);
-      skillTree = s.tree || {};
-    } catch(e) {}
-
     const buildCodePayload = {
       title: b.title,
       class_name: b.class_name,
       patch: b.patch_version,
-      content: b.stats_desc,
-      skill_tree: skillTree
+      stats: b.stats_desc,
+      skills: b.skills_desc,
+      gear: b.gear_desc
     };
 
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(buildCodePayload))));
     navigator.clipboard.writeText(encoded).then(() => {
-      alert('Đã sao chép Mã Build! Bạn có thể gửi mã này cho thành viên khác nhập vào web.');
+      alert('Đã sao chép Mã Build (Build Code)!');
     }).catch(() => {
-      prompt('Mã Build của bạn (Hãy copy dòng dưới):', encoded);
+      prompt('Mã Build của bạn:', encoded);
     });
   },
 
@@ -145,11 +154,10 @@ const DetailHandler = {
     if (!this.currentBuild) return;
     const b = this.currentBuild;
     const url = window.location.href;
-
-    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Patch:** ${b.patch_version || 'Latest'}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem chi tiết:** ${url}`;
+    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Patch:** ${b.patch_version}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem bài viết:** ${url}`;
 
     navigator.clipboard.writeText(discordText).then(() => {
-      alert('Đã copy cấu hình bài viết dạng chuẩn Discord!');
+      alert('Đã copy bài viết chuẩn định dạng Discord!');
     }).catch(() => {
       alert('Không thể sao chép tự động!');
     });
@@ -157,10 +165,7 @@ const DetailHandler = {
 
   async toggleVote() {
     const user = Auth.getCurrentUser();
-    if (!user) {
-      Auth.openModal('login');
-      return;
-    }
+    if (!user) return Auth.openModal('login');
     try {
       const res = await API.voteBuild(this.buildId, user.username);
       if (res.status === 'success') {
@@ -215,10 +220,7 @@ const DetailHandler = {
 
   async postComment() {
     const user = Auth.getCurrentUser();
-    if (!user) {
-      Auth.openModal('login');
-      return;
-    }
+    if (!user) return Auth.openModal('login');
     const input = document.getElementById('comment-input');
     const content = input.value.trim();
     if (!content) return;
@@ -253,14 +255,8 @@ const DetailHandler = {
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[size=(.*?)\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image">')
       .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold);">$2</a>')
-      .replace(/\[youtube\](.*?)\[\/youtube\]/gi, (match, url) => {
-        const idMatch = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-        const id = idMatch ? idMatch[2] : url;
-        return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:10px 0;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe></div>`;
-      })
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>')
       .replace(/\n/g, '<br>');
   },
