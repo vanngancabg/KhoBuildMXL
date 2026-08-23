@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi Tiết Build - Median XL</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .detail-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .detail-heading {
+      color: var(--accent-gold);
+      font-size: 1.15rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+    .detail-content {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      color: var(--text-bright);
+      font-size: 0.95rem;
+    }
+    .comment-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .comment-item:last-child {
+      border-bottom: none;
+    }
+    .comment-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--accent-gold);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu Điều Hướng -->
+  <nav class="navbar">
+    <a href="index.html" class="brand">⚔️ MEDIAN XL BUILDS</a>
+    <div class="nav-actions">
+      <a href="index.html" class="btn">← Trang Chủ</a>
+      <a href="create-build.html" class="btn btn-primary">+ Viết Mới</a>
+      <div id="auth-section"></div>
+    </div>
+  </nav>
+
+  <!-- Khung Nội Dung Chi Tiết -->
+  <div class="container" style="max-width: 900px;">
+    <!-- Trạng thái tải -->
+    <div id="detail-loading" style="text-align: center; padding: 40px; color: var(--accent-gold);">
+      Đang tải toàn bộ dữ liệu bài viết...
+    </div>
+
+    <div id="detail-wrapper" style="display: none;">
+      <!-- Header Bài Viết & Nút Sửa Bài Cho Tác Giả -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+            <span id="detail-class" style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid var(--accent-gold);"></span>
+            <span id="detail-patch" style="color: var(--text-muted); font-size: 0.85rem;"></span>
+          </div>
+          <h1 id="detail-title" style="color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 6px;"></h1>
+          <div style="color: var(--text-muted); font-size: 0.85rem;">
+            Tác giả: <span id="detail-author" style="color: var(--text-bright); font-weight: bold;"></span> • Cập nhật: <span id="detail-time"></span>
+          </div>
+        </div>
+        
+        <!-- Nút sửa bài (Mặc định ẩn, chỉ hiện nếu đúng tài khoản tác giả) -->
+        <div id="author-actions" style="display: none;">
+          <a id="btn-edit-link" href="#" class="btn btn-primary">✏️ Chỉnh Sửa Bài Viết</a>
+        </div>
+      </div>
+
+      <!-- Video Demo nếu có -->
+      <div id="video-section" class="detail-section" style="display: none;">
+        <div class="detail-heading">🎬 Gameplay / Video Hướng Dẫn</div>
+        <div id="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 4px;">
+          <!-- Iframe nhúng video -->
+        </div>
+      </div>
+
+      <!-- Điểm Thuộc Tính (Stats) -->
+      <div id="stats-section" class="detail-section">
+        <div class="detail-heading">📊 Phân Bổ Điểm Thuộc Tính (Stats)</div>
+        <div id="detail-stats" class="detail-content"></div>
+      </div>
+
+      <!-- Kỹ Năng (Skills) -->
+      <div class="detail-section">
+        <div class="detail-heading">⚡ Kỹ Năng & Thứ Tự Nâng Điểm (Skill Tree)</div>
+        <div id="detail-skills" class="detail-content"></div>
+      </div>
+
+      <!-- Trang Bị (Gear) -->
+      <div class="detail-section">
+        <div class="detail-heading">🛡️ Trang Bị Đề Xuất (Gear, MOs & Runewords)</div>
+        <div id="detail-gear" class="detail-content"></div>
+      </div>
+
+      <!-- Khu Vực Bình Luận & Góp Ý -->
+      <div class="detail-section" style="margin-top: 30px;">
+        <div class="detail-heading">💬 Bình Luận & Thảo Luận</div>
+
+        <!-- Form gửi bình luận -->
+        <div id="comment-box" style="margin-bottom: 20px;">
+          <textarea id="comment-input" class="form-control" placeholder="Viết câu hỏi hoặc chia sẻ ý kiến của bạn về build này..." style="min-height: 80px;"></textarea>
+          <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+            <button id="btn-send-comment" class="btn btn-primary" onclick="DetailHandler.postComment()">Gửi Bình Luận</button>
+          </div>
+        </div>
+
+        <div id="comment-login-hint" style="display: none; padding: 12px; background: #111315; border: 1px solid var(--border-color); border-radius: 4px; text-align: center; margin-bottom: 20px;">
+          Vui lòng <a href="javascript:void(0)" style="color: var(--accent-gold);" onclick="Auth.openModal('login')">Đăng nhập</a> hoặc <a href="javascript:void(0)" style="color: var(--accent-gold);" onclick="Auth.openModal('register')">Đăng ký</a> để tham gia bình luận.
+        </div>
+
+        <!-- Danh sách hiển thị bình luận -->
+        <div id="comments-list">
+          <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px;">Chưa có bình luận nào. Hãy là người đầu tiên!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nạp script -->
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="detail.js"></script>
+</body>
+</html>
