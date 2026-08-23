@@ -13,17 +13,7 @@ const ItemTooltipManager = {
     if (!el) {
       el = document.createElement('div');
       el.id = 'global-item-tooltip';
-      el.style.position = 'fixed';
-      el.style.display = 'none';
-      el.style.zIndex = '99999';
-      el.style.pointerEvents = 'none';
-      el.style.background = 'rgba(0, 0, 0, 0.95)';
-      el.style.border = '2px solid #5a4b32';
-      el.style.borderRadius = '4px';
-      el.style.padding = '4px';
-      el.style.boxShadow = '0 6px 20px rgba(0,0,0,0.9)';
-      el.style.maxWidth = '360px';
-      el.innerHTML = '<img id="tt-img-src" src="" style="max-width:100%; height:auto; display:block; border-radius:2px;">';
+      el.className = 'd2-tooltip';
       document.body.appendChild(el);
     }
     this.tooltipEl = el;
@@ -31,12 +21,13 @@ const ItemTooltipManager = {
 
   async loadDatabase() {
     try {
-      const res = await API.getItemDatabase();
-      if (res.status === 'success' && res.data) {
-        this.itemsDb = res.data;
+      // Tải trực tiếp file JSON từ kho GitHub của bạn
+      const res = await fetch('median_items.json');
+      if (res.ok) {
+        this.itemsDb = await res.json();
       }
     } catch (e) {
-      console.error('Không thể tải Item Database:', e);
+      console.warn('Không thể nạp median_items.json, dùng dữ liệu dự phòng');
     }
   },
 
@@ -47,9 +38,8 @@ const ItemTooltipManager = {
         const itemKey = target.getAttribute('data-item-key');
         const itemData = this.itemsDb[itemKey];
 
-        if (itemData && itemData.url) {
-          const imgEl = document.getElementById('tt-img-src');
-          imgEl.src = itemData.url;
+        if (itemData) {
+          this.renderItemTooltip(itemData);
           this.tooltipEl.style.display = 'block';
           this.positionTooltip(e);
         }
@@ -70,13 +60,34 @@ const ItemTooltipManager = {
     });
   },
 
+  renderItemTooltip(item) {
+    let colorClass = 'item-unique';
+    if (item.quality === 'runeword') colorClass = 'item-runeword';
+    if (item.quality === 'set') colorClass = 'item-set';
+
+    let statsHtml = '';
+    if (item.stats && item.stats.length > 0) {
+      statsHtml = item.stats.map(s => `<div class="tt-stat">${s}</div>`).join('');
+    }
+
+    this.tooltipEl.innerHTML = `
+      <div class="tt-title ${colorClass}">${item.name}</div>
+      <div class="tt-type">${item.base || ''} ${item.tier ? `(${item.tier})` : ''}</div>
+      ${item.defense ? `<div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">Defense: <span style="color:#fff;">${item.defense}</span></div>` : ''}
+      ${item.req_lvl ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:2px;">Required Level: <span style="color:#fff;">${item.req_lvl}</span></div>` : ''}
+      ${item.req_str ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:6px;">Required Strength: <span style="color:#fff;">${item.req_str}</span></div>` : ''}
+      <div style="border-top: 1px solid #333; margin: 6px 0;"></div>
+      ${statsHtml}
+      ${item.flavor ? `<div class="tt-flavor">${item.flavor}</div>` : ''}
+    `;
+  },
+
   positionTooltip(e) {
     const offset = 16;
     let left = e.clientX + offset;
     let top = e.clientY + offset;
 
-    // Giữ khung không bị tràn khỏi màn hình
-    const ttWidth = this.tooltipEl.offsetWidth || 300;
+    const ttWidth = this.tooltipEl.offsetWidth || 280;
     const ttHeight = this.tooltipEl.offsetHeight || 200;
 
     if (left + ttWidth > window.innerWidth) {
