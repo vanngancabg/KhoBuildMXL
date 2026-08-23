@@ -45,10 +45,10 @@
         <button type="button" class="bb-btn" title="Trích dẫn" onclick="FormHandler.insertBB('[quote]', '[/quote]')">💬 Quote</button>
         <button type="button" class="bb-btn" title="Gạch đầu dòng" onclick="FormHandler.insertBB('[list]\n[*] ', '\n[/list]')">📜 List</button>
         
-        <!-- NÚT GẮN ẢNH HOVER ITEM TỰ ĐỘNG -->
-        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Gắn Tooltip ảnh khi rê chuột (Bôi đen tên đồ rồi bấm)" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
+        <!-- NÚT GẮN ẢNH HOVER ITEM -->
+        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Gắn Tooltip ảnh khi rê chuột" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
 
-        <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh thường lên Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh</button>
+        <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh lên Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh</button>
         <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertBB('[url=https://]', '[/url]')">🔗 Link</button>
         <button type="button" class="bb-btn" title="Video Youtube" onclick="FormHandler.insertBB('[youtube]', '[/youtube]')">▶️ Video</button>
         <button type="button" class="bb-btn" title="Spoiler / Ẩn hiện" onclick="FormHandler.insertBB('[spoiler=Chi tiết]', '[/spoiler]')">📁 Spoiler</button>
@@ -95,6 +95,14 @@
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
           <button type="button" class="btn" onclick="FormHandler.closeItemModal()">Hủy Bỏ</button>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL PREVIEW BÀI VIẾT HOÀN CHỈNH -->
+    <div id="modal-preview-full" class="modal">
+      <div class="modal-preview-container">
+        <button type="button" class="preview-close-btn" onclick="FormHandler.closePreviewModal()">✖ Đóng Xem Trước</button>
+        <div id="preview-modal-body"></div>
       </div>
     </div>
 
@@ -227,14 +235,8 @@
         </div>
       </div>
 
-      <!-- Preview -->
-      <div id="preview-box" style="display: none; background: #0c0d0e; border: 1px solid var(--accent-gold); border-radius: 4px; padding: 16px; margin-bottom: 20px;">
-        <h4 style="color: var(--accent-gold); margin-bottom: 8px;">👁️ Xem Trước Bài Viết (Preview):</h4>
-        <div id="preview-content" class="markdown-rendered" style="line-height: 1.6;"></div>
-      </div>
-
       <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 40px;">
-        <button type="button" class="btn" onclick="FormHandler.togglePreview()">👁️ Preview / Xem Trước</button>
+        <button type="button" class="btn" onclick="FormHandler.openPreviewModal()">👁️ Preview / Xem Trước Bài Viết</button>
         <button type="button" class="btn" onclick="FormHandler.saveDraft()">💾 Lưu Bản Nháp</button>
         <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 32px; font-size: 1rem;">🚀 Submit / Đăng Bài Viết</button>
       </div>
