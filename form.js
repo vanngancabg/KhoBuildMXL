@@ -15,6 +15,8 @@ const FormHandler = {
       this.editBuildId = editId;
       document.getElementById('form-heading').innerText = 'Chỉnh Sửa Hướng Dẫn Build';
       await this.loadData(editId, user);
+    } else {
+      SkillPlanner.init(document.getElementById('build-class').value);
     }
   },
 
@@ -33,9 +35,19 @@ const FormHandler = {
         document.getElementById('build-class').value = b.class_name || 'Amazon';
         document.getElementById('build-patch').value = b.patch_version || '';
         document.getElementById('build-stats').value = b.stats_desc || '';
-        document.getElementById('build-skills').value = b.skills_desc || '';
         document.getElementById('build-video').value = b.video_url || '';
 
+        // Tách kỹ năng và điểm Skill Tree
+        try {
+          const parsedSkills = JSON.parse(b.skills_desc);
+          document.getElementById('build-skills').value = parsedSkills.notes || '';
+          SkillPlanner.init(b.class_name || 'Amazon', parsedSkills.tree || {});
+        } catch (e) {
+          document.getElementById('build-skills').value = b.skills_desc || '';
+          SkillPlanner.init(b.class_name || 'Amazon');
+        }
+
+        // Tách trang bị
         try {
           const gear = JSON.parse(b.gear_desc);
           document.getElementById('gear-weapon').value = gear.weapon || '';
@@ -51,6 +63,38 @@ const FormHandler = {
       }
     } catch (e) {
       alert('Không thể tải bài viết để sửa!');
+    }
+  },
+
+  importBuildCode() {
+    const rawCode = prompt('Dán chuỗi Mã Build (Build Code) vào đây:');
+    if (!rawCode) return;
+
+    try {
+      const jsonStr = decodeURIComponent(escape(atob(rawCode.trim())));
+      const data = JSON.parse(jsonStr);
+
+      if (data.title) document.getElementById('build-title').value = data.title;
+      if (data.class_name) {
+        document.getElementById('build-class').value = data.class_name;
+        SkillPlanner.init(data.class_name, data.skill_tree || {});
+      }
+      if (data.patch) document.getElementById('build-patch').value = data.patch;
+      if (data.stats) document.getElementById('build-stats').value = data.stats;
+      if (data.skills_notes) document.getElementById('build-skills').value = data.skills_notes;
+
+      if (data.gear) {
+        document.getElementById('gear-weapon').value = data.gear.weapon || '';
+        document.getElementById('gear-helm').value = data.gear.helm || '';
+        document.getElementById('gear-armor').value = data.gear.armor || '';
+        document.getElementById('gear-gloves').value = data.gear.gloves || '';
+        document.getElementById('gear-boots').value = data.gear.boots || '';
+        document.getElementById('gear-jewelry').value = data.gear.jewelry || '';
+        document.getElementById('gear-charms').value = data.gear.charms || '';
+      }
+      alert('Đã nhập dữ liệu cấu hình thành công!');
+    } catch (err) {
+      alert('Mã Build không hợp lệ hoặc bị lỗi!');
     }
   },
 
@@ -94,6 +138,11 @@ const FormHandler = {
       charms: document.getElementById('gear-charms').value.trim()
     };
 
+    const skillsData = {
+      notes: document.getElementById('build-skills').value.trim(),
+      tree: SkillPlanner.getPoints()
+    };
+
     const payload = {
       build_id: this.editBuildId,
       title: document.getElementById('build-title').value.trim(),
@@ -103,7 +152,7 @@ const FormHandler = {
       author_name: user.display_name,
       role: user.role || 'Member',
       stats_desc: document.getElementById('build-stats').value.trim(),
-      skills_desc: document.getElementById('build-skills').value.trim(),
+      skills_desc: JSON.stringify(skillsData),
       gear_desc: JSON.stringify(gearData),
       video_url: document.getElementById('build-video').value.trim()
     };
@@ -118,7 +167,7 @@ const FormHandler = {
         btn.innerText = '💾 Lưu Bài Viết';
       }
     } catch (err) {
-      alert('Lỗi kết nối tới máy chủ Google!');
+      alert('Lỗi kết nối máy chủ Google!');
       btn.disabled = false;
       btn.innerText = '💾 Lưu Bài Viết';
     }
