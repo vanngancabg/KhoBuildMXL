@@ -52,7 +52,6 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main); cursor: pointer; white-space: nowrap; font-size: 0.85rem; }
 .filter-btn.active { background: var(--accent-gold); color: #000; font-weight: bold; border-color: var(--accent-gold); }
 
-/* Shoutbox Layout */
 .home-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
 @media (max-width: 900px) { .home-layout { grid-template-columns: 1fr; } }
 .shoutbox-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; height: fit-content; }
@@ -64,8 +63,62 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 .item-runeword { color: #ed8936 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #ed8936; }
 .item-set { color: #48bb78 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #48bb78; }
 .markdown-rendered strong { color: var(--accent-gold); }
-.markdown-rendered ul { padding-left: 20px; margin: 8px 0; }
-.markdown-rendered li { margin-bottom: 4px; }
+.markdown-rendered blockquote { border-left: 3px solid var(--accent-gold); padding-left: 12px; margin: 8px 0; color: #a0aec0; background: rgba(0,0,0,0.2); }
+.markdown-rendered img { max-width: 100%; border-radius: 4px; border: 1px solid var(--border-color); margin: 6px 0; }
+
+/* BBCode Forum Editor Styles */
+.bb-editor-layout { display: grid; grid-template-columns: 1fr 180px; gap: 16px; }
+@media (max-width: 800px) { .bb-editor-layout { grid-template-columns: 1fr; } }
+
+.bb-toolbar {
+  background: #d4d0c8;
+  padding: 6px 8px;
+  border-radius: 4px 4px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  border: 1px solid #7f9db9;
+}
+
+.bb-btn {
+  background: #ece9d8;
+  border: 1px solid #7f9db9;
+  border-radius: 2px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #000;
+  min-width: 24px;
+  text-align: center;
+}
+.bb-btn:hover { background: #fff; border-color: #000; }
+
+.bb-select {
+  background: #fff;
+  border: 1px solid #7f9db9;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  color: #000;
+}
+
+.smilies-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 12px;
+  text-align: center;
+}
+.smilies-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.smilies-grid span:hover { transform: scale(1.3); }
 
 /* Diablo Tooltip */
 .d2-tooltip {
