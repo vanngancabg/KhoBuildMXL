@@ -43,7 +43,6 @@ const DetailHandler = {
         document.getElementById('detail-time').innerText = b.updated_at || '';
         document.getElementById('vote-count').innerText = b.votes_count || 0;
 
-        // Xử lý dữ liệu JSON các khối
         let statsObj = {};
         try {
           statsObj = JSON.parse(b.stats_desc);
@@ -64,7 +63,6 @@ const DetailHandler = {
 
         document.getElementById('detail-skills').innerHTML = this.parseBBCode(b.skills_desc || 'Chưa cập nhật kỹ năng.');
 
-        // Trang bị theo Level
         let gearObj = {};
         try {
           gearObj = JSON.parse(b.gear_desc);
@@ -92,7 +90,6 @@ const DetailHandler = {
           document.getElementById('box-gear-150').style.display = 'none';
         }
 
-        // Chiến thuật & Video
         if (statsObj.strategy) {
           document.getElementById('detail-strategy').innerHTML = this.parseBBCode(statsObj.strategy);
         } else {
@@ -109,7 +106,6 @@ const DetailHandler = {
           }
         }
 
-        // Quyền Sửa / Xóa cho Tác giả & Admin
         const user = Auth.getCurrentUser();
         if (user && (String(user.username).toLowerCase() === String(b.author_id).toLowerCase() || user.role === 'Admin')) {
           const authorActions = document.getElementById('author-actions');
@@ -247,10 +243,10 @@ const DetailHandler = {
     if (!text) return '';
     return String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\[item\](.*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
       .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[item_u\](.*?)\[\/item_u\]/gi, '<span class="item-unique">$1</span>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
