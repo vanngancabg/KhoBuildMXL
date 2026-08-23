@@ -7,8 +7,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- Thanh Menu Điều Hướng -->
   <nav class="navbar">
     <a href="index.html" class="brand">⚔️ MEDIAN XL BUILDS</a>
     <div class="nav-actions">
@@ -17,45 +15,52 @@
     </div>
   </nav>
 
-  <!-- Khung Nội Dung Chính -->
   <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div class="home-layout">
+      <!-- Cột chính: Danh sách Build -->
       <div>
-        <h1 style="color: var(--accent-gold); font-size: 1.6rem;">Danh Sách Build Nhân Vật</h1>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Tổng hợp hướng dẫn xây dựng nhân vật từ cộng đồng Median XL</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h1 style="color: var(--accent-gold); font-size: 1.5rem;">Thư Viện Build</h1>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Chia sẻ và thảo luận chiến thuật cùng cộng đồng</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-sm" id="sort-votes-btn" onclick="App.toggleSortVotes()">🔥 Top Yêu Thích</button>
+            <input type="text" id="search-input" class="form-control" style="width: 200px; padding: 6px 10px;" placeholder="Tìm build..." oninput="App.handleSearch()">
+          </div>
+        </div>
+
+        <div class="filter-bar" id="class-filters">
+          <button class="filter-btn active" onclick="App.filterByClass('All', this)">Tất cả</button>
+          <button class="filter-btn" onclick="App.filterByClass('Amazon', this)">Amazon</button>
+          <button class="filter-btn" onclick="App.filterByClass('Assassin', this)">Assassin</button>
+          <button class="filter-btn" onclick="App.filterByClass('Barbarian', this)">Barbarian</button>
+          <button class="filter-btn" onclick="App.filterByClass('Druid', this)">Druid</button>
+          <button class="filter-btn" onclick="App.filterByClass('Necromancer', this)">Necro</button>
+          <button class="filter-btn" onclick="App.filterByClass('Paladin', this)">Paladin</button>
+          <button class="filter-btn" onclick="App.filterByClass('Sorceress', this)">Sorc</button>
+        </div>
+
+        <div id="loading-state" style="text-align: center; padding: 40px; color: var(--accent-gold);">Đang tải dữ liệu...</div>
+        <div class="grid" id="builds-grid" style="display: none;"></div>
+        <div id="empty-state" style="display: none; text-align: center; padding: 40px; color: var(--text-muted);">Không tìm thấy bài viết phù hợp.</div>
       </div>
-      <!-- Thanh tìm kiếm -->
-      <div style="min-width: 260px; max-width: 400px; width: 100%;">
-        <input type="text" id="search-input" class="form-control" placeholder="Tìm theo tên build, kỹ năng, tác giả..." oninput="App.handleSearch()">
+
+      <!-- Cột phụ: Shoutbox (Chat trực tiếp) -->
+      <div>
+        <div class="shoutbox-card">
+          <h3 style="color: var(--accent-gold); font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">💬 Chat Cộng Đồng</h3>
+          <div class="shoutbox-messages" id="shoutbox-list">
+            <div style="color: var(--text-muted); text-align: center; margin-top: 20px;">Đang tải tin nhắn...</div>
+          </div>
+          <div id="shoutbox-input-box">
+            <input type="text" id="shoutbox-text" class="form-control" placeholder="Nhắn tin nhanh (Enter)..." onkeypress="if(event.key==='Enter') App.sendChat()">
+          </div>
+        </div>
       </div>
-    </div>
-
-    <!-- Thanh Lọc Theo 7 Class -->
-    <div class="filter-bar" id="class-filters">
-      <button class="filter-btn active" onclick="App.filterByClass('All', this)">Tất cả Class</button>
-      <button class="filter-btn" onclick="App.filterByClass('Amazon', this)">Amazon</button>
-      <button class="filter-btn" onclick="App.filterByClass('Assassin', this)">Assassin</button>
-      <button class="filter-btn" onclick="App.filterByClass('Barbarian', this)">Barbarian</button>
-      <button class="filter-btn" onclick="App.filterByClass('Druid', this)">Druid</button>
-      <button class="filter-btn" onclick="App.filterByClass('Necromancer', this)">Necromancer</button>
-      <button class="filter-btn" onclick="App.filterByClass('Paladin', this)">Paladin</button>
-      <button class="filter-btn" onclick="App.filterByClass('Sorceress', this)">Sorceress</button>
-    </div>
-
-    <!-- Trạng thái tải trang -->
-    <div id="loading-state" style="text-align: center; padding: 40px; color: var(--accent-gold);">
-      Đang tải dữ liệu bài viết từ máy chủ...
-    </div>
-
-    <!-- Danh Sách Hiển Thị Bài Viết -->
-    <div class="grid" id="builds-grid" style="display: none;"></div>
-    
-    <div id="empty-state" style="display: none; text-align: center; padding: 50px; color: var(--text-muted);">
-      Chưa có bài viết nào phù hợp với bộ lọc.
     </div>
   </div>
 
-  <!-- Nạp các file Javascript -->
   <script src="api.js"></script>
   <script src="auth.js"></script>
   <script src="app.js"></script>
