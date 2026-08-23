@@ -64,22 +64,52 @@ const ItemTooltipManager = {
     if (item.quality === 'runeword') colorClass = 'item-runeword';
     if (item.quality === 'set') colorClass = 'item-set';
 
+    // Xử lý màu sắc từng dòng chỉ số
     let statsHtml = '';
     if (item.stats && Array.isArray(item.stats)) {
-      statsHtml = item.stats.map(s => {
-        if (s.startsWith('Tier ')) return `<div style="color:var(--accent-gold); font-weight:bold; margin-top:4px;">${s}</div>`;
-        return `<div class="tt-stat">${s}</div>`;
+      statsHtml = item.stats.map(rawLine => {
+        const line = rawLine.trim();
+        if (!line) return '';
+
+        // Tiêu đề cấp bậc Tier
+        if (line.startsWith('Tier ')) {
+          return `<div class="tt-stat-gold">${line}</div>`;
+        }
+
+        const lower = line.toLowerCase();
+
+        // 1. Dòng yêu cầu / Thuộc tính cơ bản (Màu trắng)
+        if (lower.includes('damage:') || lower.includes('innate') || lower.includes('defense:') || lower.includes('required') || lower.includes('item level:')) {
+          return `<div class="tt-stat-white">${line}</div>`;
+        }
+
+        // 2. Dòng cơ chế đặc biệt / Lưu ý cam (Màu cam)
+        if (
+          lower.includes('while in') || 
+          lower.includes('you cannot') || 
+          lower.includes('added as') || 
+          lower.includes('reduced by') || 
+          lower.includes('always') ||
+          lower.includes('gained per point') ||
+          lower.includes('orbs applied') ||
+          lower.includes('corrupted')
+        ) {
+          return `<div class="tt-stat-orange">${line}</div>`;
+        }
+
+        // 3. Dòng thuộc tính phép ma thuật thông thường (Màu xanh dương)
+        return `<div class="tt-stat-blue">${line}</div>`;
       }).join('');
     }
 
     this.tooltipEl.innerHTML = `
       <div class="tt-title ${colorClass}">${item.name}</div>
-      ${item.base ? `<div class="tt-type" style="font-size:0.8rem; color:#888;">${item.base}</div>` : ''}
-      ${item.defense ? `<div style="font-size:0.8rem; color:#aaa; margin-bottom:2px;">Defense: <span style="color:#fff;">${item.defense}</span></div>` : ''}
-      ${item.req_lvl ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:2px;">Required Level: <span style="color:#fff;">${item.req_lvl}</span></div>` : ''}
-      ${item.req_str ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:2px;">Required Strength: <span style="color:#fff;">${item.req_str}</span></div>` : ''}
-      ${item.req_dex ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:4px;">Required Dexterity: <span style="color:#fff;">${item.req_dex}</span></div>` : ''}
-      <div style="border-top: 1px solid #333; margin: 6px 0;"></div>
+      ${item.base ? `<div class="tt-req">${item.base}</div>` : ''}
+      ${item.req_lvl ? `<div class="tt-req">Required Level: <span style="color:#fff;">${item.req_lvl}</span></div>` : ''}
+      ${item.req_str ? `<div class="tt-req">Required Strength: <span style="color:#fff;">${item.req_str}</span></div>` : ''}
+      ${item.req_dex ? `<div class="tt-req">Required Dexterity: <span style="color:#fff;">${item.req_dex}</span></div>` : ''}
+      ${item.defense ? `<div class="tt-req">Defense: <span style="color:#fff;">${item.defense}</span></div>` : ''}
+      <div class="tt-divider"></div>
       ${statsHtml}
     `;
   },
