@@ -1,0 +1,85 @@
+{
+  "royal circlet": {
+    "name": "Royal Circlet",
+    "base": "Tiara",
+    "quality": "unique",
+    "tier": "Sacred",
+    "req_lvl": 100,
+    "req_str": 350,
+    "defense": "1250 - 1500",
+    "stats": [
+      "+2 to All Skills",
+      "+(30 to 40)% Enhanced Damage",
+      "+(15 to 25)% to Spell Damage",
+      "+(20 to 30) to all Attributes",
+      "All Resists +(25 to 35)%",
+      "Socketed (4)"
+    ],
+    "flavor": "\"A crown forged for those who command the elements.\""
+  },
+  "truewarp": {
+    "name": "Truewarp",
+    "base": "Runeword (Taha)",
+    "quality": "runeword",
+    "tier": "Sacred Weapon",
+    "req_lvl": 105,
+    "req_str": 400,
+    "stats": [
+      "+(200 to 250)% Enhanced Damage",
+      "Adds 500-1000 Magic Damage",
+      "+30% Increased Attack Speed",
+      "5% Chance to cast level 20 Chronofield on striking",
+      "+15% to Maximum Life",
+      "Cannot Be Frozen"
+    ],
+    "flavor": "Taha + Jewels"
+  },
+  "latent power": {
+    "name": "Latent Power",
+    "base": "Runeword (Ghal)",
+    "quality": "runeword",
+    "tier": "Sacred Body Armor",
+    "req_lvl": 110,
+    "req_str": 550,
+    "defense": "3500 - 4200",
+    "stats": [
+      "+(150 to 200)% Enhanced Defense",
+      "+(2 to 3) to All Skills",
+      "+(20 to 30)% Faster Run/Walk",
+      "+(40 to 60) to Vitality",
+      "Physical Damage Reduced by (10 to 15)%",
+      "Maximum Elemental Resists +2%"
+    ],
+    "flavor": "Ghal + Jewels"
+  },
+  "shadowshift": {
+    "name": "Shadowshift",
+    "base": "Light Plated Boots",
+    "quality": "unique",
+    "tier": "Sacred",
+    "req_lvl": 100,
+    "req_str": 280,
+    "defense": "850 - 1100",
+    "stats": [
+      "+40% Faster Run/Walk",
+      "+(120 to 160)% Enhanced Defense",
+      "+(15 to 20)% to Dexterity",
+      "+(30 to 50)% Better Chance of Getting Magic Items",
+      "Attacker Takes Damage of 500"
+    ]
+  },
+  "rathma's blessing": {
+    "name": "Rathma's Blessing",
+    "base": "Amulet",
+    "quality": "set",
+    "tier": "Sacred",
+    "req_lvl": 115,
+    "stats": [
+      "+(2 to 4) to Necromancer Skill Levels",
+      "+(15 to 25)% to Summoned Minion Life",
+      "+(20 to 30)% to Summoned Minion Damage",
+      "Total Character Defense Plus (15 to 25)%",
+      "Target Defense -(15 to 25)%"
+    ]
+  }
+}
