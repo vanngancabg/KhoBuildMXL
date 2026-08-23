@@ -1,6 +1,7 @@
 const FormHandler = {
   editBuildId: null,
   activeTextarea: null,
+  pendingItemName: '',
 
   async init() {
     const user = Auth.getCurrentUser();
@@ -24,12 +25,10 @@ const FormHandler = {
   },
 
   setupActiveFocusAndPaste() {
-    // Theo dõi ô textarea nào đang được trỏ chuột
     const textareas = document.querySelectorAll('textarea, input[type="text"]');
     textareas.forEach(el => {
       el.addEventListener('focus', () => { this.activeTextarea = el; });
       
-      // Bắt sự kiện dán ảnh (Ctrl + V)
       el.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -43,7 +42,112 @@ const FormHandler = {
       });
     });
 
+    // Lắng nghe dán ảnh vào Modal đóng góp Item
+    window.addEventListener('paste', async (e) => {
+      const modal = document.getElementById('modal-item-upload');
+      if (modal && modal.classList.contains('active')) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const file = item.getAsFile();
+            await this.uploadItemToDatabase(file);
+            break;
+          }
+        }
+      }
+    });
+
     this.activeTextarea = document.getElementById('build-intro');
+  },
+
+  // Xử lý nút [Hover Item] thông minh
+  async handleTriggerItemTag() {
+    const el = this.activeTextarea || document.getElementById('build-intro');
+    if (!el) return;
+
+    const start = el.selectionStart || 0;
+    const end = el.selectionEnd || 0;
+    let selected = el.value.substring(start, end).trim();
+
+    if (!selected) {
+      selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Royal Circlet):');
+      if (!selected) return;
+      selected = selected.trim();
+    }
+
+    const normalizedKey = selected.toLowerCase();
+
+    // 1. Kiểm tra xem món đồ đã có ảnh trong kho dữ liệu chưa
+    if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
+      // Đã có -> Tự động chèn thẻ luôn, không cho tải trùng
+      this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
+    } else {
+      // 2. Chưa có -> Mở Popup yêu cầu đóng góp ảnh
+      this.pendingItemName = selected;
+      document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
+      document.getElementById('modal-item-upload').classList.add('active');
+    }
+  },
+
+  closeItemModal() {
+    document.getElementById('modal-item-upload').classList.remove('active');
+    this.pendingItemName = '';
+  },
+
+  async handleItemDbFileUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+      await this.uploadItemToDatabase(file);
+      e.target.value = '';
+    }
+  },
+
+  async uploadItemToDatabase(file) {
+    const user = Auth.getCurrentUser();
+    const itemName = this.pendingItemName;
+    if (!itemName || !user) return;
+
+    const statusEl = document.getElementById('upload-status');
+    statusEl.style.display = 'inline';
+    statusEl.innerText = `⏳ Đang tải ảnh cho "${itemName}" lên kho dữ liệu...`;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result.split(',')[1];
+      try {
+        const res = await API.uploadItemDatabase({
+          itemName: itemName,
+          base64Data: base64Data,
+          mimeType: file.type,
+          username: user.username,
+          role: user.role || 'Member'
+        });
+
+        if (res.status === 'success' || res.status === 'exists') {
+          // Cập nhật bộ nhớ đệm Tooltip
+          ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
+            name: itemName,
+            url: res.url,
+            by: user.username
+          };
+
+          const el = this.activeTextarea || document.getElementById('build-intro');
+          this.insertBBIntoEl(`[item]${itemName}[/item]`, '', el);
+          this.closeItemModal();
+
+          statusEl.innerText = `✅ Đã lưu ảnh món "${itemName}" thành công!`;
+          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        } else {
+          alert('Lỗi: ' + res.message);
+          statusEl.style.display = 'none';
+        }
+      } catch (err) {
+        alert('Lỗi kết nối máy chủ khi lưu ảnh món đồ!');
+        statusEl.style.display = 'none';
+      }
+    };
+    reader.readAsDataURL(file);
   },
 
   async handleImageUpload(e) {
@@ -120,7 +224,6 @@ const FormHandler = {
         document.getElementById('build-patch').value = b.patch_version || '';
         document.getElementById('build-video').value = b.video_url || '';
 
-        // Đọc dữ liệu JSON các khối
         try {
           const statsObj = JSON.parse(b.stats_desc);
           document.getElementById('build-season').value = statsObj.season || '';
@@ -264,10 +367,10 @@ const FormHandler = {
     if (!text) return '';
     return String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\[item\](.*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
       .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[item_u\](.*?)\[\/item_u\]/gi, '<span class="item-unique">$1</span>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
