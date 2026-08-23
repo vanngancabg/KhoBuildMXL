@@ -17,7 +17,7 @@ const DetailHandler = {
       document.getElementById('detail-class').innerText = b.class_name || 'Class';
       document.getElementById('detail-patch').innerText = b.patch_version ? 'Patch ' + b.patch_version : '';
       document.getElementById('detail-author').innerText = b.author_name || b.author_id;
-      document.getElementById('detail-time').innerText = b.updated_at || '';
+      document.getElementById('detail-author').innerHTML = `<a href="profile.html?user=${encodeURIComponent(b.author_id)}" style="color: var(--accent-gold); text-decoration: underline;">${b.author_name || b.author_id}</a>`;
       document.getElementById('vote-count').innerText = b.votes_count || 0;
 
       document.getElementById('detail-stats').innerHTML = this.renderMarkdown(b.stats_desc);
