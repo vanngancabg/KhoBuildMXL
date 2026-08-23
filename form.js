@@ -19,33 +19,38 @@ const FormHandler = {
   },
 
   async loadData(id, user) {
-    const res = await API.getBuildDetail(id);
-    if (res.status === 'success' && res.data) {
-      const b = res.data;
-      if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase() && user.role !== 'Admin') {
-        alert('Bạn không có quyền sửa bài này!');
-        return window.location.href = 'index.html';
-      }
-      document.getElementById('build-title').value = b.title || '';
-      document.getElementById('build-class').value = b.class_name || 'Amazon';
-      document.getElementById('build-patch').value = b.patch_version || '';
-      document.getElementById('build-stats').value = b.stats_desc || '';
-      document.getElementById('build-skills').value = b.skills_desc || '';
-      document.getElementById('build-video').value = b.video_url || '';
+    try {
+      const res = await API.getBuildDetail(id);
+      if (res.status === 'success' && res.data) {
+        const b = res.data;
+        if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase() && user.role !== 'Admin') {
+          alert('Bạn không có quyền sửa bài viết này!');
+          window.location.href = 'index.html';
+          return;
+        }
 
-      // Tách dữ liệu JSON Gear nếu có
-      try {
-        const gear = JSON.parse(b.gear_desc);
-        document.getElementById('gear-weapon').value = gear.weapon || '';
-        document.getElementById('gear-helm').value = gear.helm || '';
-        document.getElementById('gear-armor').value = gear.armor || '';
-        document.getElementById('gear-gloves').value = gear.gloves || '';
-        document.getElementById('gear-boots').value = gear.boots || '';
-        document.getElementById('gear-jewelry').value = gear.jewelry || '';
-        document.getElementById('gear-charms').value = gear.charms || '';
-      } catch (e) {
-        document.getElementById('gear-charms').value = b.gear_desc || '';
+        document.getElementById('build-title').value = b.title || '';
+        document.getElementById('build-class').value = b.class_name || 'Amazon';
+        document.getElementById('build-patch').value = b.patch_version || '';
+        document.getElementById('build-stats').value = b.stats_desc || '';
+        document.getElementById('build-skills').value = b.skills_desc || '';
+        document.getElementById('build-video').value = b.video_url || '';
+
+        try {
+          const gear = JSON.parse(b.gear_desc);
+          document.getElementById('gear-weapon').value = gear.weapon || '';
+          document.getElementById('gear-helm').value = gear.helm || '';
+          document.getElementById('gear-armor').value = gear.armor || '';
+          document.getElementById('gear-gloves').value = gear.gloves || '';
+          document.getElementById('gear-boots').value = gear.boots || '';
+          document.getElementById('gear-jewelry').value = gear.jewelry || '';
+          document.getElementById('gear-charms').value = gear.charms || '';
+        } catch (e) {
+          document.getElementById('gear-charms').value = b.gear_desc || '';
+        }
       }
+    } catch (e) {
+      alert('Không thể tải bài viết để sửa!');
     }
   },
 
@@ -60,7 +65,7 @@ const FormHandler = {
 
   insertItemTag(startTag, endTag) {
     const active = document.activeElement;
-    if (active && active.tagName === 'INPUT') {
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
       const start = active.selectionStart;
       const end = active.selectionEnd;
       active.value = active.value.substring(0, start) + startTag + active.value.substring(start, end) + endTag + active.value.substring(end);
@@ -70,8 +75,14 @@ const FormHandler = {
   async handleSubmit(e) {
     e.preventDefault();
     const user = Auth.getCurrentUser();
+    if (!user) {
+      Auth.openModal('login');
+      return;
+    }
+
     const btn = document.getElementById('btn-save');
     btn.disabled = true;
+    btn.innerText = 'Đang lưu...';
 
     const gearData = {
       weapon: document.getElementById('gear-weapon').value.trim(),
@@ -90,19 +101,26 @@ const FormHandler = {
       patch_version: document.getElementById('build-patch').value.trim(),
       author_username: user.username,
       author_name: user.display_name,
-      role: user.role,
+      role: user.role || 'Member',
       stats_desc: document.getElementById('build-stats').value.trim(),
       skills_desc: document.getElementById('build-skills').value.trim(),
       gear_desc: JSON.stringify(gearData),
       video_url: document.getElementById('build-video').value.trim()
     };
 
-    const res = await API.saveBuild(payload);
-    if (res.status === 'success') {
-      window.location.href = `build-detail.html?id=${res.build_id}`;
-    } else {
-      alert(res.message || 'Lỗi!');
+    try {
+      const res = await API.saveBuild(payload);
+      if (res.status === 'success') {
+        window.location.href = `build-detail.html?id=${res.build_id}`;
+      } else {
+        alert(res.message || 'Lưu thất bại!');
+        btn.disabled = false;
+        btn.innerText = '💾 Lưu Bài Viết';
+      }
+    } catch (err) {
+      alert('Lỗi kết nối tới máy chủ Google!');
       btn.disabled = false;
+      btn.innerText = '💾 Lưu Bài Viết';
     }
   }
 };
