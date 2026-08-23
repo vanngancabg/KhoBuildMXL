@@ -21,7 +21,26 @@ const API = {
     return await res.json();
   },
 
-  // Hàm tải ảnh trực tiếp lên Google Drive
+  async getItemDatabase() {
+    const res = await fetch(`${API_URL}?action=getItemDatabase`);
+    return await res.json();
+  },
+
+  async uploadItemDatabase(payload) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'uploadItemDatabase',
+        itemName: payload.itemName,
+        base64Data: payload.base64Data,
+        mimeType: payload.mimeType,
+        username: payload.username,
+        role: payload.role
+      })
+    });
+    return await res.json();
+  },
+
   async uploadImage(base64Data, fileName, mimeType) {
     const res = await fetch(API_URL, {
       method: 'POST',
