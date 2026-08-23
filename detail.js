@@ -42,12 +42,11 @@ const DetailHandler = {
 
         document.getElementById('detail-time').innerText = b.updated_at || '';
         document.getElementById('vote-count').innerText = b.votes_count || 0;
-
         document.getElementById('detail-stats').innerHTML = this.renderMarkdown(b.stats_desc || 'Chưa cập nhật.');
-        document.getElementById('detail-skills').innerHTML = this.renderMarkdown(b.skills_desc || 'Chưa cập nhật.');
+
+        this.renderSkills(b.skills_desc, b.class_name);
         this.renderGear(b.gear_desc);
 
-        // Kiểm tra quyền Sửa / Xóa cho tác giả hoặc Admin
         const user = Auth.getCurrentUser();
         if (user && (String(user.username).toLowerCase() === String(b.author_id).toLowerCase() || user.role === 'Admin')) {
           const authorActions = document.getElementById('author-actions');
@@ -58,7 +57,6 @@ const DetailHandler = {
           }
         }
 
-        // Nhúng Youtube video
         if (b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be'))) {
           const videoMatch = b.video_url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
           const videoId = videoMatch ? videoMatch[2] : null;
@@ -78,6 +76,35 @@ const DetailHandler = {
       }
     } catch (err) {
       loading.innerText = 'Lỗi tải dữ liệu bài viết!';
+    }
+  },
+
+  renderSkills(skillsRaw, className) {
+    const treeContainer = document.getElementById('detail-skills-tree');
+    const noteContainer = document.getElementById('detail-skills');
+    if (!skillsRaw) {
+      noteContainer.innerHTML = 'Chưa cập nhật kỹ năng.';
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(skillsRaw);
+      noteContainer.innerHTML = this.renderMarkdown(parsed.notes || '');
+
+      if (parsed.tree && Object.keys(parsed.tree).length > 0) {
+        const skillList = MEDIAN_SKILLS[className] || [];
+        let badgesHtml = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">';
+        skillList.forEach(s => {
+          const pts = parsed.tree[s.id] || 0;
+          if (pts > 0) {
+            badgesHtml += `<span style="background: #111315; border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;"><strong>${s.name}:</strong> ${pts}/${s.max}</span>`;
+          }
+        });
+        badgesHtml += '</div>';
+        treeContainer.innerHTML = badgesHtml;
+      }
+    } catch (e) {
+      noteContainer.innerHTML = this.renderMarkdown(skillsRaw);
     }
   },
 
@@ -106,6 +133,55 @@ const DetailHandler = {
     }
   },
 
+  exportBuildCode() {
+    if (!this.currentBuild) return;
+    const b = this.currentBuild;
+
+    let skillTree = {};
+    let skillNotes = b.skills_desc;
+    try {
+      const s = JSON.parse(b.skills_desc);
+      skillTree = s.tree || {};
+      skillNotes = s.notes || '';
+    } catch(e) {}
+
+    let gearObj = {};
+    try {
+      gearObj = JSON.parse(b.gear_desc);
+    } catch(e) {}
+
+    const buildCodePayload = {
+      title: b.title,
+      class_name: b.class_name,
+      patch: b.patch_version,
+      stats: b.stats_desc,
+      skills_notes: skillNotes,
+      skill_tree: skillTree,
+      gear: gearObj
+    };
+
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(buildCodePayload))));
+    navigator.clipboard.writeText(encoded).then(() => {
+      alert('Đã sao chép Mã Build (Build Code)! Bạn có thể gửi cho bạn bè để họ nhập thẳng vào web.');
+    }).catch(() => {
+      prompt('Mã Build của bạn (Hãy copy dòng dưới):', encoded);
+    });
+  },
+
+  exportToDiscord() {
+    if (!this.currentBuild) return;
+    const b = this.currentBuild;
+    const url = window.location.href;
+
+    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Patch:** ${b.patch_version || 'Latest'}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem chi tiết:** ${url}`;
+
+    navigator.clipboard.writeText(discordText).then(() => {
+      alert('Đã copy cấu hình bài viết dạng chuẩn Discord!');
+    }).catch(() => {
+      alert('Không thể sao chép tự động!');
+    });
+  },
+
   async toggleVote() {
     const user = Auth.getCurrentUser();
     if (!user) {
@@ -132,20 +208,6 @@ const DetailHandler = {
     } else {
       alert(res.message || 'Không thể xóa bài viết!');
     }
-  },
-
-  exportToDiscord() {
-    if (!this.currentBuild) return;
-    const b = this.currentBuild;
-    const url = window.location.href;
-
-    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Patch:** ${b.patch_version || 'Latest'}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem chi tiết:** ${url}`;
-
-    navigator.clipboard.writeText(discordText).then(() => {
-      alert('Đã copy cấu hình bài viết dạng chuẩn Discord!');
-    }).catch(() => {
-      alert('Không thể sao chép tự động!');
-    });
   },
 
   async loadComments() {
