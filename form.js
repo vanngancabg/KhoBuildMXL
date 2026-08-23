@@ -1,5 +1,6 @@
 const FormHandler = {
   editBuildId: null,
+  activeTextarea: null,
 
   async init() {
     const user = Auth.getCurrentUser();
@@ -10,8 +11,7 @@ const FormHandler = {
       return;
     }
 
-    // Lắng nghe sự kiện dán ảnh (Ctrl + V)
-    this.setupPasteEvent();
+    this.setupActiveFocusAndPaste();
 
     const editId = new URLSearchParams(window.location.search).get('edit');
     if (editId) {
@@ -19,37 +19,42 @@ const FormHandler = {
       document.getElementById('form-heading').innerText = 'EDIT TOPIC / SỬA HƯỚNG DẪN BUILD';
       await this.loadData(editId, user);
     } else {
-      SkillPlanner.init(document.getElementById('build-class').value);
       this.loadDraft();
     }
   },
 
-  setupPasteEvent() {
-    const textarea = document.getElementById('build-content');
-    if (!textarea) return;
-
-    textarea.addEventListener('paste', async (e) => {
-      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-      for (let item of items) {
-        if (item.type.indexOf('image') !== -1) {
-          e.preventDefault();
-          const file = item.getAsFile();
-          await this.processImageFile(file);
-          break;
+  setupActiveFocusAndPaste() {
+    // Theo dõi ô textarea nào đang được trỏ chuột
+    const textareas = document.querySelectorAll('textarea, input[type="text"]');
+    textareas.forEach(el => {
+      el.addEventListener('focus', () => { this.activeTextarea = el; });
+      
+      // Bắt sự kiện dán ảnh (Ctrl + V)
+      el.addEventListener('paste', async (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const file = item.getAsFile();
+            await this.processImageFile(file, el);
+            break;
+          }
         }
-      }
+      });
     });
+
+    this.activeTextarea = document.getElementById('build-intro');
   },
 
   async handleImageUpload(e) {
     const file = e.target.files[0];
     if (file) {
-      await this.processImageFile(file);
+      await this.processImageFile(file, this.activeTextarea || document.getElementById('build-intro'));
       e.target.value = '';
     }
   },
 
-  async processImageFile(file) {
+  async processImageFile(file, targetEl) {
     const statusEl = document.getElementById('upload-status');
     statusEl.style.display = 'inline';
     statusEl.innerText = '⏳ Đang tải ảnh lên Google Drive...';
@@ -60,7 +65,7 @@ const FormHandler = {
       try {
         const res = await API.uploadImage(base64Data, file.name, file.type);
         if (res.status === 'success' && res.url) {
-          this.insertBB(`[img]${res.url}[/img]`, '');
+          this.insertBBIntoEl(`[img]${res.url}[/img]`, '', targetEl);
           statusEl.innerText = '✅ Đã tải ảnh lên Drive thành công!';
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
         } else {
@@ -73,6 +78,30 @@ const FormHandler = {
       }
     };
     reader.readAsDataURL(file);
+  },
+
+  insertBB(startTag, endTag) {
+    const el = this.activeTextarea || document.getElementById('build-intro');
+    this.insertBBIntoEl(startTag, endTag, el);
+  },
+
+  insertSmiley(icon) {
+    const el = this.activeTextarea || document.getElementById('build-intro');
+    if (!el) return;
+    const start = el.selectionStart || 0;
+    const end = el.selectionEnd || 0;
+    el.value = el.value.substring(0, start) + ' ' + icon + ' ' + el.value.substring(end);
+    el.focus();
+  },
+
+  insertBBIntoEl(startTag, endTag, el) {
+    if (!el) return;
+    const start = el.selectionStart || 0;
+    const end = el.selectionEnd || 0;
+    const selected = el.value.substring(start, end);
+    el.value = el.value.substring(0, start) + startTag + selected + endTag + el.value.substring(end);
+    el.focus();
+    el.setSelectionRange(start + startTag.length, start + startTag.length + selected.length);
   },
 
   async loadData(id, user) {
@@ -89,13 +118,36 @@ const FormHandler = {
         document.getElementById('build-title').value = b.title || '';
         document.getElementById('build-class').value = b.class_name || 'Amazon';
         document.getElementById('build-patch').value = b.patch_version || '';
-        document.getElementById('build-content').value = b.stats_desc || '';
+        document.getElementById('build-video').value = b.video_url || '';
+
+        // Đọc dữ liệu JSON các khối
+        try {
+          const statsObj = JSON.parse(b.stats_desc);
+          document.getElementById('build-season').value = statsObj.season || '';
+          document.getElementById('build-purpose').value = statsObj.purpose || 'Speed Farming';
+          document.getElementById('build-difficulty').value = statsObj.difficulty || 'Dễ';
+          document.getElementById('build-intro').value = statsObj.intro || '';
+          document.getElementById('build-pros').value = statsObj.pros || '';
+          document.getElementById('build-cons').value = statsObj.cons || '';
+          document.getElementById('stat-str').value = statsObj.str || '';
+          document.getElementById('stat-dex').value = statsObj.dex || '';
+          document.getElementById('stat-vit').value = statsObj.vit || '';
+          document.getElementById('stat-ene').value = statsObj.ene || '';
+          document.getElementById('build-strategy').value = statsObj.strategy || '';
+        } catch(e) {
+          document.getElementById('build-intro').value = b.stats_desc || '';
+        }
+
+        document.getElementById('build-skills-text').value = b.skills_desc || '';
 
         try {
-          const parsedSkills = JSON.parse(b.skills_desc);
-          SkillPlanner.init(b.class_name || 'Amazon', parsedSkills.tree || {});
-        } catch (e) {
-          SkillPlanner.init(b.class_name || 'Amazon');
+          const gearObj = JSON.parse(b.gear_desc);
+          document.getElementById('gear-lv105').value = gearObj.lv105 || '';
+          document.getElementById('gear-lv120').value = gearObj.lv120 || '';
+          document.getElementById('gear-lv130').value = gearObj.lv130 || '';
+          document.getElementById('gear-lv150').value = gearObj.lv150 || '';
+        } catch(e) {
+          document.getElementById('gear-lv105').value = b.gear_desc || '';
         }
       }
     } catch (e) {
@@ -103,65 +155,38 @@ const FormHandler = {
     }
   },
 
-  insertBB(startTag, endTag) {
-    const textarea = document.getElementById('build-content');
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = textarea.value.substring(start, end);
-    const replacement = startTag + selected + endTag;
-    
-    textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-    textarea.focus();
-    textarea.setSelectionRange(start + startTag.length, start + startTag.length + selected.length);
-  },
-
-  insertSmiley(icon) {
-    const textarea = document.getElementById('build-content');
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    textarea.value = textarea.value.substring(0, start) + ' ' + icon + ' ' + textarea.value.substring(end);
-    textarea.focus();
-  },
-
-  togglePreview() {
-    const box = document.getElementById('preview-box');
-    const content = document.getElementById('preview-content');
-    const raw = document.getElementById('build-content').value;
-
-    if (box.style.display === 'none') {
-      content.innerHTML = this.parseBBCode(raw);
-      box.style.display = 'block';
-      box.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      box.style.display = 'none';
-    }
-  },
-
   saveDraft() {
-    const draft = {
-      title: document.getElementById('build-title').value,
-      class_name: document.getElementById('build-class').value,
-      patch: document.getElementById('build-patch').value,
-      content: document.getElementById('build-content').value,
-      skill_tree: SkillPlanner.getPoints()
-    };
-    localStorage.setItem('d2_build_draft', JSON.stringify(draft));
+    const draft = this.collectFormData();
+    localStorage.setItem('d2_build_draft_v2', JSON.stringify(draft));
     alert('Đã lưu bản nháp vào trình duyệt!');
   },
 
   loadDraft() {
-    const saved = localStorage.getItem('d2_build_draft');
+    const saved = localStorage.getItem('d2_build_draft_v2');
     if (saved) {
       try {
         const d = JSON.parse(saved);
         if (confirm('Tìm thấy một bản nháp chưa hoàn thành. Bạn có muốn khôi phục không?')) {
           if (d.title) document.getElementById('build-title').value = d.title;
-          if (d.class_name) {
-            document.getElementById('build-class').value = d.class_name;
-            SkillPlanner.init(d.class_name, d.skill_tree || {});
-          }
+          if (d.class_name) document.getElementById('build-class').value = d.class_name;
+          if (d.season) document.getElementById('build-season').value = d.season;
           if (d.patch) document.getElementById('build-patch').value = d.patch;
-          if (d.content) document.getElementById('build-content').value = d.content;
+          if (d.purpose) document.getElementById('build-purpose').value = d.purpose;
+          if (d.difficulty) document.getElementById('build-difficulty').value = d.difficulty;
+          if (d.intro) document.getElementById('build-intro').value = d.intro;
+          if (d.pros) document.getElementById('build-pros').value = d.pros;
+          if (d.cons) document.getElementById('build-cons').value = d.cons;
+          if (d.str) document.getElementById('stat-str').value = d.str;
+          if (d.dex) document.getElementById('stat-dex').value = d.dex;
+          if (d.vit) document.getElementById('stat-vit').value = d.vit;
+          if (d.ene) document.getElementById('stat-ene').value = d.ene;
+          if (d.skills) document.getElementById('build-skills-text').value = d.skills;
+          if (d.gear_lv105) document.getElementById('gear-lv105').value = d.gear_lv105;
+          if (d.gear_lv120) document.getElementById('gear-lv120').value = d.gear_lv120;
+          if (d.gear_lv130) document.getElementById('gear-lv130').value = d.gear_lv130;
+          if (d.gear_lv150) document.getElementById('gear-lv150').value = d.gear_lv150;
+          if (d.strategy) document.getElementById('build-strategy').value = d.strategy;
+          if (d.video) document.getElementById('build-video').value = d.video;
         }
       } catch (e) {}
     }
@@ -170,22 +195,68 @@ const FormHandler = {
   importBuildCode() {
     const rawCode = prompt('Dán chuỗi Mã Build vào đây:');
     if (!rawCode) return;
-
     try {
       const jsonStr = decodeURIComponent(escape(atob(rawCode.trim())));
-      const data = JSON.parse(jsonStr);
-
-      if (data.title) document.getElementById('build-title').value = data.title;
-      if (data.class_name) {
-        document.getElementById('build-class').value = data.class_name;
-        SkillPlanner.init(data.class_name, data.skill_tree || {});
-      }
-      if (data.patch) document.getElementById('build-patch').value = data.patch;
-      if (data.content) document.getElementById('build-content').value = data.content;
-
-      alert('Đã nhập dữ liệu cấu hình thành công!');
+      const d = JSON.parse(jsonStr);
+      if (d.title) document.getElementById('build-title').value = d.title;
+      if (d.class_name) document.getElementById('build-class').value = d.class_name;
+      if (d.season) document.getElementById('build-season').value = d.season;
+      if (d.patch) document.getElementById('build-patch').value = d.patch;
+      if (d.skills) document.getElementById('build-skills-text').value = d.skills;
+      if (d.gear_lv105) document.getElementById('gear-lv105').value = d.gear_lv105;
+      alert('Đã nhập mã build thành công!');
     } catch (err) {
       alert('Mã Build không hợp lệ!');
+    }
+  },
+
+  collectFormData() {
+    return {
+      title: document.getElementById('build-title').value.trim(),
+      class_name: document.getElementById('build-class').value,
+      season: document.getElementById('build-season').value.trim(),
+      patch: document.getElementById('build-patch').value.trim(),
+      purpose: document.getElementById('build-purpose').value,
+      difficulty: document.getElementById('build-difficulty').value,
+      intro: document.getElementById('build-intro').value.trim(),
+      pros: document.getElementById('build-pros').value.trim(),
+      cons: document.getElementById('build-cons').value.trim(),
+      str: document.getElementById('stat-str').value.trim(),
+      dex: document.getElementById('stat-dex').value.trim(),
+      vit: document.getElementById('stat-vit').value.trim(),
+      ene: document.getElementById('stat-ene').value.trim(),
+      skills: document.getElementById('build-skills-text').value.trim(),
+      gear_lv105: document.getElementById('gear-lv105').value.trim(),
+      gear_lv120: document.getElementById('gear-lv120').value.trim(),
+      gear_lv130: document.getElementById('gear-lv130').value.trim(),
+      gear_lv150: document.getElementById('gear-lv150').value.trim(),
+      strategy: document.getElementById('build-strategy').value.trim(),
+      video: document.getElementById('build-video').value.trim()
+    };
+  },
+
+  togglePreview() {
+    const box = document.getElementById('preview-box');
+    const content = document.getElementById('preview-content');
+    const d = this.collectFormData();
+
+    if (box.style.display === 'none') {
+      content.innerHTML = `
+        <h3 style="color:var(--accent-gold);">${d.title} (${d.season} - Patch ${d.patch})</h3>
+        <p><strong>Mục đích:</strong> ${d.purpose} | <strong>Độ khó:</strong> ${d.difficulty}</p>
+        <div style="margin-top:10px;">${this.parseBBCode(d.intro)}</div>
+        <hr style="border-color:var(--border-color);margin:12px 0;">
+        <h4 style="color:var(--accent-green);">Ưu điểm:</h4>${this.parseBBCode(d.pros)}
+        <h4 style="color:#ff6b6b;margin-top:8px;">Nhược điểm:</h4>${this.parseBBCode(d.cons)}
+        <hr style="border-color:var(--border-color);margin:12px 0;">
+        <h4 style="color:var(--accent-gold);">Kỹ năng:</h4>${this.parseBBCode(d.skills)}
+        <hr style="border-color:var(--border-color);margin:12px 0;">
+        <h4 style="color:var(--accent-gold);">Trang bị Level 1-105:</h4>${this.parseBBCode(d.gear_lv105)}
+      `;
+      box.style.display = 'block';
+      box.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      box.style.display = 'none';
     }
   },
 
@@ -201,14 +272,8 @@ const FormHandler = {
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[size=(.*?)\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image">')
       .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold);">$2</a>')
-      .replace(/\[youtube\](.*?)\[\/youtube\]/gi, (match, url) => {
-        const idMatch = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-        const id = idMatch ? idMatch[2] : url;
-        return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:10px 0;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe></div>`;
-      })
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>')
       .replace(/\n/g, '<br>');
   },
@@ -220,40 +285,59 @@ const FormHandler = {
 
     const btn = document.getElementById('btn-save');
     btn.disabled = true;
-    btn.innerText = 'Đang đăng bài...';
+    btn.innerText = 'Đang lưu bài viết...';
 
-    const skillsData = {
-      tree: SkillPlanner.getPoints()
+    const d = this.collectFormData();
+
+    const statsPayload = {
+      season: d.season,
+      purpose: d.purpose,
+      difficulty: d.difficulty,
+      intro: d.intro,
+      pros: d.pros,
+      cons: d.cons,
+      str: d.str,
+      dex: d.dex,
+      vit: d.vit,
+      ene: d.ene,
+      strategy: d.strategy
+    };
+
+    const gearPayload = {
+      lv105: d.gear_lv105,
+      lv120: d.gear_lv120,
+      lv130: d.gear_lv130,
+      lv150: d.gear_lv150
     };
 
     const payload = {
       build_id: this.editBuildId,
-      title: document.getElementById('build-title').value.trim(),
-      class_name: document.getElementById('build-class').value,
-      patch_version: document.getElementById('build-patch').value.trim(),
+      title: d.title,
+      class_name: d.class_name,
+      patch_version: `${d.season} - ${d.patch}`,
       author_username: user.username,
       author_name: user.display_name,
       role: user.role || 'Member',
-      stats_desc: document.getElementById('build-content').value.trim(),
-      skills_desc: JSON.stringify(skillsData),
-      gear_desc: '',
-      video_url: ''
+      stats_desc: JSON.stringify(statsPayload),
+      skills_desc: d.skills,
+      gear_desc: JSON.stringify(gearPayload),
+      video_url: d.video
     };
 
     try {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
-        localStorage.removeItem('d2_build_draft');
+        localStorage.removeItem('d2_build_draft_v2');
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
         alert(res.message || 'Lưu thất bại!');
         btn.disabled = false;
-        btn.innerText = 'Submit / Đăng Bài';
+        btn.innerText = '🚀 Submit / Đăng Bài Viết';
       }
     } catch (err) {
       alert('Lỗi kết nối máy chủ Google!');
       btn.disabled = false;
-      btn.innerText = 'Submit / Đăng Bài';
+      btn.innerText = '🚀 Submit / Đăng Bài Viết';
     }
   }
 };
