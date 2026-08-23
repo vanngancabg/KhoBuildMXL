@@ -13,6 +13,7 @@ const FormHandler = {
     }
 
     this.setupActiveFocusAndPaste();
+    this.setupModalOutsideClick();
 
     const editId = new URLSearchParams(window.location.search).get('edit');
     if (editId) {
@@ -58,6 +59,35 @@ const FormHandler = {
     });
 
     this.activeTextarea = document.getElementById('build-intro');
+  },
+
+  // Xử lý đóng Modal khi click ra ngoài vùng nội dung hoặc bấm phím Escape
+  setupModalOutsideClick() {
+    const previewModal = document.getElementById('modal-preview-full');
+    if (previewModal) {
+      previewModal.addEventListener('click', (e) => {
+        // Nếu click trúng vùng nền mờ bên ngoài khung nội dung
+        if (e.target === previewModal) {
+          this.closePreviewModal();
+        }
+      });
+    }
+
+    const itemModal = document.getElementById('modal-item-upload');
+    if (itemModal) {
+      itemModal.addEventListener('click', (e) => {
+        if (e.target === itemModal) {
+          this.closeItemModal();
+        }
+      });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closePreviewModal();
+        this.closeItemModal();
+      }
+    });
   },
 
   async handleTriggerItemTag() {
@@ -451,7 +481,6 @@ const FormHandler = {
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      // HỖ TRỢ CẢ [quote=Tên Người] VÀ [quote]
       .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
