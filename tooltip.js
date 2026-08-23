@@ -21,13 +21,12 @@ const ItemTooltipManager = {
 
   async loadDatabase() {
     try {
-      // Tải trực tiếp file JSON từ kho GitHub của bạn
       const res = await fetch('median_items.json');
       if (res.ok) {
         this.itemsDb = await res.json();
       }
     } catch (e) {
-      console.warn('Không thể nạp median_items.json, dùng dữ liệu dự phòng');
+      console.warn('Không thể nạp median_items.json');
     }
   },
 
@@ -66,19 +65,18 @@ const ItemTooltipManager = {
     if (item.quality === 'set') colorClass = 'item-set';
 
     let statsHtml = '';
-    if (item.stats && item.stats.length > 0) {
+    if (item.stats && Array.isArray(item.stats)) {
       statsHtml = item.stats.map(s => `<div class="tt-stat">${s}</div>`).join('');
     }
 
     this.tooltipEl.innerHTML = `
       <div class="tt-title ${colorClass}">${item.name}</div>
-      <div class="tt-type">${item.base || ''} ${item.tier ? `(${item.tier})` : ''}</div>
-      ${item.defense ? `<div style="font-size:0.8rem; color:#aaa; margin-bottom:4px;">Defense: <span style="color:#fff;">${item.defense}</span></div>` : ''}
+      ${item.base ? `<div class="tt-type">${item.base}</div>` : ''}
+      ${item.defense ? `<div style="font-size:0.8rem; color:#aaa; margin-bottom:2px;">Defense: <span style="color:#fff;">${item.defense}</span></div>` : ''}
       ${item.req_lvl ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:2px;">Required Level: <span style="color:#fff;">${item.req_lvl}</span></div>` : ''}
-      ${item.req_str ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:6px;">Required Strength: <span style="color:#fff;">${item.req_str}</span></div>` : ''}
+      ${item.req_str ? `<div style="font-size:0.75rem; color:#aaa; margin-bottom:4px;">Required Strength: <span style="color:#fff;">${item.req_str}</span></div>` : ''}
       <div style="border-top: 1px solid #333; margin: 6px 0;"></div>
       ${statsHtml}
-      ${item.flavor ? `<div class="tt-flavor">${item.flavor}</div>` : ''}
     `;
   },
 
