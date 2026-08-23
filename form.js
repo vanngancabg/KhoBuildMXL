@@ -1,7 +1,6 @@
 const FormHandler = {
   editBuildId: null,
   activeTextarea: null,
-  pendingItemName: '',
 
   async init() {
     const user = Auth.getCurrentUser();
@@ -42,27 +41,10 @@ const FormHandler = {
       });
     });
 
-    // Lắng nghe dán ảnh vào Modal đóng góp Item
-    window.addEventListener('paste', async (e) => {
-      const modal = document.getElementById('modal-item-upload');
-      if (modal && modal.classList.contains('active')) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            e.preventDefault();
-            const file = item.getAsFile();
-            await this.uploadItemToDatabase(file);
-            break;
-          }
-        }
-      }
-    });
-
     this.activeTextarea = document.getElementById('build-intro');
   },
 
-  // Xử lý nút [Hover Item] thông minh
-  async handleTriggerItemTag() {
+  handleTriggerItemTag() {
     const el = this.activeTextarea || document.getElementById('build-intro');
     if (!el) return;
 
@@ -71,83 +53,12 @@ const FormHandler = {
     let selected = el.value.substring(start, end).trim();
 
     if (!selected) {
-      selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Royal Circlet):');
+      selected = prompt('Nhập tên món đồ Median XL (VD: Royal Circlet, Truewarp, Latent Power):');
       if (!selected) return;
       selected = selected.trim();
     }
 
-    const normalizedKey = selected.toLowerCase();
-
-    // 1. Kiểm tra xem món đồ đã có ảnh trong kho dữ liệu chưa
-    if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
-      // Đã có -> Tự động chèn thẻ luôn, không cho tải trùng
-      this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
-    } else {
-      // 2. Chưa có -> Mở Popup yêu cầu đóng góp ảnh
-      this.pendingItemName = selected;
-      document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
-      document.getElementById('modal-item-upload').classList.add('active');
-    }
-  },
-
-  closeItemModal() {
-    document.getElementById('modal-item-upload').classList.remove('active');
-    this.pendingItemName = '';
-  },
-
-  async handleItemDbFileUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-      await this.uploadItemToDatabase(file);
-      e.target.value = '';
-    }
-  },
-
-  async uploadItemToDatabase(file) {
-    const user = Auth.getCurrentUser();
-    const itemName = this.pendingItemName;
-    if (!itemName || !user) return;
-
-    const statusEl = document.getElementById('upload-status');
-    statusEl.style.display = 'inline';
-    statusEl.innerText = `⏳ Đang tải ảnh cho "${itemName}" lên kho dữ liệu...`;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Data = reader.result.split(',')[1];
-      try {
-        const res = await API.uploadItemDatabase({
-          itemName: itemName,
-          base64Data: base64Data,
-          mimeType: file.type,
-          username: user.username,
-          role: user.role || 'Member'
-        });
-
-        if (res.status === 'success' || res.status === 'exists') {
-          // Cập nhật bộ nhớ đệm Tooltip
-          ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
-            name: itemName,
-            url: res.url,
-            by: user.username
-          };
-
-          const el = this.activeTextarea || document.getElementById('build-intro');
-          this.insertBBIntoEl(`[item]${itemName}[/item]`, '', el);
-          this.closeItemModal();
-
-          statusEl.innerText = `✅ Đã lưu ảnh món "${itemName}" thành công!`;
-          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-        } else {
-          alert('Lỗi: ' + res.message);
-          statusEl.style.display = 'none';
-        }
-      } catch (err) {
-        alert('Lỗi kết nối máy chủ khi lưu ảnh món đồ!');
-        statusEl.style.display = 'none';
-      }
-    };
-    reader.readAsDataURL(file);
+    this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
   },
 
   async handleImageUpload(e) {
@@ -160,8 +71,10 @@ const FormHandler = {
 
   async processImageFile(file, targetEl) {
     const statusEl = document.getElementById('upload-status');
-    statusEl.style.display = 'inline';
-    statusEl.innerText = '⏳ Đang tải ảnh lên Google Drive...';
+    if (statusEl) {
+      statusEl.style.display = 'inline';
+      statusEl.innerText = '⏳ Đang tải ảnh lên Google Drive...';
+    }
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -170,15 +83,17 @@ const FormHandler = {
         const res = await API.uploadImage(base64Data, file.name, file.type);
         if (res.status === 'success' && res.url) {
           this.insertBBIntoEl(`[img]${res.url}[/img]`, '', targetEl);
-          statusEl.innerText = '✅ Đã tải ảnh lên Drive thành công!';
-          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+          if (statusEl) {
+            statusEl.innerText = '✅ Đã tải ảnh lên Drive thành công!';
+            setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+          }
         } else {
           alert('Lỗi tải ảnh: ' + (res.message || 'Không xác định'));
-          statusEl.style.display = 'none';
+          if (statusEl) statusEl.style.display = 'none';
         }
       } catch (err) {
         alert('Lỗi kết nối khi tải ảnh lên Google Drive!');
-        statusEl.style.display = 'none';
+        if (statusEl) statusEl.style.display = 'none';
       }
     };
     reader.readAsDataURL(file);
