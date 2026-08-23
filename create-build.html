@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng / Sửa Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .editor-tools { display: flex; gap: 6px; margin-bottom: 6px; }
-  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -18,10 +15,9 @@
     </div>
   </nav>
 
-  <div class="container" style="max-width: 900px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-      <h2 id="form-heading" style="color: var(--accent-gold); margin: 0;">Chia Sẻ Hướng Dẫn Build Chi Tiết</h2>
-      <!-- Nút nhập mã Build nhanh -->
+  <div class="container" style="max-width: 1000px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+      <h2 id="form-heading" style="color: var(--accent-gold); margin: 0; font-size: 1.3rem;">POST A NEW TOPIC / TẠO BUILD MỚI</h2>
       <button type="button" class="btn btn-sm" onclick="FormHandler.importBuildCode()">📥 Nhập Mã Build</button>
     </div>
 
@@ -31,12 +27,13 @@
     </div>
 
     <form id="build-form" onsubmit="FormHandler.handleSubmit(event)">
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label>Tên bài Build (*)</label>
-          <input type="text" id="build-title" class="form-control" required placeholder="VD: Bowzon Nuke Ubers">
+      <!-- Thông tin chủ đề -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div class="form-group" style="margin: 0;">
+          <label>Subject / Tên bài Build (*)</label>
+          <input type="text" id="build-title" class="form-control" required placeholder="VD: [2.9] Bowzon Nuke Ubers Guide">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin: 0;">
           <label>Class Nhân vật (*)</label>
           <select id="build-class" class="form-control" onchange="SkillPlanner.init(this.value)">
             <option value="Amazon">Amazon</option>
@@ -48,59 +45,98 @@
             <option value="Sorceress">Sorceress</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin: 0;">
           <label>Phiên bản Patch</label>
           <input type="text" id="build-patch" class="form-control" placeholder="2.9.1">
         </div>
       </div>
 
-      <!-- Khung Skill Tree Planner tương tác -->
+      <!-- Skill Tree Planner -->
       <div id="skill-tree-container"></div>
 
-      <div class="form-group">
-        <label>📊 Phân Bổ Điểm Thuộc Tính (Stats)</label>
-        <textarea id="build-stats" class="form-control" placeholder="Strength: đủ mặc đồ&#10;Dexterity: max block / max dam&#10;Vitality: toàn bộ điểm còn lại..."></textarea>
-      </div>
+      <!-- Trình soạn thảo BBCode Forum Style -->
+      <div class="bb-editor-layout">
+        <!-- Khung soạn thảo chính -->
+        <div>
+          <label style="color: var(--accent-gold); font-weight: bold; margin-bottom: 6px; display: block;">Nội Dung Chi Tiết Hướng Dẫn (BBCode Editor)</label>
+          
+          <!-- Thanh Toolbar BBCode -->
+          <div class="bb-toolbar">
+            <button type="button" class="bb-btn" title="In đậm" onclick="FormHandler.insertBB('[b]', '[/b]')">B</button>
+            <button type="button" class="bb-btn" title="In nghiêng" onclick="FormHandler.insertBB('[i]', '[/i]')"><i>I</i></button>
+            <button type="button" class="bb-btn" title="Gạch chân" onclick="FormHandler.insertBB('[u]', '[/u]')"><u>U</u></button>
+            <button type="button" class="bb-btn" title="Trích dẫn" onclick="FormHandler.insertBB('[quote]', '[/quote]')">💬</button>
+            <button type="button" class="bb-btn" title="Gạch đầu dòng" onclick="FormHandler.insertBB('[list]\n[*] ', '\n[/list]')">📜</button>
+            <button type="button" class="bb-btn" title="Chèn ảnh" onclick="FormHandler.insertBB('[img]', '[/img]')">🖼️</button>
+            <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertBB('[url=https://]', '[/url]')">🔗</button>
+            <button type="button" class="bb-btn" title="Video Youtube" onclick="FormHandler.insertBB('[youtube]', '[/youtube]')">▶️</button>
+            <button type="button" class="bb-btn" title="Spoiler / Ẩn hiện" onclick="FormHandler.insertBB('[spoiler=Chi tiết]', '[/spoiler]')">📁</button>
+            
+            <!-- Tô màu đồ Median XL -->
+            <button type="button" class="bb-btn" style="color: #d4af37;" title="Unique Item" onclick="FormHandler.insertBB('[item_u]', '[/item_u]')">Sacred Unique</button>
+            <button type="button" class="bb-btn" style="color: #ed8936;" title="Runeword" onclick="FormHandler.insertBB('[rw]', '[/rw]')">Runeword</button>
+            <button type="button" class="bb-btn" style="color: #48bb78;" title="Set Item" onclick="FormHandler.insertBB('[set]', '[/set]')">Set</button>
 
-      <div class="form-group">
-        <label>⚡ Ghi Chú Kỹ Năng Bổ Sung</label>
-        <div class="editor-tools">
-          <button type="button" class="btn btn-sm" onclick="FormHandler.insertTag('build-skills', '**', '**')"><b>B</b> In Đậm</button>
-          <button type="button" class="btn btn-sm" onclick="FormHandler.insertTag('build-skills', '- ', '')">• Gạch đầu dòng</button>
+            <!-- Cỡ chữ & Màu -->
+            <select class="bb-select" onchange="if(this.value){ FormHandler.insertBB('[size=' + this.value + ']', '[/size]'); this.value=''; }">
+              <option value="">Cỡ chữ</option>
+              <option value="12">Nhỏ (12px)</option>
+              <option value="16">Vừa (16px)</option>
+              <option value="20">Lớn (20px)</option>
+            </select>
+
+            <select class="bb-select" onchange="if(this.value){ FormHandler.insertBB('[color=' + this.value + ']', '[/color]'); this.value=''; }">
+              <option value="">Màu chữ</option>
+              <option value="#c79c5e">Vàng Gold</option>
+              <option value="#ff4444">Đỏ</option>
+              <option value="#44ff44">Xanh lá</option>
+              <option value="#4488ff">Xanh dương</option>
+            </select>
+          </div>
+
+          <!-- Ô nhập văn bản -->
+          <textarea id="build-content" class="form-control" style="border-radius: 0 0 4px 4px; min-height: 350px; font-family: monospace; font-size: 0.95rem; line-height: 1.5;" placeholder="Viết toàn bộ hướng dẫn build tại đây (Stats, Skills, Gear, Boss Strategy)..."></textarea>
         </div>
-        <textarea id="build-skills" class="form-control" style="min-height: 100px;" placeholder="Ghi chú thêm về combo phím tắt, xoay vòng chiêu thức..."></textarea>
-      </div>
 
-      <!-- Phân Mục Trang Bị -->
-      <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; margin-bottom: 16px; background: #111315;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-          <label style="color: var(--accent-gold); font-weight: bold; margin: 0;">🛡️ Phân Mục Trang Bị Đề Xuất (Gear & Runewords)</label>
-          <div class="editor-tools">
-            <button type="button" class="btn btn-sm" style="color: #d4af37;" onclick="FormHandler.insertItemTag('[u]', '[/u]')">[U] Unique</button>
-            <button type="button" class="btn btn-sm" style="color: #ed8936;" onclick="FormHandler.insertItemTag('[rw]', '[/rw]')">[RW] Runeword</button>
-            <button type="button" class="btn btn-sm" style="color: #48bb78;" onclick="FormHandler.insertItemTag('[set]', '[/set]')">[Set] Đồ Xanh</button>
+        <!-- Bảng Smilies / Emoji bên phải -->
+        <div>
+          <div class="smilies-panel">
+            <span style="color: var(--accent-gold); font-size: 0.85rem; font-weight: bold;">Smilies</span>
+            <div class="smilies-grid">
+              <span onclick="FormHandler.insertSmiley('😀')">😀</span>
+              <span onclick="FormHandler.insertSmiley('😎')">😎</span>
+              <span onclick="FormHandler.insertSmiley('🔥')">🔥</span>
+              <span onclick="FormHandler.insertSmiley('⚔️')">⚔️</span>
+              <span onclick="FormHandler.insertSmiley('🛡️')">🛡️</span>
+              <span onclick="FormHandler.insertSmiley('💀')">💀</span>
+              <span onclick="FormHandler.insertSmiley('👑')">👑</span>
+              <span onclick="FormHandler.insertSmiley('⚡')">⚡</span>
+              <span onclick="FormHandler.insertSmiley('❤️')">❤️</span>
+              <span onclick="FormHandler.insertSmiley('🎯')">🎯</span>
+              <span onclick="FormHandler.insertSmiley('💣')">💣</span>
+              <span onclick="FormHandler.insertSmiley('🏆')">🏆</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; text-align: left; line-height: 1.4;">
+              BBCode is <b>ON</b><br>
+              [img] is <b>ON</b><br>
+              [youtube] is <b>ON</b><br>
+              Smilies are <b>ON</b>
+            </div>
           </div>
         </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group"><label>🗡️ Vũ Khí</label><input type="text" id="gear-weapon" class="form-control" placeholder="VD: [rw]Truewarp[/rw]"></div>
-          <div class="form-group"><label>👑 Nón</label><input type="text" id="gear-helm" class="form-control" placeholder="VD: [u]Royal Circlet[/u]"></div>
-          <div class="form-group"><label>🥋 Áo Giáp</label><input type="text" id="gear-armor" class="form-control" placeholder="VD: [rw]Latent Power[/rw]"></div>
-          <div class="form-group"><label>🧤 Găng Tay</label><input type="text" id="gear-gloves" class="form-control"></div>
-          <div class="form-group"><label>👢 Giày</label><input type="text" id="gear-boots" class="form-control"></div>
-          <div class="form-group"><label>💍 Trang Sức (Nhẫn / Dây chuyền)</label><input type="text" id="gear-jewelry" class="form-control"></div>
-        </div>
-        <div class="form-group"><label>🔮 Charms, Mystic Orbs (MOs) & Relics</label><textarea id="gear-charms" class="form-control" placeholder="Các dòng MO ưu tiên ép vào đồ..."></textarea></div>
       </div>
 
-      <div class="form-group">
-        <label>🎬 Link Video Youtube Gameplay / Hướng dẫn</label>
-        <input type="url" id="build-video" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+      <!-- Khung xem trước trực tiếp (Live Preview) -->
+      <div id="preview-box" style="display: none; background: #0c0d0e; border: 1px solid var(--accent-gold); border-radius: 4px; padding: 16px; margin-top: 16px;">
+        <h4 style="color: var(--accent-gold); margin-bottom: 8px;">👁️ Xem Trước Bài Viết (Preview):</h4>
+        <div id="preview-content" class="markdown-rendered" style="line-height: 1.6;"></div>
       </div>
 
-      <div style="display: flex; gap: 12px; margin-top: 20px;">
-        <button type="submit" id="btn-save" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;">💾 Lưu Bài Viết</button>
-        <a href="index.html" class="btn" style="padding: 12px 20px;">Hủy</a>
+      <!-- Nút điều khiển -->
+      <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+        <button type="button" class="btn" onclick="FormHandler.togglePreview()">👁️ Preview</button>
+        <button type="button" class="btn" onclick="FormHandler.saveDraft()">💾 Save draft</button>
+        <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 28px;">Submit / Đăng Bài</button>
       </div>
     </form>
   </div>
