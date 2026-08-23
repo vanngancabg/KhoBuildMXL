@@ -336,7 +336,6 @@ const FormHandler = {
     };
   },
 
-  // Hiển thị Preview dạng Modal toàn màn hình trọn vẹn
   openPreviewModal() {
     const d = this.collectFormData();
     const modal = document.getElementById('modal-preview-full');
@@ -452,7 +451,9 @@ const FormHandler = {
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
+      // HỖ TRỢ CẢ [quote=Tên Người] VÀ [quote]
+      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
