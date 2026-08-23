@@ -12,6 +12,7 @@ const FormHandler = {
     }
 
     this.setupActiveFocusAndPaste();
+    this.populateItemSelectMenu();
 
     const editId = new URLSearchParams(window.location.search).get('edit');
     if (editId) {
@@ -21,6 +22,30 @@ const FormHandler = {
     } else {
       this.loadDraft();
     }
+  },
+
+  // Tự động quét file median_items.json để tạo danh sách trong Menu Toolbar
+  async populateItemSelectMenu() {
+    const select = document.getElementById('select-item-quick');
+    if (!select) return;
+
+    // Đợi tooltip load xong data
+    setTimeout(() => {
+      const items = ItemTooltipManager.itemsDb || {};
+      const keys = Object.keys(items);
+      keys.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = items[k].name;
+        opt.innerText = `${items[k].name} (${items[k].quality || 'Item'})`;
+        select.appendChild(opt);
+      });
+    }, 500);
+  },
+
+  handleQuickItemSelect(itemName) {
+    if (!itemName) return;
+    const el = this.activeTextarea || document.getElementById('build-intro');
+    this.insertBBIntoEl(`[item]${itemName}[/item]`, '', el);
   },
 
   setupActiveFocusAndPaste() {
@@ -53,7 +78,7 @@ const FormHandler = {
     let selected = el.value.substring(start, end).trim();
 
     if (!selected) {
-      selected = prompt('Nhập tên món đồ Median XL (VD: Royal Circlet, Truewarp, Latent Power):');
+      selected = prompt('Nhập tên món đồ Median XL muốn gắn Tooltip:');
       if (!selected) return;
       selected = selected.trim();
     }
