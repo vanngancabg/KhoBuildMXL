@@ -10,17 +10,69 @@ const FormHandler = {
       return;
     }
 
+    // Lắng nghe sự kiện dán ảnh (Ctrl + V)
+    this.setupPasteEvent();
+
     const editId = new URLSearchParams(window.location.search).get('edit');
     if (editId) {
       this.editBuildId = editId;
       document.getElementById('form-heading').innerText = 'EDIT TOPIC / SỬA HƯỚNG DẪN BUILD';
       await this.loadData(editId, user);
     } else {
-      // Khởi tạo Skill Tree mặc định
       SkillPlanner.init(document.getElementById('build-class').value);
-      // Tải lại bản nháp nếu có
       this.loadDraft();
     }
+  },
+
+  setupPasteEvent() {
+    const textarea = document.getElementById('build-content');
+    if (!textarea) return;
+
+    textarea.addEventListener('paste', async (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          await this.processImageFile(file);
+          break;
+        }
+      }
+    });
+  },
+
+  async handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+      await this.processImageFile(file);
+      e.target.value = '';
+    }
+  },
+
+  async processImageFile(file) {
+    const statusEl = document.getElementById('upload-status');
+    statusEl.style.display = 'inline';
+    statusEl.innerText = '⏳ Đang tải ảnh lên Google Drive...';
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64Data = reader.result.split(',')[1];
+      try {
+        const res = await API.uploadImage(base64Data, file.name, file.type);
+        if (res.status === 'success' && res.url) {
+          this.insertBB(`[img]${res.url}[/img]`, '');
+          statusEl.innerText = '✅ Đã tải ảnh lên Drive thành công!';
+          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        } else {
+          alert('Lỗi tải ảnh: ' + (res.message || 'Không xác định'));
+          statusEl.style.display = 'none';
+        }
+      } catch (err) {
+        alert('Lỗi kết nối khi tải ảnh lên Google Drive!');
+        statusEl.style.display = 'none';
+      }
+    };
+    reader.readAsDataURL(file);
   },
 
   async loadData(id, user) {
@@ -37,11 +89,8 @@ const FormHandler = {
         document.getElementById('build-title').value = b.title || '';
         document.getElementById('build-class').value = b.class_name || 'Amazon';
         document.getElementById('build-patch').value = b.patch_version || '';
-
-        // Tải nội dung BBCode chính
         document.getElementById('build-content').value = b.stats_desc || '';
 
-        // Tải phân bổ Skill Tree
         try {
           const parsedSkills = JSON.parse(b.skills_desc);
           SkillPlanner.init(b.class_name || 'Amazon', parsedSkills.tree || {});
@@ -97,7 +146,7 @@ const FormHandler = {
       skill_tree: SkillPlanner.getPoints()
     };
     localStorage.setItem('d2_build_draft', JSON.stringify(draft));
-    alert('Đã lưu bản nháp vào trình duyệt của bạn!');
+    alert('Đã lưu bản nháp vào trình duyệt!');
   },
 
   loadDraft() {
@@ -119,7 +168,7 @@ const FormHandler = {
   },
 
   importBuildCode() {
-    const rawCode = prompt('Dán chuỗi Mã Build (Build Code) vào đây:');
+    const rawCode = prompt('Dán chuỗi Mã Build vào đây:');
     if (!rawCode) return;
 
     try {
@@ -185,7 +234,7 @@ const FormHandler = {
       author_username: user.username,
       author_name: user.display_name,
       role: user.role || 'Member',
-      stats_desc: document.getElementById('build-content').value.trim(), // Toàn bộ BBCode được lưu tại đây
+      stats_desc: document.getElementById('build-content').value.trim(),
       skills_desc: JSON.stringify(skillsData),
       gear_desc: '',
       video_url: ''
@@ -194,7 +243,7 @@ const FormHandler = {
     try {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
-        localStorage.removeItem('d2_build_draft'); // Xóa nháp khi đăng xong
+        localStorage.removeItem('d2_build_draft');
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
         alert(res.message || 'Lưu thất bại!');
