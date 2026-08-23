@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tạo / Sửa Hướng Dẫn Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .item-hover-trigger { color: #d4af37 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #d4af37; }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -29,14 +32,14 @@
       <button class="btn btn-primary" style="margin-top: 8px;" onclick="Auth.openModal('login')">Đăng nhập</button>
     </div>
 
-    <!-- Input file ẩn để tải ảnh lên Google Drive -->
     <input type="file" id="image-upload-input" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
+    <input type="file" id="item-db-file-input" accept="image/*" style="display: none;" onchange="FormHandler.handleItemDbFileUpload(event)">
 
-    <!-- THANH CÔNG CỤ BBCODE STICKY (Luôn bám theo màn hình) -->
+    <!-- THANH CÔNG CỤ BBCODE STICKY -->
     <div class="sticky-toolbar-wrapper">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: bold;">🛠️ Thanh Công Cụ BBCode (Áp dụng vào ô bạn đang trỏ chuột hoặc Ctrl + V dán ảnh)</span>
-        <span id="upload-status" style="font-size: 0.8rem; color: var(--accent-gold); display: none;">⏳ Đang tải ảnh lên Google Drive...</span>
+        <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: bold;">🛠️ Thanh Công Cụ BBCode & Gắn Ảnh Đồ Tự Động</span>
+        <span id="upload-status" style="font-size: 0.8rem; color: var(--accent-gold); display: none;">⏳ Đang tải...</span>
       </div>
       <div class="bb-toolbar">
         <button type="button" class="bb-btn" title="In đậm" onclick="FormHandler.insertBB('[b]', '[/b]')">B</button>
@@ -45,12 +48,14 @@
         <button type="button" class="bb-btn" title="Trích dẫn" onclick="FormHandler.insertBB('[quote]', '[/quote]')">💬 Quote</button>
         <button type="button" class="bb-btn" title="Gạch đầu dòng" onclick="FormHandler.insertBB('[list]\n[*] ', '\n[/list]')">📜 List</button>
         
-        <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh lên Google Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh (Drive)</button>
+        <!-- NÚT GẮN ẢNH HOVER ITEM VÀO CHỮ -->
+        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Gắn Tooltip soi ảnh chỉ số khi rê chuột" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
+
+        <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh thường lên Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh</button>
         <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertBB('[url=https://]', '[/url]')">🔗 Link</button>
         <button type="button" class="bb-btn" title="Video Youtube" onclick="FormHandler.insertBB('[youtube]', '[/youtube]')">▶️ Video</button>
         <button type="button" class="bb-btn" title="Spoiler / Ẩn hiện" onclick="FormHandler.insertBB('[spoiler=Chi tiết]', '[/spoiler]')">📁 Spoiler</button>
         
-        <button type="button" class="bb-btn" style="color: #d4af37;" title="Unique Item" onclick="FormHandler.insertBB('[item_u]', '[/item_u]')">[U] Unique</button>
         <button type="button" class="bb-btn" style="color: #ed8936;" title="Runeword" onclick="FormHandler.insertBB('[rw]', '[/rw]')">[RW] Runeword</button>
         <button type="button" class="bb-btn" style="color: #48bb78;" title="Set Item" onclick="FormHandler.insertBB('[set]', '[/set]')">[Set] Đồ Xanh</button>
 
@@ -74,6 +79,25 @@
           <option value="⚡">⚡ Sấm sét</option>
           <option value="❤️">❤️ Tim</option>
         </select>
+      </div>
+    </div>
+
+    <!-- MODAL ĐÓNG GÓP ẢNH ITEM DATABASE -->
+    <div id="modal-item-upload" class="modal">
+      <div class="modal-content" style="max-width: 450px;">
+        <h3 style="color: var(--accent-gold); margin-bottom: 8px;">🗡️ Đóng Góp Ảnh Trang Bị</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+          Món đồ <strong id="modal-item-name-preview" style="color: var(--text-bright);"></strong> chưa có ảnh trong kho dữ liệu chung. Hãy tải ảnh chụp chỉ số món đồ này lên:
+        </p>
+
+        <div id="item-drop-zone" style="border: 2px dashed var(--accent-gold); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; background: #0f1012; margin-bottom: 14px;" onclick="document.getElementById('item-db-file-input').click()">
+          <p style="color: var(--text-bright); font-size: 0.9rem; margin-bottom: 4px;">📁 Bấm để chọn file ảnh</p>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">(Hoặc nhấn <b>Ctrl + V</b> trực tiếp tại đây)</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" class="btn" onclick="FormHandler.closeItemModal()">Hủy Bỏ</button>
+        </div>
       </div>
     </div>
 
@@ -129,26 +153,26 @@
         </div>
       </div>
 
-      <!-- KHỐI 2: TỔNG QUAN & ƯU / NHƯỢC ĐIỂM -->
+      <!-- KHỐI 2: TỔNG QUAN & PROS/CONS -->
       <div class="form-block">
         <div class="form-block-title">⚖️ KHỐI 2: TỔNG QUAN & ƯU / NHƯỢC ĐIỂM</div>
         <div class="form-group">
           <label>Giới thiệu tóm tắt lối chơi</label>
-          <textarea id="build-intro" class="form-control" placeholder="Mô tả phong cách chơi, cơ chế sát thương chính (Vật lý, Phép, Độc, Lửa...)..."></textarea>
+          <textarea id="build-intro" class="form-control" placeholder="Mô tả phong cách chơi, cơ chế sát thương chính..."></textarea>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group" style="margin: 0;">
             <label style="color: var(--accent-green);">Ưu điểm (Pros) (*)</label>
-            <textarea id="build-pros" class="form-control" required placeholder="[list]&#10;[*] Sát thương diện rộng khủng&#10;[*] Tốc chạy và dọn quái nhanh&#10;[/list]"></textarea>
+            <textarea id="build-pros" class="form-control" required placeholder="[list]&#10;[*] Sát thương diện rộng khủng&#10;[*] Dọn quái cực nhanh&#10;[/list]"></textarea>
           </div>
           <div class="form-group" style="margin: 0;">
             <label style="color: #ff6b6b;">Nhược điểm (Cons) (*)</label>
-            <textarea id="build-cons" class="form-control" required placeholder="[list]&#10;[*] Cần đồ hút máu hoặc kháng cao&#10;[*] Gặp khó khăn trước quái miễn nhiễm nguyên tố&#10;[/list]"></textarea>
+            <textarea id="build-cons" class="form-control" required placeholder="[list]&#10;[*] Cần đồ hút máu hoặc kháng cao&#10;[/list]"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH -->
+      <!-- KHỐI 3: STATS -->
       <div class="form-block">
         <div class="form-block-title">📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -159,7 +183,7 @@
         </div>
       </div>
 
-      <!-- KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM -->
+      <!-- KHỐI 4: SKILLS -->
       <div class="form-block">
         <div class="form-block-title">⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
         <div class="form-group">
@@ -168,28 +192,28 @@
         </div>
       </div>
 
-      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ THEO LEVEL -->
+      <!-- KHỐI 5: GEAR THEO LEVEL -->
       <div class="form-block">
         <div class="form-block-title">🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
         
         <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 1: Level 1 - 105 (Starter / Leveling / Tiered Uniques - TU & Runewords cơ bản) (*)</label>
-          <textarea id="gear-lv105" class="form-control" required placeholder="• Vũ khí: [item_u]Tên vũ khí TU4[/item_u]&#10;• Áo giáp: [rw]Tên Runeword[/rw]&#10;• MOs ưu tiên: Ép % Enhanced Damage, % Total Defense..."></textarea>
+          <label style="color: var(--accent-gold);">Mức 1: Level 1 - 105 (Starter / Leveling / TU & Runewords cơ bản) (*)</label>
+          <textarea id="gear-lv105" class="form-control" required placeholder="• Vũ khí: [item]Tên Món Đồ[/item]&#10;• Áo giáp: [rw]Tên Runeword[/rw]&#10;• MOs ưu tiên: % Enhanced Damage..."></textarea>
         </div>
 
         <div class="form-group">
           <label style="color: var(--accent-gold);">Mức 2: Level 105 - 120 (Mid Game / Sacred Uniques - SU & Runewords tầm trung)</label>
-          <textarea id="gear-lv120" class="form-control" placeholder="• Vũ khí: [item_u]Tên Sacred Unique[/item_u]&#10;• Nón: [item_u]Tên nón SU[/item_u]&#10;• Runewords cần thiết..."></textarea>
+          <textarea id="gear-lv120" class="form-control" placeholder="• Vũ khí: [item]Tên Sacred Unique[/item]&#10;• Nón: [item]Tên nón SU[/item]..."></textarea>
         </div>
 
         <div class="form-group">
           <label style="color: var(--accent-gold);">Mức 3: Level 120 - 130 (Late Game / Sacred Uniques nâng cao & MOs tối ưu)</label>
-          <textarea id="gear-lv130" class="form-control" placeholder="• Trang bị chính: SU Tier cao...&#10;• Jewels: Khảm Crafted Jewels (+All Attributes, % Spell Damage)..."></textarea>
+          <textarea id="gear-lv130" class="form-control" placeholder="• Trang bị chính: SU Tier cao...&#10;• Jewels: Khảm Crafted Jewels..."></textarea>
         </div>
 
         <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 4: Level 130 - 150 (Endgame Tối Thượng / SSU, SSSU, Xis Runewords, Relics & Charms)</label>
-          <textarea id="gear-lv150" class="form-control" placeholder="• Vũ khí: [item_u]SSU / SSSU Weapon[/item_u]&#10;• Giáp: [rw]Xis Runeword[/rw]&#10;• Relics & Bảng Charms quan trọng nhất..."></textarea>
+          <label style="color: var(--accent-gold);">Mức 4: Level 130 - 150 (Endgame Tối Thượng / SSU, SSSU, Xis Runewords & Relics)</label>
+          <textarea id="gear-lv150" class="form-control" placeholder="• Vũ khí: [item]SSU / SSSU Weapon[/item]&#10;• Giáp: [rw]Xis Runeword[/rw]&#10;• Relics & Charms..."></textarea>
         </div>
       </div>
 
@@ -206,7 +230,7 @@
         </div>
       </div>
 
-      <!-- Xem trước & Nút gửi -->
+      <!-- Preview -->
       <div id="preview-box" style="display: none; background: #0c0d0e; border: 1px solid var(--accent-gold); border-radius: 4px; padding: 16px; margin-bottom: 20px;">
         <h4 style="color: var(--accent-gold); margin-bottom: 8px;">👁️ Xem Trước Bài Viết (Preview):</h4>
         <div id="preview-content" class="markdown-rendered" style="line-height: 1.6;"></div>
@@ -222,7 +246,7 @@
 
   <script src="api.js"></script>
   <script src="auth.js"></script>
-  <script src="form.js"></script>
   <script src="tooltip.js"></script>
+  <script src="form.js"></script>
 </body>
 </html>
