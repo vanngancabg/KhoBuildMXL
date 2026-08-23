@@ -1,101 +1,110 @@
-// Xử lý logic Form Tạo mới / Chỉnh sửa bài build
 const FormHandler = {
   editBuildId: null,
 
   async init() {
     const user = Auth.getCurrentUser();
-    const loginWarning = document.getElementById('login-warning');
-    const buildForm = document.getElementById('build-form');
-
     if (!user) {
-      loginWarning.style.display = 'block';
-      buildForm.style.opacity = '0.4';
-      buildForm.style.pointerEvents = 'none';
+      document.getElementById('login-warning').style.display = 'block';
+      document.getElementById('build-form').style.opacity = '0.4';
+      document.getElementById('build-form').style.pointerEvents = 'none';
       return;
     }
 
-    // Kiểm tra xem trang có đang ở chế độ SỬA bài không (có ?edit=build_id trên link)
-    const urlParams = new URLSearchParams(window.location.search);
-    const editId = urlParams.get('edit');
-
+    const editId = new URLSearchParams(window.location.search).get('edit');
     if (editId) {
       this.editBuildId = editId;
       document.getElementById('form-heading').innerText = 'Chỉnh Sửa Hướng Dẫn Build';
-      document.getElementById('btn-save-build').innerText = '💾 Lưu Thay Đổi';
-      await this.loadExistingBuild(editId, user);
+      await this.loadData(editId, user);
     }
   },
 
-  async loadExistingBuild(buildId, currentUser) {
-    try {
-      const res = await API.getBuildDetail(buildId);
-      if (res.status === 'success' && res.data) {
-        const build = res.data;
-
-        // Kiểm tra quyền: Chỉ tác giả mới được vào trang sửa
-        if (String(build.author_id).toLowerCase() !== String(currentUser.username).toLowerCase()) {
-          alert('Bạn không phải là tác giả của bài viết này!');
-          window.location.href = `build-detail.html?id=${buildId}`;
-          return;
-        }
-
-        // Điền dữ liệu cũ vào các ô input
-        document.getElementById('build-title').value = build.title || '';
-        document.getElementById('build-class').value = build.class_name || 'Amazon';
-        document.getElementById('build-patch').value = build.patch_version || '';
-        document.getElementById('build-stats').value = build.stats_desc || '';
-        document.getElementById('build-skills').value = build.skills_desc || '';
-        document.getElementById('build-gear').value = build.gear_desc || '';
-        document.getElementById('build-video').value = build.video_url || '';
+  async loadData(id, user) {
+    const res = await API.getBuildDetail(id);
+    if (res.status === 'success' && res.data) {
+      const b = res.data;
+      if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase() && user.role !== 'Admin') {
+        alert('Bạn không có quyền sửa bài này!');
+        return window.location.href = 'index.html';
       }
-    } catch (err) {
-      alert('Không thể tải dữ liệu bài viết để sửa!');
+      document.getElementById('build-title').value = b.title || '';
+      document.getElementById('build-class').value = b.class_name || 'Amazon';
+      document.getElementById('build-patch').value = b.patch_version || '';
+      document.getElementById('build-stats').value = b.stats_desc || '';
+      document.getElementById('build-skills').value = b.skills_desc || '';
+      document.getElementById('build-video').value = b.video_url || '';
+
+      // Tách dữ liệu JSON Gear nếu có
+      try {
+        const gear = JSON.parse(b.gear_desc);
+        document.getElementById('gear-weapon').value = gear.weapon || '';
+        document.getElementById('gear-helm').value = gear.helm || '';
+        document.getElementById('gear-armor').value = gear.armor || '';
+        document.getElementById('gear-gloves').value = gear.gloves || '';
+        document.getElementById('gear-boots').value = gear.boots || '';
+        document.getElementById('gear-jewelry').value = gear.jewelry || '';
+        document.getElementById('gear-charms').value = gear.charms || '';
+      } catch (e) {
+        document.getElementById('gear-charms').value = b.gear_desc || '';
+      }
     }
   },
 
-  async handleSubmit(event) {
-    event.preventDefault();
-    const user = Auth.getCurrentUser();
-    if (!user) {
-      alert('Vui lòng đăng nhập trước khi đăng bài!');
-      Auth.openModal('login');
-      return;
+  insertTag(id, startTag, endTag) {
+    const el = document.getElementById(id);
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = el.value;
+    el.value = text.substring(0, start) + startTag + text.substring(start, end) + endTag + text.substring(end);
+    el.focus();
+  },
+
+  insertItemTag(startTag, endTag) {
+    const active = document.activeElement;
+    if (active && active.tagName === 'INPUT') {
+      const start = active.selectionStart;
+      const end = active.selectionEnd;
+      active.value = active.value.substring(0, start) + startTag + active.value.substring(start, end) + endTag + active.value.substring(end);
     }
+  },
 
-    const btn = document.getElementById('btn-save-build');
+  async handleSubmit(e) {
+    e.preventDefault();
+    const user = Auth.getCurrentUser();
+    const btn = document.getElementById('btn-save');
     btn.disabled = true;
-    btn.innerText = 'Đang lưu dữ liệu lên máy chủ...';
 
-    const buildPayload = {
-      build_id: this.editBuildId, // null nếu tạo mới, có chuỗi ID nếu sửa
+    const gearData = {
+      weapon: document.getElementById('gear-weapon').value.trim(),
+      helm: document.getElementById('gear-helm').value.trim(),
+      armor: document.getElementById('gear-armor').value.trim(),
+      gloves: document.getElementById('gear-gloves').value.trim(),
+      boots: document.getElementById('gear-boots').value.trim(),
+      jewelry: document.getElementById('gear-jewelry').value.trim(),
+      charms: document.getElementById('gear-charms').value.trim()
+    };
+
+    const payload = {
+      build_id: this.editBuildId,
       title: document.getElementById('build-title').value.trim(),
       class_name: document.getElementById('build-class').value,
       patch_version: document.getElementById('build-patch').value.trim(),
       author_username: user.username,
       author_name: user.display_name,
+      role: user.role,
       stats_desc: document.getElementById('build-stats').value.trim(),
       skills_desc: document.getElementById('build-skills').value.trim(),
-      gear_desc: document.getElementById('build-gear').value.trim(),
+      gear_desc: JSON.stringify(gearData),
       video_url: document.getElementById('build-video').value.trim()
     };
 
-    try {
-      const res = await API.saveBuild(buildPayload);
-      if (res.status === 'success') {
-        alert(res.message || 'Lưu thành công!');
-        window.location.href = `build-detail.html?id=${res.build_id}`;
-      } else {
-        alert(res.message || 'Có lỗi xảy ra!');
-      }
-    } catch (err) {
-      alert('Lỗi kết nối tới máy chủ Google Apps Script!');
-    } finally {
+    const res = await API.saveBuild(payload);
+    if (res.status === 'success') {
+      window.location.href = `build-detail.html?id=${res.build_id}`;
+    } else {
+      alert(res.message || 'Lỗi!');
       btn.disabled = false;
-      btn.innerText = this.editBuildId ? '💾 Lưu Thay Đổi' : '💾 Đăng Bài Viết';
     }
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  FormHandler.init();
-});
+document.addEventListener('DOMContentLoaded', () => FormHandler.init());
