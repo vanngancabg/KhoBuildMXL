@@ -42,11 +42,20 @@ const DetailHandler = {
 
         document.getElementById('detail-time').innerText = b.updated_at || '';
         document.getElementById('vote-count').innerText = b.votes_count || 0;
-        document.getElementById('detail-stats').innerHTML = this.renderMarkdown(b.stats_desc || 'Chưa cập nhật.');
 
+        // Render toàn bộ nội dung BBCode chính
+        document.getElementById('detail-stats').innerHTML = this.parseBBCode(b.stats_desc || 'Chưa có nội dung.');
+
+        // Render phân bổ điểm Skill Tree
         this.renderSkills(b.skills_desc, b.class_name);
-        this.renderGear(b.gear_desc);
 
+        // Ẩn bảng gear cũ vì đã gộp vào khung BBCode
+        const gearSection = document.getElementById('detail-gear');
+        if (gearSection) {
+          gearSection.parentElement.style.display = 'none';
+        }
+
+        // Quyền Sửa / Xóa cho Tác giả & Admin
         const user = Auth.getCurrentUser();
         if (user && (String(user.username).toLowerCase() === String(b.author_id).toLowerCase() || user.role === 'Admin')) {
           const authorActions = document.getElementById('author-actions');
@@ -54,18 +63,6 @@ const DetailHandler = {
           if (authorActions && editBtn) {
             authorActions.style.display = 'flex';
             editBtn.href = `create-build.html?edit=${b.build_id}`;
-          }
-        }
-
-        if (b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be'))) {
-          const videoMatch = b.video_url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-          const videoId = videoMatch ? videoMatch[2] : null;
-          if (videoId && videoId.length === 11) {
-            document.getElementById('video-container').innerHTML = `
-              <iframe style="position: absolute; top:0; left:0; width:100%; height:100%; border:0;" 
-                src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
-            `;
-            document.getElementById('video-section').style.display = 'block';
           }
         }
 
@@ -81,55 +78,40 @@ const DetailHandler = {
 
   renderSkills(skillsRaw, className) {
     const treeContainer = document.getElementById('detail-skills-tree');
-    const noteContainer = document.getElementById('detail-skills');
+    const skillCard = document.getElementById('detail-skills')?.parentElement;
+
     if (!skillsRaw) {
-      noteContainer.innerHTML = 'Chưa cập nhật kỹ năng.';
+      if (skillCard) skillCard.style.display = 'none';
       return;
     }
 
     try {
       const parsed = JSON.parse(skillsRaw);
-      noteContainer.innerHTML = this.renderMarkdown(parsed.notes || '');
-
       if (parsed.tree && Object.keys(parsed.tree).length > 0) {
         const skillList = MEDIAN_SKILLS[className] || [];
         let badgesHtml = '<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">';
+        let hasPoints = false;
+
         skillList.forEach(s => {
           const pts = parsed.tree[s.id] || 0;
           if (pts > 0) {
+            hasPoints = true;
             badgesHtml += `<span style="background: #111315; border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;"><strong>${s.name}:</strong> ${pts}/${s.max}</span>`;
           }
         });
         badgesHtml += '</div>';
-        treeContainer.innerHTML = badgesHtml;
+
+        if (hasPoints && treeContainer) {
+          treeContainer.innerHTML = badgesHtml;
+          if (skillCard) skillCard.style.display = 'block';
+        } else if (skillCard) {
+          skillCard.style.display = 'none';
+        }
+      } else if (skillCard) {
+        skillCard.style.display = 'none';
       }
     } catch (e) {
-      noteContainer.innerHTML = this.renderMarkdown(skillsRaw);
-    }
-  },
-
-  renderGear(gearRaw) {
-    const container = document.getElementById('detail-gear');
-    if (!gearRaw) {
-      container.innerHTML = '<div class="markdown-rendered">Chưa cập nhật trang bị.</div>';
-      return;
-    }
-
-    try {
-      const g = JSON.parse(gearRaw);
-      container.innerHTML = `
-        <table class="gear-table">
-          <tr><td class="gear-label">🗡️ Vũ Khí:</td><td>${this.renderMarkdown(g.weapon || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">👑 Nón:</td><td>${this.renderMarkdown(g.helm || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">🥋 Áo Giáp:</td><td>${this.renderMarkdown(g.armor || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">🧤 Găng Tay:</td><td>${this.renderMarkdown(g.gloves || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">👢 Giày:</td><td>${this.renderMarkdown(g.boots || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">💍 Trang Sức:</td><td>${this.renderMarkdown(g.jewelry || 'Chưa rõ')}</td></tr>
-          <tr><td class="gear-label">🔮 Charms & MOs:</td><td>${this.renderMarkdown(g.charms || 'Chưa rõ')}</td></tr>
-        </table>
-      `;
-    } catch (e) {
-      container.innerHTML = `<div class="markdown-rendered">${this.renderMarkdown(gearRaw)}</div>`;
+      if (skillCard) skillCard.style.display = 'none';
     }
   },
 
@@ -138,31 +120,22 @@ const DetailHandler = {
     const b = this.currentBuild;
 
     let skillTree = {};
-    let skillNotes = b.skills_desc;
     try {
       const s = JSON.parse(b.skills_desc);
       skillTree = s.tree || {};
-      skillNotes = s.notes || '';
-    } catch(e) {}
-
-    let gearObj = {};
-    try {
-      gearObj = JSON.parse(b.gear_desc);
     } catch(e) {}
 
     const buildCodePayload = {
       title: b.title,
       class_name: b.class_name,
       patch: b.patch_version,
-      stats: b.stats_desc,
-      skills_notes: skillNotes,
-      skill_tree: skillTree,
-      gear: gearObj
+      content: b.stats_desc,
+      skill_tree: skillTree
     };
 
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(buildCodePayload))));
     navigator.clipboard.writeText(encoded).then(() => {
-      alert('Đã sao chép Mã Build (Build Code)! Bạn có thể gửi cho bạn bè để họ nhập thẳng vào web.');
+      alert('Đã sao chép Mã Build! Bạn có thể gửi mã này cho thành viên khác nhập vào web.');
     }).catch(() => {
       prompt('Mã Build của bạn (Hãy copy dòng dưới):', encoded);
     });
@@ -233,7 +206,7 @@ const DetailHandler = {
               ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteComment('${cmt.comment_id}')">Xóa</button>` : ''}
             </div>
           </div>
-          <div>${this.renderMarkdown(cmt.content)}</div>
+          <div>${this.parseBBCode(cmt.content)}</div>
         `;
         list.appendChild(div);
       });
@@ -268,14 +241,27 @@ const DetailHandler = {
     await this.loadComments();
   },
 
-  renderMarkdown(text) {
+  parseBBCode(text) {
     if (!text) return '';
     return String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\[u\](.*?)\[\/u\]/gi, '<span class="item-unique">$1</span>')
+      .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[item_u\](.*?)\[\/item_u\]/gi, '<span class="item-unique">$1</span>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
+      .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[size=(.*?)\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image">')
+      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold);">$2</a>')
+      .replace(/\[youtube\](.*?)\[\/youtube\]/gi, (match, url) => {
+        const idMatch = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+        const id = idMatch ? idMatch[2] : url;
+        return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:10px 0;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe></div>`;
+      })
+      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>')
       .replace(/\n/g, '<br>');
   },
 
