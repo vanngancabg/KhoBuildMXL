@@ -26,8 +26,11 @@
       <button class="btn btn-primary" style="margin-top: 8px;" onclick="Auth.openModal('login')">Đăng nhập</button>
     </div>
 
+    <!-- Input file ẩn phục vụ chức năng chọn ảnh tải lên -->
+    <input type="file" id="image-upload-input" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
+
     <form id="build-form" onsubmit="FormHandler.handleSubmit(event)">
-      <!-- Thông tin chủ đề -->
+      <!-- Thông tin bài viết -->
       <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
         <div class="form-group" style="margin: 0;">
           <label>Subject / Tên bài Build (*)</label>
@@ -51,14 +54,16 @@
         </div>
       </div>
 
-      <!-- Skill Tree Planner -->
+      <!-- Khung Skill Tree Planner -->
       <div id="skill-tree-container"></div>
 
       <!-- Trình soạn thảo BBCode Forum Style -->
       <div class="bb-editor-layout">
-        <!-- Khung soạn thảo chính -->
         <div>
-          <label style="color: var(--accent-gold); font-weight: bold; margin-bottom: 6px; display: block;">Nội Dung Chi Tiết Hướng Dẫn (BBCode Editor)</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="color: var(--accent-gold); font-weight: bold; margin: 0;">Nội Dung Bài Viết (Hỗ trợ dán ảnh trực tiếp Ctrl + V)</label>
+            <span id="upload-status" style="font-size: 0.8rem; color: var(--accent-gold); display: none;">⏳ Đang tải ảnh lên Google Drive...</span>
+          </div>
           
           <!-- Thanh Toolbar BBCode -->
           <div class="bb-toolbar">
@@ -67,17 +72,18 @@
             <button type="button" class="bb-btn" title="Gạch chân" onclick="FormHandler.insertBB('[u]', '[/u]')"><u>U</u></button>
             <button type="button" class="bb-btn" title="Trích dẫn" onclick="FormHandler.insertBB('[quote]', '[/quote]')">💬</button>
             <button type="button" class="bb-btn" title="Gạch đầu dòng" onclick="FormHandler.insertBB('[list]\n[*] ', '\n[/list]')">📜</button>
-            <button type="button" class="bb-btn" title="Chèn ảnh" onclick="FormHandler.insertBB('[img]', '[/img]')">🖼️</button>
+            
+            <!-- Nút Upload ảnh lên Drive -->
+            <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh lên Google Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh (Drive)</button>
+            
             <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertBB('[url=https://]', '[/url]')">🔗</button>
             <button type="button" class="bb-btn" title="Video Youtube" onclick="FormHandler.insertBB('[youtube]', '[/youtube]')">▶️</button>
             <button type="button" class="bb-btn" title="Spoiler / Ẩn hiện" onclick="FormHandler.insertBB('[spoiler=Chi tiết]', '[/spoiler]')">📁</button>
             
-            <!-- Tô màu đồ Median XL -->
             <button type="button" class="bb-btn" style="color: #d4af37;" title="Unique Item" onclick="FormHandler.insertBB('[item_u]', '[/item_u]')">Sacred Unique</button>
             <button type="button" class="bb-btn" style="color: #ed8936;" title="Runeword" onclick="FormHandler.insertBB('[rw]', '[/rw]')">Runeword</button>
             <button type="button" class="bb-btn" style="color: #48bb78;" title="Set Item" onclick="FormHandler.insertBB('[set]', '[/set]')">Set</button>
 
-            <!-- Cỡ chữ & Màu -->
             <select class="bb-select" onchange="if(this.value){ FormHandler.insertBB('[size=' + this.value + ']', '[/size]'); this.value=''; }">
               <option value="">Cỡ chữ</option>
               <option value="12">Nhỏ (12px)</option>
@@ -94,11 +100,9 @@
             </select>
           </div>
 
-          <!-- Ô nhập văn bản -->
-          <textarea id="build-content" class="form-control" style="border-radius: 0 0 4px 4px; min-height: 350px; font-family: monospace; font-size: 0.95rem; line-height: 1.5;" placeholder="Viết toàn bộ hướng dẫn build tại đây (Stats, Skills, Gear, Boss Strategy)..."></textarea>
+          <textarea id="build-content" class="form-control" style="border-radius: 0 0 4px 4px; min-height: 350px; font-family: monospace; font-size: 0.95rem; line-height: 1.5;" placeholder="Nhập nội dung bài viết. Bạn có thể bấm nút 'Up Ảnh' hoặc bấm trực tiếp Ctrl + V để dán ảnh chụp màn hình vào đây..."></textarea>
         </div>
 
-        <!-- Bảng Smilies / Emoji bên phải -->
         <div>
           <div class="smilies-panel">
             <span style="color: var(--accent-gold); font-size: 0.85rem; font-weight: bold;">Smilies</span>
@@ -117,22 +121,20 @@
               <span onclick="FormHandler.insertSmiley('🏆')">🏆</span>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; text-align: left; line-height: 1.4;">
-              BBCode is <b>ON</b><br>
-              [img] is <b>ON</b><br>
-              [youtube] is <b>ON</b><br>
-              Smilies are <b>ON</b>
+              Google Drive: <b>Active</b><br>
+              Ctrl + V Image: <b>ON</b><br>
+              BBCode: <b>ON</b><br>
+              YouTube: <b>ON</b>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Khung xem trước trực tiếp (Live Preview) -->
       <div id="preview-box" style="display: none; background: #0c0d0e; border: 1px solid var(--accent-gold); border-radius: 4px; padding: 16px; margin-top: 16px;">
         <h4 style="color: var(--accent-gold); margin-bottom: 8px;">👁️ Xem Trước Bài Viết (Preview):</h4>
         <div id="preview-content" class="markdown-rendered" style="line-height: 1.6;"></div>
       </div>
 
-      <!-- Nút điều khiển -->
       <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
         <button type="button" class="btn" onclick="FormHandler.togglePreview()">👁️ Preview</button>
         <button type="button" class="btn" onclick="FormHandler.saveDraft()">💾 Save draft</button>
