@@ -125,6 +125,46 @@ const DetailHandler = {
     await this.loadComments();
   },
 
+  // Thêm vào trong đối tượng DetailHandler:
+exportToDiscord() {
+  if (!this.currentBuild) return;
+  const b = this.currentBuild;
+  const url = window.location.href;
+
+  const discordText = `**[MEDIAN XL BUILD] ${b.title}**
+> **Class:** ${b.class_name} | **Patch:** ${b.patch_version || 'Latest'}
+> **Tác giả:** ${b.author_name || b.author_id}
+> **Xem chi tiết tại:** ${url}
+
+**Kỹ năng:**
+${b.skills_desc ? b.skills_desc.substring(0, 150) + '...' : 'Xem trên web'}`;
+
+  navigator.clipboard.writeText(discordText).then(() => {
+    alert('Đã sao chép nội dung bài viết dạng chuẩn Discord vào bộ nhớ tạm!');
+  }).catch(() => {
+    alert('Không thể sao chép, vui lòng thử lại!');
+  });
+}// Thêm vào trong đối tượng DetailHandler:
+exportToDiscord() {
+  if (!this.currentBuild) return;
+  const b = this.currentBuild;
+  const url = window.location.href;
+
+  const discordText = `**[MEDIAN XL BUILD] ${b.title}**
+> **Class:** ${b.class_name} | **Patch:** ${b.patch_version || 'Latest'}
+> **Tác giả:** ${b.author_name || b.author_id}
+> **Xem chi tiết tại:** ${url}
+
+**Kỹ năng:**
+${b.skills_desc ? b.skills_desc.substring(0, 150) + '...' : 'Xem trên web'}`;
+
+  navigator.clipboard.writeText(discordText).then(() => {
+    alert('Đã sao chép nội dung bài viết dạng chuẩn Discord vào bộ nhớ tạm!');
+  }).catch(() => {
+    alert('Không thể sao chép, vui lòng thử lại!');
+  });
+},
+
   renderMarkdown(text) {
     if (!text) return '';
     return String(text)
