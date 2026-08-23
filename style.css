@@ -11,6 +11,7 @@
   --accent-red: #9e2a2b;
   --accent-green: #2ecc71;
   --accent-blue: #3498db;
+  --accent-orange: #ed8936;
   --border-color: #2a2e33;
 }
 
@@ -53,6 +54,19 @@ body {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-badge img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-gold);
 }
 
 .container {
@@ -112,8 +126,8 @@ body {
   font-size: 0.8rem;
 }
 
-/* GIAO DIỆN TRANG CHỦ (INDEX.HTML) */
-.index-layout {
+/* GIAO DIỆN TRANG CHỦ & GRID */
+.home-layout {
   display: grid;
   grid-template-columns: 1fr 340px;
   gap: 24px;
@@ -121,18 +135,9 @@ body {
 }
 
 @media (max-width: 900px) {
-  .index-layout {
+  .home-layout {
     grid-template-columns: 1fr;
   }
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
 }
 
 .filter-bar {
@@ -160,88 +165,51 @@ body {
   border-color: var(--accent-gold);
 }
 
-/* DANH SÁCH BÀI VIẾT BUILD CARD */
-.builds-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
-.build-card {
+.card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 16px;
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
   text-decoration: none;
   color: inherit;
   transition: all 0.2s;
 }
 
-.build-card:hover {
+.card:hover {
   background: var(--bg-card-hover);
   border-color: var(--accent-gold);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-.build-main-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.build-card-title {
+.card-title {
   color: var(--accent-gold);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: bold;
+  margin-bottom: 8px;
 }
 
-.build-meta {
+.card-meta {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-.class-badge {
-  background: #23272d;
-  color: var(--accent-gold);
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  font-weight: bold;
-  border: 1px solid rgba(199, 156, 94, 0.4);
-}
-
-.purpose-badge {
-  background: rgba(52, 152, 219, 0.15);
-  color: var(--accent-blue);
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  border: 1px solid rgba(52, 152, 219, 0.4);
-}
-
-.vote-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #ff6b6b;
-  font-weight: bold;
-  font-size: 0.9rem;
-  padding: 4px 8px;
-  background: rgba(231, 76, 60, 0.1);
-  border-radius: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 8px;
+  margin-top: 8px;
 }
 
 /* SHOUTBOX / CHAT CỘNG ĐỒNG */
-.shoutbox-wrapper {
+.shoutbox-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -249,15 +217,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 600px;
-}
-
-.shoutbox-header {
-  color: var(--accent-gold);
-  font-weight: bold;
-  font-size: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
 }
 
 .shoutbox-messages {
@@ -268,29 +227,14 @@ body {
   gap: 10px;
   padding-right: 6px;
   margin-bottom: 12px;
+  margin-top: 10px;
 }
 
-.shout-item {
+.shoutbox-item {
   font-size: 0.85rem;
   line-height: 1.4;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   padding-bottom: 6px;
-}
-
-.shout-user {
-  font-weight: bold;
-  color: var(--accent-gold);
-}
-
-.shout-time {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-left: 6px;
-}
-
-.shout-text {
-  color: var(--text-main);
-  margin-top: 2px;
 }
 
 /* FORM VIẾT BÀI (CREATE-BUILD.HTML) */
