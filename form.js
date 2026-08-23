@@ -42,7 +42,6 @@ const FormHandler = {
       });
     });
 
-    // Lắng nghe phím Ctrl + V dán ảnh vào Modal đóng góp Item
     window.addEventListener('paste', async (e) => {
       const modal = document.getElementById('modal-item-upload');
       if (modal && modal.classList.contains('active')) {
@@ -77,11 +76,9 @@ const FormHandler = {
 
     const normalizedKey = selected.toLowerCase();
 
-    // 1. Kiểm tra xem món đồ đã có ảnh trong kho dữ liệu Google Sheets chưa
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
       this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
     } else {
-      // 2. Chưa có -> Mở Popup yêu cầu tải ảnh chụp
       this.pendingItemName = selected;
       document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
       document.getElementById('modal-item-upload').classList.add('active');
@@ -140,7 +137,7 @@ const FormHandler = {
           statusEl.style.display = 'none';
         }
       } catch (err) {
-        alert('Lỗi kết nối máy chủ Google khi lưu ảnh món đồ!');
+        alert('Lỗi kết nối máy chủ khi lưu ảnh!');
         statusEl.style.display = 'none';
       }
     };
@@ -339,29 +336,110 @@ const FormHandler = {
     };
   },
 
-  togglePreview() {
-    const box = document.getElementById('preview-box');
-    const content = document.getElementById('preview-content');
+  // Hiển thị Preview dạng Modal toàn màn hình trọn vẹn
+  openPreviewModal() {
     const d = this.collectFormData();
+    const modal = document.getElementById('modal-preview-full');
+    const body = document.getElementById('preview-modal-body');
 
-    if (box.style.display === 'none') {
-      content.innerHTML = `
-        <h3 style="color:var(--accent-gold);">${d.title} (${d.season} - Patch ${d.patch})</h3>
-        <p><strong>Mục đích:</strong> ${d.purpose} | <strong>Độ khó:</strong> ${d.difficulty}</p>
-        <div style="margin-top:10px;">${this.parseBBCode(d.intro)}</div>
-        <hr style="border-color:var(--border-color);margin:12px 0;">
-        <h4 style="color:var(--accent-green);">Ưu điểm:</h4>${this.parseBBCode(d.pros)}
-        <h4 style="color:#ff6b6b;margin-top:8px;">Nhược điểm:</h4>${this.parseBBCode(d.cons)}
-        <hr style="border-color:var(--border-color);margin:12px 0;">
-        <h4 style="color:var(--accent-gold);">Kỹ năng:</h4>${this.parseBBCode(d.skills)}
-        <hr style="border-color:var(--border-color);margin:12px 0;">
-        <h4 style="color:var(--accent-gold);">Trang bị Level 1-105:</h4>${this.parseBBCode(d.gear_lv105)}
-      `;
-      box.style.display = 'block';
-      box.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      box.style.display = 'none';
+    let videoEmbed = '';
+    if (d.video && (d.video.includes('youtube.com') || d.video.includes('youtu.be'))) {
+      const match = d.video.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+      if (match && match[2].length === 11) {
+        videoEmbed = `
+          <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:4px; margin-top:14px;">
+            <iframe style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" src="https://www.youtube.com/embed/${match[2]}" allowfullscreen></iframe>
+          </div>
+        `;
+      }
     }
+
+    body.innerHTML = `
+      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 16px;">
+        <h2 style="color: var(--accent-gold); margin: 0 0 6px 0;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
+        <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
+          <span>Class: <strong style="color: var(--text-bright);">${d.class_name}</strong></span>
+          <span>Patch: <strong style="color: var(--text-bright);">${d.season} - ${d.patch}</strong></span>
+          <span>Mục đích: <strong style="color: var(--text-bright);">${d.purpose}</strong></span>
+          <span>Độ khó: <strong style="color: var(--text-bright);">${d.difficulty}</strong></span>
+        </div>
+      </div>
+
+      <div class="form-block" style="background: #111315;">
+        <div class="form-block-title">📖 TỔNG QUAN LỐI CHƠI</div>
+        <div style="line-height: 1.6;">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+          <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid var(--accent-green); padding: 12px; border-radius: 4px;">
+            <strong style="color: var(--accent-green); font-size: 0.9rem;">ƯU ĐIỂM (PROS)</strong>
+            <div style="margin-top: 6px; font-size: 0.85rem;">${this.parseBBCode(d.pros || '• Chưa cập nhật')}</div>
+          </div>
+          <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid #e74c3c; padding: 12px; border-radius: 4px;">
+            <strong style="color: #ff6b6b; font-size: 0.9rem;">NHƯỢC ĐIỂM (CONS)</strong>
+            <div style="margin-top: 6px; font-size: 0.85rem;">${this.parseBBCode(d.cons || '• Chưa cập nhật')}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-block" style="background: #111315;">
+        <div class="form-block-title">📊 PHÂN BỔ STATS</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.str || '0'}</strong></div>
+          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.dex || '0'}</strong></div>
+          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.vit || '0'}</strong></div>
+          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.ene || '0'}</strong></div>
+        </div>
+      </div>
+
+      <div class="form-block" style="background: #111315;">
+        <div class="form-block-title">⚡ KỸ NĂNG & ROTATION</div>
+        <div style="line-height: 1.6;">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
+      </div>
+
+      <div class="form-block" style="background: #111315;">
+        <div class="form-block-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
+        
+        <div style="margin-bottom: 12px;">
+          <strong style="color: var(--accent-gold);">Mức 1: Level 1 - 105 (Starter / Leveling / TU)</strong>
+          <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv105 || 'Chưa cập nhật')}</div>
+        </div>
+
+        ${d.gear_lv120 ? `
+          <div style="margin-bottom: 12px;">
+            <strong style="color: var(--accent-gold);">Mức 2: Level 105 - 120 (Mid Game / Sacred Uniques)</strong>
+            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv120)}</div>
+          </div>
+        ` : ''}
+
+        ${d.gear_lv130 ? `
+          <div style="margin-bottom: 12px;">
+            <strong style="color: var(--accent-gold);">Mức 3: Level 120 - 130 (Late Game / Sacred Uniques Nâng Cao)</strong>
+            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv130)}</div>
+          </div>
+        ` : ''}
+
+        ${d.gear_lv150 ? `
+          <div style="margin-bottom: 12px;">
+            <strong style="color: var(--accent-gold);">Mức 4: Level 130 - 150 (Endgame Tối Thượng / SSU, SSSU, Xis)</strong>
+            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv150)}</div>
+          </div>
+        ` : ''}
+      </div>
+
+      ${d.strategy || videoEmbed ? `
+        <div class="form-block" style="background: #111315;">
+          <div class="form-block-title">🎬 CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+          ${d.strategy ? `<div style="line-height: 1.6; margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
+          ${videoEmbed}
+        </div>
+      ` : ''}
+    `;
+
+    modal.classList.add('active');
+  },
+
+  closePreviewModal() {
+    document.getElementById('modal-preview-full').classList.remove('active');
   },
 
   parseBBCode(text) {
@@ -376,8 +454,8 @@ const FormHandler = {
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<blockquote>$1</blockquote>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image">')
-      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold);">$2</a>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
+      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>')
       .replace(/\n/g, '<br>');
   },
