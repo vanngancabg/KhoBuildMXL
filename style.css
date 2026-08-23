@@ -60,14 +60,14 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 .shoutbox-item { font-size: 0.85rem; line-height: 1.4; background: #0f1012; padding: 8px; border-radius: 4px; border: 1px solid #1c1f24; }
 
 /* Markdown & Diablo Item Colors */
-.item-unique { color: #d4af37 !important; font-weight: bold; } /* Vàng Gold */
-.item-runeword { color: #ed8936 !important; font-weight: bold; } /* Cam Runeword */
-.item-set { color: #48bb78 !important; font-weight: bold; } /* Xanh lá Set */
+.item-unique { color: #d4af37 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #d4af37; }
+.item-runeword { color: #ed8936 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #ed8936; }
+.item-set { color: #48bb78 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #48bb78; }
 .markdown-rendered strong { color: var(--accent-gold); }
 .markdown-rendered ul { padding-left: 20px; margin: 8px 0; }
 .markdown-rendered li { margin-bottom: 4px; }
 
-/* --- DIABLO 2 TOOLTIP & GAMING POLISH --- */
+/* Diablo Tooltip */
 .d2-tooltip {
   position: fixed;
   display: none;
@@ -78,32 +78,10 @@ textarea.form-control { min-height: 100px; resize: vertical; }
   box-shadow: inset 0 0 8px rgba(199, 156, 94, 0.2), 0 4px 16px rgba(0,0,0,0.9);
   padding: 10px 14px;
   border-radius: 2px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   max-width: 300px;
   text-align: center;
 }
-
 .d2-tooltip .tt-title { font-weight: bold; font-size: 1rem; margin-bottom: 4px; }
 .d2-tooltip .tt-type { font-size: 0.8rem; color: #888; margin-bottom: 6px; }
 .d2-tooltip .tt-stat { font-size: 0.82rem; color: #4169e1; line-height: 1.35; }
 .d2-tooltip .tt-flavor { font-size: 0.75rem; color: var(--accent-gold); margin-top: 6px; font-style: italic; }
-
-.item-unique { color: #d4af37 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #d4af37; }
-.item-runeword { color: #ed8936 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #ed8936; }
-.item-set { color: #48bb78 !important; font-weight: bold; cursor: help; border-bottom: 1px dashed #48bb78; }
-
-/* Tag filter badges */
-.tag-badge {
-  display: inline-block;
-  font-size: 0.72rem;
-  padding: 2px 6px;
-  border-radius: 3px;
-  margin-right: 4px;
-  background: #1c1f24;
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-}
-.tag-badge.active {
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
-}
