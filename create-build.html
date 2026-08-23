@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tạo / Sửa Hướng Dẫn Build - Median XL</title>
+  <title>Đăng / Sửa Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .editor-tools { display: flex; gap: 6px; margin-bottom: 6px; }
+  </style>
 </head>
 <body>
-
-  <!-- Thanh Menu Điều Hướng -->
   <nav class="navbar">
     <a href="index.html" class="brand">⚔️ MEDIAN XL BUILDS</a>
     <div class="nav-actions">
@@ -17,28 +18,23 @@
     </div>
   </nav>
 
-  <!-- Khung Nhập Liệu Form -->
-  <div class="container" style="max-width: 800px;">
-    <div style="margin-bottom: 24px;">
-      <h2 id="form-heading" style="color: var(--accent-gold);">Chia Sẻ Hướng Dẫn Build Mới</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Điền đầy đủ thông tin để chia sẻ cách build tối ưu cùng cộng đồng</p>
-    </div>
+  <div class="container" style="max-width: 900px;">
+    <h2 id="form-heading" style="color: var(--accent-gold); margin-bottom: 20px;">Chia Sẻ Hướng Dẫn Build Chi Tiết</h2>
 
-    <!-- Cảnh báo nếu chưa đăng nhập -->
     <div id="login-warning" style="display: none; background: rgba(158, 42, 43, 0.2); border: 1px solid var(--accent-red); padding: 16px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
-      <p style="color: #ff8b8b; margin-bottom: 8px;">Bạn cần đăng nhập để có thể đăng hoặc chỉnh sửa bài viết!</p>
-      <button class="btn btn-primary" onclick="Auth.openModal('login')">Đăng nhập ngay</button>
+      <p style="color: #ff8b8b;">Bạn cần đăng nhập để tiếp tục!</p>
+      <button class="btn btn-primary" style="margin-top: 8px;" onclick="Auth.openModal('login')">Đăng nhập</button>
     </div>
 
     <form id="build-form" onsubmit="FormHandler.handleSubmit(event)">
       <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px;">
         <div class="form-group">
           <label>Tên bài Build (*)</label>
-          <input type="text" id="build-title" class="form-control" placeholder="VD: Bowzon Nuke Ubers Mùa 2.9" required>
+          <input type="text" id="build-title" class="form-control" required placeholder="VD: Bowzon Nuke Ubers">
         </div>
         <div class="form-group">
           <label>Class Nhân vật (*)</label>
-          <select id="build-class" class="form-control" required>
+          <select id="build-class" class="form-control">
             <option value="Amazon">Amazon</option>
             <option value="Assassin">Assassin</option>
             <option value="Barbarian">Barbarian</option>
@@ -50,40 +46,58 @@
         </div>
         <div class="form-group">
           <label>Phiên bản Patch</label>
-          <input type="text" id="build-patch" class="form-control" placeholder="VD: 2.9.1">
+          <input type="text" id="build-patch" class="form-control" placeholder="2.9.1">
         </div>
       </div>
 
       <div class="form-group">
-        <label>Điểm Cộng Thuộc Tính (Stats Distribution)</label>
-        <textarea id="build-stats" class="form-control" placeholder="Mô tả cách tăng: Strength (đủ mặc đồ), Dexterity (max block), Vitality, Energy..."></textarea>
+        <label>📊 Phân Bổ Điểm Thuộc Tính (Stats)</label>
+        <textarea id="build-stats" class="form-control" placeholder="Strength: đủ mặc đồ&#10;Dexterity: max block / max dam&#10;Vitality: toàn bộ điểm còn lại..."></textarea>
       </div>
 
       <div class="form-group">
-        <label>Kỹ Năng & Skill Tree (*)</label>
-        <textarea id="build-skills" class="form-control" style="min-height: 150px;" placeholder="Mô tả chi tiết: Kỹ năng chính, Masteries, Passives, Uberskills và thứ tự ưu tiên max điểm..." required></textarea>
+        <label>⚡ Kỹ Năng & Thứ Tự Nâng Điểm (Skill Tree)</label>
+        <div class="editor-tools">
+          <button type="button" class="btn btn-sm" onclick="FormHandler.insertTag('build-skills', '**', '**')"><b>B</b> In Đậm</button>
+          <button type="button" class="btn btn-sm" onclick="FormHandler.insertTag('build-skills', '- ', '')">• Gạch đầu dòng</button>
+        </div>
+        <textarea id="build-skills" class="form-control" style="min-height: 120px;" placeholder="Liệt kê kỹ năng chính, Uber skill, và thứ tự max điểm..."></textarea>
+      </div>
+
+      <!-- Phân Mục Trang Bị Chi Tiết -->
+      <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; margin-bottom: 16px; background: #111315;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <label style="color: var(--accent-gold); font-weight: bold; margin: 0;">🛡️ Phân Mục Trang Bị Đề Xuất (Gear & Runewords)</label>
+          <div class="editor-tools">
+            <button type="button" class="btn btn-sm" style="color: #d4af37;" onclick="FormHandler.insertItemTag('[u]', '[/u]')">[U] Unique</button>
+            <button type="button" class="btn btn-sm" style="color: #ed8936;" onclick="FormHandler.insertItemTag('[rw]', '[/rw]')">[RW] Runeword</button>
+            <button type="button" class="btn btn-sm" style="color: #48bb78;" onclick="FormHandler.insertItemTag('[set]', '[/set]')">[Set] Đồ Xanh</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group"><label>🗡️ Vũ Khí (Weapon / Shield / Switch)</label><input type="text" id="gear-weapon" class="form-control" placeholder="VD: [rw]Truewarp[/rw]"></div>
+          <div class="form-group"><label>👑 Nón (Helm)</label><input type="text" id="gear-helm" class="form-control" placeholder="VD: [u]Royal Circlet[/u]"></div>
+          <div class="form-group"><label>🥋 Áo Giáp (Body Armor)</label><input type="text" id="gear-armor" class="form-control" placeholder="VD: [rw]Latent Power[/rw]"></div>
+          <div class="form-group"><label>🧤 Găng Tay (Gloves)</label><input type="text" id="gear-gloves" class="form-control"></div>
+          <div class="form-group"><label>👢 Giày (Boots)</label><input type="text" id="gear-boots" class="form-control"></div>
+          <div class="form-group"><label>💍 Dây Chuyền & Nhẫn (Amulet / Rings)</label><input type="text" id="gear-jewelry" class="form-control"></div>
+        </div>
+        <div class="form-group"><label>🔮 Charms, Mystic Orbs (MOs) & Relics Quan Trọng</label><textarea id="gear-charms" class="form-control" placeholder="Các dòng MO ưu tiên ép vào đồ, Charms cần farm trước..."></textarea></div>
       </div>
 
       <div class="form-group">
-        <label>Trang Bị (Gear: Early / Mid / End game & Mystic Orbs) (*)</label>
-        <textarea id="build-gear" class="form-control" style="min-height: 180px;" placeholder="Gợi ý trang bị từng giai đoạn: Vũ khí, Giáp, Runeword, MOs, Relics, Charms quan trọng..." required></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Link Video Youtube Gameplay / Guide (nếu có)</label>
+        <label>🎬 Link Video Youtube Gameplay / Hướng dẫn</label>
         <input type="url" id="build-video" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
       </div>
 
-      <div style="display: flex; gap: 12px; margin-top: 24px;">
-        <button type="submit" id="btn-save-build" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px; font-size: 1rem;">
-          💾 Đăng Bài Viết
-        </button>
-        <a href="index.html" class="btn" style="padding: 12px 20px;">Hủy bỏ</a>
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <button type="submit" id="btn-save" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;">💾 Lưu Bài Viết</button>
+        <a href="index.html" class="btn" style="padding: 12px 20px;">Hủy</a>
       </div>
     </form>
   </div>
 
-  <!-- Nạp script -->
   <script src="api.js"></script>
   <script src="auth.js"></script>
   <script src="form.js"></script>
