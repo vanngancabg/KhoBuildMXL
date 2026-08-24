@@ -37,8 +37,10 @@
             <span id="detail-difficulty" style="background: rgba(237, 137, 54, 0.15); color: var(--accent-orange); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-orange);"></span>
           </div>
           <h1 id="detail-title" style="color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 6px;"></h1>
-          <div style="color: var(--text-muted); font-size: 0.85rem;">
-            Tác giả: <span id="detail-author" style="color: var(--text-bright); font-weight: bold;"></span> • Cập nhật: <span id="detail-time"></span>
+          <div style="color: var(--text-muted); font-size: 0.85rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <span>Tác giả: <strong id="detail-author" style="color: var(--text-bright);"></strong></span>
+            <span>Cập nhật: <span id="detail-time"></span></span>
+            <span>👁️ Lượt xem: <strong id="detail-views" style="color: var(--accent-gold);">0</strong></span>
           </div>
         </div>
 
@@ -118,9 +120,11 @@
         <div id="video-container" style="display: none; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 4px;"></div>
       </div>
 
-      <!-- Bình Luận -->
+      <!-- Bình Luận & Phân Trang Bình Luận -->
       <div class="detail-card">
-        <div class="detail-card-title">💬 BÌNH LUẬN & THẢO LUẬN</div>
+        <div class="detail-card-title">
+          <span>💬 BÌNH LUẬN & THẢO LUẬN (<span id="detail-comment-count">0</span>)</span>
+        </div>
         <div id="comment-box" style="margin-bottom: 20px;">
           <textarea id="comment-input" class="form-control" placeholder="Viết câu hỏi hoặc chia sẻ ý kiến..." style="min-height: 80px;"></textarea>
           <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
@@ -128,6 +132,7 @@
           </div>
         </div>
         <div id="comments-list"></div>
+        <div id="comment-pagination" class="pagination-bar" style="display: none; margin-top: 14px;"></div>
       </div>
     </div>
   </div>
