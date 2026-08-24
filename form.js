@@ -76,6 +76,14 @@ const FormHandler = {
       el.addEventListener('click', updateSelection);
       el.addEventListener('keyup', updateSelection);
       el.addEventListener('select', updateSelection);
+
+      // BẮT PHÍM TAB TRỰC TIẾP TRONG Ô NHẬP LIỆU ĐỂ THỤT LỀ
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          this.insertBBIntoEl('    ', '', el);
+        }
+      });
       
       el.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -149,7 +157,7 @@ const FormHandler = {
       selected = selected.trim();
     }
 
-    const cleanItemName = selected.replace(/\[\/?(color|b|i|u|rw|set).*?\]/gi, '').trim();
+    const cleanItemName = selected.replace(/\[\/?(color|b|i|u|rw|set|indent).*?\]/gi, '').trim();
     const normalizedKey = cleanItemName.toLowerCase();
 
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
@@ -270,7 +278,6 @@ const FormHandler = {
     this.insertBBIntoEl(' ' + icon + ' ', '', el);
   },
 
-  // HÀM CHÈN GIỮ CHÍNH XÁC VỊ TRÍ CON TRỎ & VỊ TRÍ CUỘN MÀN HÌNH
   insertBBIntoEl(startTag, endTag, el) {
     if (!el) return;
 
@@ -278,7 +285,6 @@ const FormHandler = {
     const end = (el.selectionEnd !== undefined) ? el.selectionEnd : (this.savedSelection.end || 0);
     const selected = el.value.substring(start, end);
 
-    // Ghi nhớ vị trí cuộn của textarea và cửa sổ
     const prevTextareaScroll = el.scrollTop;
     const prevWindowScrollX = window.scrollX;
     const prevWindowScrollY = window.scrollY;
@@ -286,7 +292,6 @@ const FormHandler = {
     const replacement = startTag + selected + endTag;
     el.value = el.value.substring(0, start) + replacement + el.value.substring(end);
 
-    // Tính toán lại vị trí con trỏ mới
     let newCursorStart, newCursorEnd;
     if (selected.length > 0) {
       newCursorStart = start + startTag.length;
@@ -296,15 +301,12 @@ const FormHandler = {
       newCursorEnd = newCursorStart;
     }
 
-    // Focus không làm cuộn giật màn hình
     el.focus({ preventScroll: true });
     el.setSelectionRange(newCursorStart, newCursorEnd);
 
-    // Khôi phục vị trí cuộn
     el.scrollTop = prevTextareaScroll;
     window.scrollTo(prevWindowScrollX, prevWindowScrollY);
 
-    // Cập nhật lại bộ nhớ selection
     this.savedSelection = {
       start: newCursorStart,
       end: newCursorEnd,
@@ -539,26 +541,31 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
+  // BBCODE PARSER HỖ TRỢ THỤT LỀ [indent]
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+    // 1. Xử lý [indent], Quote & Spoiler lồng nhau
     let prev;
     do {
       prev = str;
       str = str
+        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<div style="padding-left: 24px; margin: 4px 0;">$1</div>')
         .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
         .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
         .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
     } while (str !== prev);
 
+    // 2. Xử lý [list] và [*]
     str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
       const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
       const liHtml = items.map(it => `<li>${it.trim()}</li>`).join('');
       return `<ul class="bb-list">${liHtml}</ul>`;
     });
 
+    // 3. Xử lý [youtube]
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
       const raw = urlOrId.trim();
       let videoId = raw;
@@ -567,6 +574,7 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
+    // 4. Định dạng chữ & Màu sắc
     str = str
       .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
@@ -578,11 +586,13 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
+    // 5. Xử lý [item]
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
+    // Chuyển dấu xuống dòng nhưng bảo toàn khoảng trắng
     return str.replace(/\n/g, '<br>');
   },
 
