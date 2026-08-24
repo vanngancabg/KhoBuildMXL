@@ -10,20 +10,20 @@
 }
 
 :root {
-  --bg-main: #0c0d0f; /* Đen sâu hơn, chuẩn diễn đàn */
-  --bg-card: transparent; /* Bỏ nền xám của các thẻ detail */
+  --bg-main: #0c0d0f;
+  --bg-card: transparent;
   --bg-card-hover: #14161a;
   --bg-input: #1a1d21;
-  --text-main: #cfd8dc; /* Chữ xám nhạt nhẹ nhàng */
+  --text-main: #cfd8dc;
   --text-muted: #88929b;
   --text-bright: #ffffff;
-  --accent-gold: #d4af37; /* Màu vàng sang trọng hơn */
+  --accent-gold: #d4af37;
   --accent-gold-hover: #f1c40f;
   --accent-red: #e74c3c;
   --accent-green: #2ecc71;
   --accent-blue: #3498db;
   --accent-orange: #ed8936;
-  --border-color: rgba(255, 255, 255, 0.05); /* Viền cực mờ hoặc bỏ hẳn */
+  --border-color: rgba(255, 255, 255, 0.05);
   
   --font-body: 'Exo 2', sans-serif;
   --font-heading: 'DiabloLight', 'Cormorant Garamond', serif;
@@ -41,7 +41,7 @@ body {
   font-family: var(--font-body);
   line-height: 1.6;
   padding-bottom: 60px;
-  font-size: 15px; /* Size chữ to và dễ đọc hơn */
+  font-size: 15px;
 }
 
 /* NAVBAR */
@@ -90,6 +90,72 @@ body {
   max-width: 1100px;
   margin: 24px auto;
   padding: 0 20px;
+}
+
+/* CHUÔNG THÔNG BÁO */
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 10px;
+  border: 1px solid #08090a;
+  animation: pulseNew 2s infinite;
+}
+
+.notif-popup {
+  display: none;
+  position: absolute;
+  top: 38px;
+  right: 0;
+  width: 320px;
+  background: #111215;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.95);
+  z-index: 2000;
+  overflow: hidden;
+}
+
+.notif-popup.active {
+  display: block;
+}
+
+.notif-header {
+  padding: 10px 14px;
+  background: #0d0e10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--text-bright);
+}
+
+.notif-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notif-item:hover {
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.notif-item.unread {
+  background: rgba(231, 76, 60, 0.05);
+  border-left: 3px solid #e74c3c;
 }
 
 /* BUTTONS */
@@ -403,11 +469,7 @@ textarea.form-control {
   outline: none;
 }
 
-/* ==============================================================
-   DIABLO / MEDIAN XL STYLE FOR DETAIL PAGE (BUILD-DETAIL.HTML)
-================================================================ */
-
-/* Bỏ background của các block, dùng không gian trống */
+/* DETAIL PAGE STYLE */
 .detail-card { 
   background: transparent; 
   border: none;
@@ -415,7 +477,6 @@ textarea.form-control {
   margin-bottom: 40px; 
 }
 
-/* Tiêu đề mục phong cách Diablo */
 .detail-card-title { 
   font-family: var(--font-heading);
   color: var(--text-bright); 
@@ -431,13 +492,11 @@ textarea.form-control {
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
-/* Đoạn văn bản markdown */
 .markdown-rendered {
   font-size: 0.95rem;
   color: #b0bec5;
 }
 
-/* Các thẻ Li / Bullet point của Median XL */
 .markdown-rendered ul {
   list-style-type: none;
   padding-left: 20px;
@@ -456,11 +515,9 @@ textarea.form-control {
   font-size: 1rem;
 }
 
-/* Định dạng chữ của các Item */
 .item-runeword { color: #ff8000 !important; }
 .item-set { color: #00aa00 !important; }
 
-/* Thay đổi Gear Stage Box (Mức Level) cho giống ảnh của bạn */
 .gear-stage-box { 
   background: transparent; 
   border: none;
@@ -471,7 +528,7 @@ textarea.form-control {
 
 .gear-stage-box > strong {
   font-family: var(--font-body);
-  color: #e74c3c !important; /* Đỏ Rực */
+  color: #e74c3c !important;
   font-size: 1.1rem !important;
   font-weight: 500;
   display: block;
@@ -483,28 +540,6 @@ textarea.form-control {
   padding-left: 24px;
 }
 
-/* Khối Pros / Cons dạng không viền */
-.pros-cons-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-
-.pros-box, .cons-box {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-.pros-box strong, .cons-box strong {
-  font-family: var(--font-heading);
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-  margin-bottom: 10px;
-  display: block;
-}
-
-/* Stat pills (Strength, Dex...) */
 .stat-pill { 
   background: transparent; 
   border: 1px solid rgba(255,255,255,0.05); 
@@ -519,8 +554,6 @@ textarea.form-control {
   letter-spacing: 1px;
   margin-bottom: 4px; 
 }
-
-/* ============================================================== */
 
 /* KHỐI QUOTE / TRÍCH DẪN */
 .bb-quote-container {
@@ -593,7 +626,7 @@ textarea.form-control {
 #modal-preview-full .modal-preview-container {
   max-width: 1000px;
   margin: 0 auto;
-  background: transparent; /* Bỏ viền và nền của bảng xem trước */
+  background: transparent;
   border: none;
   padding: 0;
   position: relative;
