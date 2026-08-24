@@ -129,7 +129,7 @@
           </div>
           <div class="form-group" style="margin: 0;">
             <label>Mùa giải (Season) (*)</label>
-            <input type="text" id="build-season" class="form-control" required placeholder="VD: Season 36">
+            <input type="text" id="build-season" class="form-control" required placeholder="VD: Season 36 hoặc Mùa 2.13">
           </div>
           <div class="form-group" style="margin: 0;">
             <label>Phiên bản Patch (*)</label>
@@ -197,28 +197,23 @@
         </div>
       </div>
 
-      <!-- KHỐI 5: GEAR THEO LEVEL -->
+      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ 3 MỨC LEVEL -->
       <div class="form-block">
         <div class="form-block-title">🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
         
         <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 1: Level 1 - 105 (Starter / Leveling / TU & Runewords cơ bản) (*)</label>
-          <textarea id="gear-lv105" class="form-control" required placeholder="• Vũ khí: [item]Tên Món Đồ[/item]&#10;• Áo giáp: [rw]Tên Runeword[/rw]&#10;• MOs ưu tiên: % Enhanced Damage..."></textarea>
+          <label style="color: var(--accent-gold); font-weight: bold;">Mức 1: Level 0 - 50 (*)</label>
+          <textarea id="gear-lv0-50" class="form-control" style="min-height: 220px;" required></textarea>
         </div>
 
         <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 2: Level 105 - 120 (Mid Game / Sacred Uniques - SU & Runewords tầm trung)</label>
-          <textarea id="gear-lv120" class="form-control" placeholder="• Vũ khí: [item]Tên Sacred Unique[/item]&#10;• Nón: [item]Tên nón SU[/item]..."></textarea>
+          <label style="color: var(--accent-gold); font-weight: bold;">Mức 2: Level 50 - 135</label>
+          <textarea id="gear-lv50-135" class="form-control" style="min-height: 220px;"></textarea>
         </div>
 
         <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 3: Level 120 - 130 (Late Game / Sacred Uniques nâng cao & MOs tối ưu)</label>
-          <textarea id="gear-lv130" class="form-control" placeholder="• Trang bị chính: SU Tier cao...&#10;• Jewels: Khảm Crafted Jewels..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label style="color: var(--accent-gold);">Mức 4: Level 130 - 150 (Endgame Tối Thượng / SSU, SSSU, Xis Runewords & Relics)</label>
-          <textarea id="gear-lv150" class="form-control" placeholder="• Vũ khí: [item]SSU / SSSU Weapon[/item]&#10;• Giáp: [rw]Xis Runeword[/rw]&#10;• Relics & Charms..."></textarea>
+          <label style="color: var(--accent-gold); font-weight: bold;">Mức 3: Level 135+</label>
+          <textarea id="gear-lv135plus" class="form-control" style="min-height: 220px;"></textarea>
         </div>
       </div>
 
