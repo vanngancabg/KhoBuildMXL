@@ -3,6 +3,30 @@ const FormHandler = {
   activeTextarea: null,
   pendingItemName: '',
 
+  // Mẫu khung 10 mục trang bị mặc định
+  defaultGearTemplate: 
+`1. VŨ KHÍ CHÍNH: 
+
+- VŨ KHÍ PHỤ: 
+
+2. MŨ: 
+
+3. ÁO GIÁP: 
+
+4. GĂNG TAY: 
+
+5. THẮT LƯNG: 
+
+6. GIẦY: 
+
+7. AMULET: 
+
+8. NHẪN: 
+
+9. JEWEL, GEM ...: 
+
+10. MO, UMO ...: `,
+
   async init() {
     const user = Auth.getCurrentUser();
     if (!user) {
@@ -21,8 +45,19 @@ const FormHandler = {
       document.getElementById('form-heading').innerText = 'EDIT TOPIC / SỬA HƯỚNG DẪN BUILD';
       await this.loadData(editId, user);
     } else {
+      this.populateDefaultGearTemplates();
       this.loadDraft();
     }
+  },
+
+  populateDefaultGearTemplates() {
+    const g1 = document.getElementById('gear-lv0-50');
+    const g2 = document.getElementById('gear-lv50-135');
+    const g3 = document.getElementById('gear-lv135plus');
+
+    if (g1 && !g1.value) g1.value = this.defaultGearTemplate;
+    if (g2 && !g2.value) g2.value = this.defaultGearTemplate;
+    if (g3 && !g3.value) g3.value = this.defaultGearTemplate;
   },
 
   setupActiveFocusAndPaste() {
@@ -61,12 +96,10 @@ const FormHandler = {
     this.activeTextarea = document.getElementById('build-intro');
   },
 
-  // Xử lý đóng Modal khi click ra ngoài vùng nội dung hoặc bấm phím Escape
   setupModalOutsideClick() {
     const previewModal = document.getElementById('modal-preview-full');
     if (previewModal) {
       previewModal.addEventListener('click', (e) => {
-        // Nếu click trúng vùng nền mờ bên ngoài khung nội dung
         if (e.target === previewModal) {
           this.closePreviewModal();
         }
@@ -273,12 +306,13 @@ const FormHandler = {
 
         try {
           const gearObj = JSON.parse(b.gear_desc);
-          document.getElementById('gear-lv105').value = gearObj.lv105 || '';
-          document.getElementById('gear-lv120').value = gearObj.lv120 || '';
-          document.getElementById('gear-lv130').value = gearObj.lv130 || '';
-          document.getElementById('gear-lv150').value = gearObj.lv150 || '';
+          document.getElementById('gear-lv0-50').value = gearObj.lv0_50 || gearObj.lv105 || this.defaultGearTemplate;
+          document.getElementById('gear-lv50-135').value = gearObj.lv50_135 || gearObj.lv120 || this.defaultGearTemplate;
+          document.getElementById('gear-lv135plus').value = gearObj.lv135plus || gearObj.lv130 || gearObj.lv150 || this.defaultGearTemplate;
         } catch(e) {
-          document.getElementById('gear-lv105').value = b.gear_desc || '';
+          document.getElementById('gear-lv0-50').value = b.gear_desc || this.defaultGearTemplate;
+          document.getElementById('gear-lv50-135').value = this.defaultGearTemplate;
+          document.getElementById('gear-lv135plus').value = this.defaultGearTemplate;
         }
       }
     } catch (e) {
@@ -288,12 +322,12 @@ const FormHandler = {
 
   saveDraft() {
     const draft = this.collectFormData();
-    localStorage.setItem('d2_build_draft_v2', JSON.stringify(draft));
+    localStorage.setItem('d2_build_draft_v3', JSON.stringify(draft));
     alert('Đã lưu bản nháp vào trình duyệt!');
   },
 
   loadDraft() {
-    const saved = localStorage.getItem('d2_build_draft_v2');
+    const saved = localStorage.getItem('d2_build_draft_v3');
     if (saved) {
       try {
         const d = JSON.parse(saved);
@@ -312,10 +346,9 @@ const FormHandler = {
           if (d.vit) document.getElementById('stat-vit').value = d.vit;
           if (d.ene) document.getElementById('stat-ene').value = d.ene;
           if (d.skills) document.getElementById('build-skills-text').value = d.skills;
-          if (d.gear_lv105) document.getElementById('gear-lv105').value = d.gear_lv105;
-          if (d.gear_lv120) document.getElementById('gear-lv120').value = d.gear_lv120;
-          if (d.gear_lv130) document.getElementById('gear-lv130').value = d.gear_lv130;
-          if (d.gear_lv150) document.getElementById('gear-lv150').value = d.gear_lv150;
+          if (d.gear_lv0_50) document.getElementById('gear-lv0-50').value = d.gear_lv0_50;
+          if (d.gear_lv50_135) document.getElementById('gear-lv50-135').value = d.gear_lv50_135;
+          if (d.gear_lv135plus) document.getElementById('gear-lv135plus').value = d.gear_lv135plus;
           if (d.strategy) document.getElementById('build-strategy').value = d.strategy;
           if (d.video) document.getElementById('build-video').value = d.video;
         }
@@ -334,7 +367,7 @@ const FormHandler = {
       if (d.season) document.getElementById('build-season').value = d.season;
       if (d.patch) document.getElementById('build-patch').value = d.patch;
       if (d.skills) document.getElementById('build-skills-text').value = d.skills;
-      if (d.gear_lv105) document.getElementById('gear-lv105').value = d.gear_lv105;
+      if (d.gear_lv0_50) document.getElementById('gear-lv0-50').value = d.gear_lv0_50;
       alert('Đã nhập mã build thành công!');
     } catch (err) {
       alert('Mã Build không hợp lệ!');
@@ -357,10 +390,9 @@ const FormHandler = {
       vit: document.getElementById('stat-vit').value.trim(),
       ene: document.getElementById('stat-ene').value.trim(),
       skills: document.getElementById('build-skills-text').value.trim(),
-      gear_lv105: document.getElementById('gear-lv105').value.trim(),
-      gear_lv120: document.getElementById('gear-lv120').value.trim(),
-      gear_lv130: document.getElementById('gear-lv130').value.trim(),
-      gear_lv150: document.getElementById('gear-lv150').value.trim(),
+      gear_lv0_50: document.getElementById('gear-lv0-50').value.trim(),
+      gear_lv50_135: document.getElementById('gear-lv50-135').value.trim(),
+      gear_lv135plus: document.getElementById('gear-lv135plus').value.trim(),
       strategy: document.getElementById('build-strategy').value.trim(),
       video: document.getElementById('build-video').value.trim()
     };
@@ -428,29 +460,22 @@ const FormHandler = {
       <div class="form-block" style="background: #111315;">
         <div class="form-block-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
         
-        <div style="margin-bottom: 12px;">
-          <strong style="color: var(--accent-gold);">Mức 1: Level 1 - 105 (Starter / Leveling / TU)</strong>
-          <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv105 || 'Chưa cập nhật')}</div>
+        <div style="margin-bottom: 14px;">
+          <strong style="color: var(--accent-gold);">Mức 1: Level 0 - 50</strong>
+          <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
         </div>
 
-        ${d.gear_lv120 ? `
-          <div style="margin-bottom: 12px;">
-            <strong style="color: var(--accent-gold);">Mức 2: Level 105 - 120 (Mid Game / Sacred Uniques)</strong>
-            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv120)}</div>
+        ${d.gear_lv50_135 ? `
+          <div style="margin-bottom: 14px;">
+            <strong style="color: var(--accent-gold);">Mức 2: Level 50 - 135</strong>
+            <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv50_135)}</div>
           </div>
         ` : ''}
 
-        ${d.gear_lv130 ? `
-          <div style="margin-bottom: 12px;">
-            <strong style="color: var(--accent-gold);">Mức 3: Level 120 - 130 (Late Game / Sacred Uniques Nâng Cao)</strong>
-            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv130)}</div>
-          </div>
-        ` : ''}
-
-        ${d.gear_lv150 ? `
-          <div style="margin-bottom: 12px;">
-            <strong style="color: var(--accent-gold);">Mức 4: Level 130 - 150 (Endgame Tối Thượng / SSU, SSSU, Xis)</strong>
-            <div style="margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem;">${this.parseBBCode(d.gear_lv150)}</div>
+        ${d.gear_lv135plus ? `
+          <div style="margin-bottom: 14px;">
+            <strong style="color: var(--accent-gold);">Mức 3: Level 135+</strong>
+            <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv135plus)}</div>
           </div>
         ` : ''}
       </div>
@@ -516,10 +541,9 @@ const FormHandler = {
     };
 
     const gearPayload = {
-      lv105: d.gear_lv105,
-      lv120: d.gear_lv120,
-      lv130: d.gear_lv130,
-      lv150: d.gear_lv150
+      lv0_50: d.gear_lv0_50,
+      lv50_135: d.gear_lv50_135,
+      lv135plus: d.gear_lv135plus
     };
 
     const payload = {
@@ -539,7 +563,7 @@ const FormHandler = {
     try {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
-        localStorage.removeItem('d2_build_draft_v2');
+        localStorage.removeItem('d2_build_draft_v3');
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
         alert(res.message || 'Lưu thất bại!');
