@@ -651,17 +651,17 @@ textarea.form-control {
   color: #fff;
 }
 
-/* HOVER ITEM TOOLTIP ẢNH */
+/* HOVER ITEM TOOLTIP ẢNH (KHÔNG ÉP MÀU, CHO PHÉP MÀU TÙY BIẾN) */
 .item-hover-trigger {
-  color: #d4af37 !important;
+  color: inherit;
   cursor: help;
-  border-bottom: 1px dashed rgba(212, 175, 55, 0.5);
-  transition: all 0.2s;
+  border-bottom: 1px dashed rgba(212, 175, 55, 0.6);
+  transition: opacity 0.2s;
+  display: inline-block;
 }
 
 .item-hover-trigger:hover {
-  color: #fff !important;
-  border-bottom-color: #fff;
+  opacity: 0.85;
 }
 
 #global-item-tooltip {
