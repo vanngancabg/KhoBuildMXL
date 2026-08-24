@@ -184,9 +184,10 @@ body {
   justify-content: space-between;
   text-decoration: none;
   color: inherit;
-  min-height: 125px;
+  min-height: 130px;
   transition: all 0.2s ease-in-out;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  position: relative;
 }
 
 .card:hover {
@@ -213,6 +214,57 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding-top: 10px;
   margin-top: 10px;
+}
+
+/* HUY HIỆU BÀI VIẾT MỚI */
+.badge-new {
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+  animation: pulseNew 2s infinite;
+}
+
+@keyframes pulseNew {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* THANH PHÂN TRANG (PAGINATION BAR) */
+.pagination-bar {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.page-btn:hover {
+  background: #23272d;
+  border-color: var(--accent-gold);
+  color: var(--text-bright);
+}
+
+.page-btn.active {
+  background: var(--accent-gold);
+  color: #000;
+  font-weight: bold;
+  border-color: var(--accent-gold);
 }
 
 /* KHỐI SHOUTBOX (CHAT CỘNG ĐỒNG) */
@@ -519,7 +571,7 @@ textarea.form-control {
   margin-bottom: 14px; 
   display: flex; 
   align-items: center; 
-  gap: 8px; 
+  justify-content: space-between;
 }
 
 .stat-pill { 
