@@ -47,6 +47,18 @@ const DetailHandler = {
         document.getElementById('detail-views').innerText = b.views_count || 0;
         document.getElementById('vote-count').innerText = b.votes_count || 0;
 
+        // KIỂM TRA TRẠNG THÁI THẢ TIM CỦA USER HIỆN TẠI
+        const currentUser = Auth.getCurrentUser();
+        const btnVote = document.getElementById('btn-vote');
+        if (currentUser && b.votes) {
+          const voteList = String(b.votes).toLowerCase().split(',');
+          if (voteList.includes(currentUser.username.toLowerCase())) {
+            btnVote.classList.add('btn-primary');
+          } else {
+            btnVote.classList.remove('btn-primary');
+          }
+        }
+
         let statsObj = {};
         try {
           statsObj = JSON.parse(b.stats_desc);
@@ -168,13 +180,23 @@ const DetailHandler = {
   async toggleVote() {
     const user = Auth.getCurrentUser();
     if (!user) return Auth.openModal('login');
+    const btnVote = document.getElementById('btn-vote');
+    btnVote.disabled = true;
+
     try {
       const res = await API.voteBuild(this.buildId, user.username);
       if (res.status === 'success') {
         document.getElementById('vote-count').innerText = res.votes_count;
+        if (res.is_voted) {
+          btnVote.classList.add('btn-primary');
+        } else {
+          btnVote.classList.remove('btn-primary');
+        }
       }
     } catch (e) {
       alert('Lỗi khi thả tim!');
+    } finally {
+      btnVote.disabled = false;
     }
   },
 
