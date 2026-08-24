@@ -1,6 +1,9 @@
 const DetailHandler = {
   buildId: null,
   currentBuild: null,
+  allComments: [],
+  currentCmtPage: 1,
+  cmtPageSize: 10, // 10 bình luận / 1 trang
 
   async init() {
     this.buildId = new URLSearchParams(window.location.search).get('id');
@@ -41,6 +44,7 @@ const DetailHandler = {
         }
 
         document.getElementById('detail-time').innerText = b.updated_at || '';
+        document.getElementById('detail-views').innerText = b.views_count || 0;
         document.getElementById('vote-count').innerText = b.votes_count || 0;
 
         let statsObj = {};
@@ -186,32 +190,68 @@ const DetailHandler = {
 
   async loadComments() {
     const res = await API.getComments(this.buildId);
-    const list = document.getElementById('comments-list');
     if (res.status === 'success' && res.data) {
-      list.innerHTML = '';
-      const user = Auth.getCurrentUser();
-      if (res.data.length === 0) {
-        list.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px;">Chưa có bình luận nào.</div>';
-        return;
-      }
-      res.data.forEach(cmt => {
-        const canDelete = user && (user.role === 'Admin' || user.username === cmt.username);
-        const div = document.createElement('div');
-        div.style.padding = '10px 0';
-        div.style.borderBottom = '1px solid var(--border-color)';
-        div.innerHTML = `
-          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-            <strong style="color:var(--accent-gold); font-size:0.9rem;">${this.escapeHTML(cmt.user_name || cmt.username)}</strong>
-            <div>
-              <span style="font-size:0.75rem; color:var(--text-muted); margin-right:8px;">${cmt.created_at || ''}</span>
-              ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteComment('${cmt.comment_id}')">Xóa</button>` : ''}
-            </div>
-          </div>
-          <div>${this.parseBBCode(cmt.content)}</div>
-        `;
-        list.appendChild(div);
-      });
+      this.allComments = res.data;
+      document.getElementById('detail-comment-count').innerText = this.allComments.length;
+      this.renderCommentsPage();
     }
+  },
+
+  renderCommentsPage() {
+    const list = document.getElementById('comments-list');
+    const pagination = document.getElementById('comment-pagination');
+    const user = Auth.getCurrentUser();
+    list.innerHTML = '';
+
+    if (this.allComments.length === 0) {
+      list.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px;">Chưa có bình luận nào.</div>';
+      pagination.style.display = 'none';
+      return;
+    }
+
+    const startIndex = (this.currentCmtPage - 1) * this.cmtPageSize;
+    const pagedComments = this.allComments.slice(startIndex, startIndex + this.cmtPageSize);
+
+    pagedComments.forEach(cmt => {
+      const canDelete = user && (user.role === 'Admin' || user.username === cmt.username);
+      const div = document.createElement('div');
+      div.style.padding = '10px 0';
+      div.style.borderBottom = '1px solid var(--border-color)';
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <strong style="color:var(--accent-gold); font-size:0.9rem;">${this.escapeHTML(cmt.user_name || cmt.username)}</strong>
+          <div>
+            <span style="font-size:0.75rem; color:var(--text-muted); margin-right:8px;">${cmt.created_at || ''}</span>
+            ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteComment('${cmt.comment_id}')">Xóa</button>` : ''}
+          </div>
+        </div>
+        <div>${this.parseBBCode(cmt.content)}</div>
+      `;
+      list.appendChild(div);
+    });
+
+    const totalPages = Math.ceil(this.allComments.length / this.cmtPageSize);
+    if (totalPages > 1) {
+      pagination.style.display = 'flex';
+      let html = '';
+      if (this.currentCmtPage > 1) {
+        html += `<button class="page-btn" onclick="DetailHandler.goToCmtPage(${this.currentCmtPage - 1})">« Trước</button>`;
+      }
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i === this.currentCmtPage ? 'active' : ''}" onclick="DetailHandler.goToCmtPage(${i})">${i}</button>`;
+      }
+      if (this.currentCmtPage < totalPages) {
+        html += `<button class="page-btn" onclick="DetailHandler.goToCmtPage(${this.currentCmtPage + 1})">Sau »</button>`;
+      }
+      pagination.innerHTML = html;
+    } else {
+      pagination.style.display = 'none';
+    }
+  },
+
+  goToCmtPage(page) {
+    this.currentCmtPage = page;
+    this.renderCommentsPage();
   },
 
   async postComment() {
@@ -229,6 +269,7 @@ const DetailHandler = {
       avatar: user.avatar,
       content: content
     });
+    this.currentCmtPage = 1;
     await this.loadComments();
   },
 
@@ -249,7 +290,6 @@ const DetailHandler = {
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
       .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      // HỖ TRỢ CẢ [quote=Tên Người] VÀ [quote]
       .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
       .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
