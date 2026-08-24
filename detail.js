@@ -282,7 +282,6 @@ const DetailHandler = {
     await this.loadComments();
   },
 
-  // BBCODE PARSER ĐỒNG BỘ TRỌN VẸN
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -292,6 +291,7 @@ const DetailHandler = {
     do {
       prev = str;
       str = str
+        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<div style="padding-left: 24px; margin: 4px 0;">$1</div>')
         .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
         .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
         .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
