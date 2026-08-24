@@ -2,6 +2,7 @@ const FormHandler = {
   editBuildId: null,
   activeTextarea: null,
   pendingItemName: '',
+  savedSelection: { start: 0, end: 0, el: null },
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -62,7 +63,19 @@ const FormHandler = {
   setupActiveFocusAndPaste() {
     const textareas = document.querySelectorAll('textarea, input[type="text"]');
     textareas.forEach(el => {
-      el.addEventListener('focus', () => { this.activeTextarea = el; });
+      const updateSelection = () => {
+        this.activeTextarea = el;
+        this.savedSelection = {
+          start: el.selectionStart || 0,
+          end: el.selectionEnd || 0,
+          el: el
+        };
+      };
+
+      el.addEventListener('focus', updateSelection);
+      el.addEventListener('click', updateSelection);
+      el.addEventListener('keyup', updateSelection);
+      el.addEventListener('select', updateSelection);
       
       el.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -123,11 +136,11 @@ const FormHandler = {
   },
 
   async handleTriggerItemTag() {
-    const el = this.activeTextarea || document.getElementById('build-intro');
+    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
     if (!el) return;
 
-    const start = el.selectionStart || 0;
-    const end = el.selectionEnd || 0;
+    const start = el.selectionStart !== undefined ? el.selectionStart : this.savedSelection.start;
+    const end = el.selectionEnd !== undefined ? el.selectionEnd : this.savedSelection.end;
     let selected = el.value.substring(start, end).trim();
 
     if (!selected) {
@@ -136,7 +149,6 @@ const FormHandler = {
       selected = selected.trim();
     }
 
-    // Bóc sạch mọi tag BBCode lồng nhau nếu người dùng bôi đen cả thẻ color/bold
     const cleanItemName = selected.replace(/\[\/?(color|b|i|u|rw|set).*?\]/gi, '').trim();
     const normalizedKey = cleanItemName.toLowerCase();
 
@@ -144,6 +156,7 @@ const FormHandler = {
       this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
     } else {
       this.pendingItemName = cleanItemName;
+      this.savedSelection = { start, end, el };
       document.getElementById('modal-item-name-preview').innerText = `"${cleanItemName}"`;
       document.getElementById('modal-item-upload').classList.add('active');
     }
@@ -190,7 +203,7 @@ const FormHandler = {
             by: user.username
           };
 
-          const el = this.activeTextarea || document.getElementById('build-intro');
+          const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
           this.insertBBIntoEl(`[item]${itemName}[/item]`, '', el);
           this.closeItemModal();
 
@@ -211,7 +224,7 @@ const FormHandler = {
   async handleImageUpload(e) {
     const file = e.target.files[0];
     if (file) {
-      await this.processImageFile(file, this.activeTextarea || document.getElementById('build-intro'));
+      await this.processImageFile(file, this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro'));
       e.target.value = '';
     }
   },
@@ -247,27 +260,56 @@ const FormHandler = {
   },
 
   insertBB(startTag, endTag) {
-    const el = this.activeTextarea || document.getElementById('build-intro');
+    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
     this.insertBBIntoEl(startTag, endTag, el);
   },
 
   insertSmiley(icon) {
-    const el = this.activeTextarea || document.getElementById('build-intro');
+    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
     if (!el) return;
-    const start = el.selectionStart || 0;
-    const end = el.selectionEnd || 0;
-    el.value = el.value.substring(0, start) + ' ' + icon + ' ' + el.value.substring(end);
-    el.focus();
+    this.insertBBIntoEl(' ' + icon + ' ', '', el);
   },
 
+  // HÀM CHÈN GIỮ CHÍNH XÁC VỊ TRÍ CON TRỎ & VỊ TRÍ CUỘN MÀN HÌNH
   insertBBIntoEl(startTag, endTag, el) {
     if (!el) return;
-    const start = el.selectionStart || 0;
-    const end = el.selectionEnd || 0;
+
+    const start = (el.selectionStart !== undefined) ? el.selectionStart : (this.savedSelection.start || 0);
+    const end = (el.selectionEnd !== undefined) ? el.selectionEnd : (this.savedSelection.end || 0);
     const selected = el.value.substring(start, end);
-    el.value = el.value.substring(0, start) + startTag + selected + endTag + el.value.substring(end);
-    el.focus();
-    el.setSelectionRange(start + startTag.length, start + startTag.length + selected.length);
+
+    // Ghi nhớ vị trí cuộn của textarea và cửa sổ
+    const prevTextareaScroll = el.scrollTop;
+    const prevWindowScrollX = window.scrollX;
+    const prevWindowScrollY = window.scrollY;
+
+    const replacement = startTag + selected + endTag;
+    el.value = el.value.substring(0, start) + replacement + el.value.substring(end);
+
+    // Tính toán lại vị trí con trỏ mới
+    let newCursorStart, newCursorEnd;
+    if (selected.length > 0) {
+      newCursorStart = start + startTag.length;
+      newCursorEnd = newCursorStart + selected.length;
+    } else {
+      newCursorStart = start + startTag.length;
+      newCursorEnd = newCursorStart;
+    }
+
+    // Focus không làm cuộn giật màn hình
+    el.focus({ preventScroll: true });
+    el.setSelectionRange(newCursorStart, newCursorEnd);
+
+    // Khôi phục vị trí cuộn
+    el.scrollTop = prevTextareaScroll;
+    window.scrollTo(prevWindowScrollX, prevWindowScrollY);
+
+    // Cập nhật lại bộ nhớ selection
+    this.savedSelection = {
+      start: newCursorStart,
+      end: newCursorEnd,
+      el: el
+    };
   },
 
   async loadData(id, user) {
@@ -497,13 +539,11 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // BBCODE PARSER HOÀN HẢO - HỖ TRỢ ĐA TẦNG LỒNG GHÉP
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // 1. Xử lý Quote & Spoiler lồng nhau
     let prev;
     do {
       prev = str;
@@ -513,14 +553,12 @@ const FormHandler = {
         .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
     } while (str !== prev);
 
-    // 2. Xử lý [list] và [*]
     str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
       const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
       const liHtml = items.map(it => `<li>${it.trim()}</li>`).join('');
       return `<ul class="bb-list">${liHtml}</ul>`;
     });
 
-    // 3. Xử lý [youtube] URL hoặc Video ID
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
       const raw = urlOrId.trim();
       let videoId = raw;
@@ -529,7 +567,6 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // 4. Xử lý định dạng chữ & Màu sắc
     str = str
       .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
@@ -541,7 +578,6 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // 5. Xử lý [item] bóc sạch mọi tag lồng bên trong để lấy data-item-key sạch
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
