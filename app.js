@@ -40,7 +40,6 @@ const App = {
     }
     emptyState.style.display = 'none';
 
-    // Cắt mảng theo trang hiện tại (20 bài/trang)
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const pagedBuilds = this.filteredBuilds.slice(startIndex, startIndex + this.pageSize);
 
@@ -49,14 +48,15 @@ const App = {
       card.className = 'card';
       card.href = `build-detail.html?id=${build.build_id}`;
       
-      // Kiểm tra xem bài có mới đăng trong vòng 3 ngày không
       const isNew = this.checkIsNew(build.updated_at);
+      const formattedDate = (build.updated_at || '').split(' ')[0]; // Lấy ngày dd/mm/yyyy
 
       card.innerHTML = `
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <div style="display: flex; gap: 6px; align-items: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
               <span style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--accent-gold);">${build.class_name || 'Class'}</span>
+              ${build.patch_version ? `<span style="background: #1c1f24; color: #cfd8dc; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; border: 1px solid var(--border-color);">${build.patch_version}</span>` : ''}
               ${isNew ? '<span class="badge-new">✨ MỚI</span>' : ''}
             </div>
             <span style="color: #ff6b6b; font-size: 0.85rem; font-weight: bold;">❤️ ${build.votes_count || 0}</span>
@@ -64,7 +64,10 @@ const App = {
           <div class="card-title">${this.escapeHTML(build.title)}</div>
         </div>
         <div class="card-meta">
-          <span>✍️ ${this.escapeHTML(build.author_name || 'Ẩn danh')}</span>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span>✍️ ${this.escapeHTML(build.author_name || 'Ẩn danh')}</span>
+            ${formattedDate ? `<span style="color: var(--text-muted); font-size: 0.75rem;">🕒 ${formattedDate}</span>` : ''}
+          </div>
           <div style="display: flex; gap: 8px; font-size: 0.75rem;">
             <span>👁️ ${build.views_count || 0}</span>
             <span>💬 ${build.comments_count || 0}</span>
@@ -80,7 +83,6 @@ const App = {
   checkIsNew(dateStr) {
     if (!dateStr) return false;
     try {
-      // Phân tích định dạng dd/mm/yyyy hoặc ISO
       let postDate;
       if (dateStr.includes('/')) {
         const parts = dateStr.split(' ')[0].split('/');
@@ -90,7 +92,7 @@ const App = {
       }
       const diffTime = Math.abs(new Date() - postDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 3; // Bài đăng <= 3 ngày được tính là MỚI
+      return diffDays <= 3;
     } catch(e) {
       return false;
     }
