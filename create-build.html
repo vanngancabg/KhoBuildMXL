@@ -56,12 +56,18 @@
         <button type="button" class="bb-btn" style="color: #ed8936;" title="Runeword" onclick="FormHandler.insertBB('[rw]', '[/rw]')">[RW] Runeword</button>
         <button type="button" class="bb-btn" style="color: #48bb78;" title="Set Item" onclick="FormHandler.insertBB('[set]', '[/set]')">[Set] Đồ Xanh</button>
 
+        <!-- BẢNG CHỌN MÀU ĐẶC TRƯNG DIỄN ĐÀN MEDIAN XL -->
         <select class="bb-select" onchange="if(this.value){ FormHandler.insertBB('[color=' + this.value + ']', '[/color]'); this.value=''; }">
-          <option value="">Màu chữ</option>
-          <option value="#c79c5e">Vàng Gold</option>
-          <option value="#ff4444">Đỏ</option>
-          <option value="#44ff44">Xanh lá</option>
-          <option value="#4488ff">Xanh dương</option>
+          <option value="">🎨 Chọn Màu Chữ</option>
+          <option value="#c038c0" style="color: #c038c0; background: #141619;">🟣 Tím (SSU / Mystic / Boss)</option>
+          <option value="#00aa00" style="color: #00aa00; background: #141619;">🟢 Xanh Lục Đậm (TU / Upgrades)</option>
+          <option value="#ffff60" style="color: #ffff60; background: #141619;">🟡 Vàng Nhạt (Angelic / SSSU)</option>
+          <option value="#9b722b" style="color: #9b722b; background: #141619;">🟤 Nâu Unique (Diablo Unique)</option>
+          <option value="#ff8000" style="color: #ff8000; background: #141619;">🟠 Cam (Craft / Runewords)</option>
+          <option value="#ff3333" style="color: #ff3333; background: #141619;">🔴 Đỏ Rực (Leveling / Chú ý)</option>
+          <option value="#4888ff" style="color: #4888ff; background: #141619;">🔵 Xanh Dương (Magic / Spell)</option>
+          <option value="#a0a0a0" style="color: #a0a0a0; background: #141619;">⚪ Xám Bạc (Base / Phôi)</option>
+          <option value="#c79c5e" style="color: #c79c5e; background: #141619;">⭐ Vàng Gold Diễn Đàn</option>
         </select>
 
         <select class="bb-select" onchange="if(this.value){ FormHandler.insertSmiley(this.value); this.value=''; }">
