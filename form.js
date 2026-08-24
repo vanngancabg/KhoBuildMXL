@@ -77,7 +77,6 @@ const FormHandler = {
       el.addEventListener('keyup', updateSelection);
       el.addEventListener('select', updateSelection);
 
-      // BẮT PHÍM TAB TRỰC TIẾP ĐỂ THỤT LỀ
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -505,23 +504,29 @@ const FormHandler = {
       <div class="detail-card">
         <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
         
-        <div class="gear-stage-box">
-          <strong style="color: #e74c3c;">Mức 1: Level 0 - 50</strong>
-          <div class="markdown-rendered">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
-        </div>
+        <details class="gear-accordion-item" open>
+          <summary class="gear-accordion-header">🔰 Mức 1: Level 0 - 50</summary>
+          <div class="gear-accordion-body">
+            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
+          </div>
+        </details>
 
         ${d.gear_lv50_135 ? `
-          <div class="gear-stage-box">
-            <strong style="color: #e74c3c;">Mức 2: Level 50 - 135</strong>
-            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
-          </div>
+          <details class="gear-accordion-item">
+            <summary class="gear-accordion-header">⚔️ Mức 2: Level 50 - 135</summary>
+            <div class="gear-accordion-body">
+              <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
+            </div>
+          </details>
         ` : ''}
 
         ${d.gear_lv135plus ? `
-          <div class="gear-stage-box">
-            <strong style="color: #e74c3c;">Mức 3: Level 135+</strong>
-            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv135plus)}</div>
-          </div>
+          <details class="gear-accordion-item">
+            <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
+            <div class="gear-accordion-body">
+              <div class="markdown-rendered">${this.parseBBCode(d.gear_lv135plus)}</div>
+            </div>
+          </details>
         ` : ''}
       </div>
 
@@ -541,7 +546,6 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // BBCODE PARSER BẢO TOÀN DÒNG LIỀN MẠCH VỚI [indent]
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
