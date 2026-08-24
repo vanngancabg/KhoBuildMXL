@@ -49,14 +49,38 @@ const App = {
       card.href = `build-detail.html?id=${build.build_id}`;
       
       const isNew = this.checkIsNew(build.updated_at);
-      const formattedDate = (build.updated_at || '').split(' ')[0]; // Lấy ngày dd/mm/yyyy
+      
+      // 1. Xử lý hiển thị Season (Bỏ phần sau dấu gạch ngang nếu có và thêm chữ Mùa)
+      let seasonBadgeText = '';
+      if (build.patch_version) {
+        let rawSeason = String(build.patch_version).split('-')[0].trim();
+        if (rawSeason.toLowerCase().startsWith('season') || rawSeason.toLowerCase().startsWith('mùa')) {
+          seasonBadgeText = rawSeason.replace(/season/i, 'Mùa').trim();
+        } else {
+          seasonBadgeText = 'Mùa ' + rawSeason;
+        }
+      }
+
+      // 2. Xử lý hiển thị Ngày cập nhật (Bóc tách chính xác phần ngày dd/mm/yyyy)
+      let formattedDate = '';
+      if (build.updated_at) {
+        const rawDate = String(build.updated_at).trim();
+        if (rawDate.includes(' ')) {
+          const parts = rawDate.split(' ');
+          // Tìm phần chứa dấu / hoặc -
+          const datePart = parts.find(p => p.includes('/') || p.includes('-'));
+          formattedDate = datePart || parts[0];
+        } else {
+          formattedDate = rawDate;
+        }
+      }
 
       card.innerHTML = `
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
               <span style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--accent-gold);">${build.class_name || 'Class'}</span>
-              ${build.patch_version ? `<span style="background: #1c1f24; color: #cfd8dc; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; border: 1px solid var(--border-color);">${build.patch_version}</span>` : ''}
+              ${seasonBadgeText ? `<span style="background: #1c1f24; color: #cfd8dc; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; border: 1px solid var(--border-color);">${seasonBadgeText}</span>` : ''}
               ${isNew ? '<span class="badge-new">✨ MỚI</span>' : ''}
             </div>
             <span style="color: #ff6b6b; font-size: 0.85rem; font-weight: bold;">❤️ ${build.votes_count || 0}</span>
@@ -64,9 +88,9 @@ const App = {
           <div class="card-title">${this.escapeHTML(build.title)}</div>
         </div>
         <div class="card-meta">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span>✍️ ${this.escapeHTML(build.author_name || 'Ẩn danh')}</span>
-            ${formattedDate ? `<span style="color: var(--text-muted); font-size: 0.75rem;">🕒 ${formattedDate}</span>` : ''}
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.78rem;">
+            <span>Tác giả: <strong style="color: var(--text-bright);">${this.escapeHTML(build.author_name || 'Ẩn danh')}</strong></span>
+            ${formattedDate ? `<span style="color: var(--text-muted);">Ngày cập nhật: <strong style="color: var(--text-bright);">${formattedDate}</strong></span>` : ''}
           </div>
           <div style="display: flex; gap: 8px; font-size: 0.75rem;">
             <span>👁️ ${build.views_count || 0}</span>
