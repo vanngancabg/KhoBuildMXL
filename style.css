@@ -498,6 +498,12 @@ textarea.form-control {
   line-height: 1.7;
 }
 
+/* BBCODE THỤT LỀ NỘI DÒNG CHUẨN XÁC */
+.bb-indent {
+  display: inline-block;
+  padding-left: 24px;
+}
+
 /* BBCODE LIST STYLING */
 .bb-list {
   list-style-type: none;
