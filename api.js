@@ -26,6 +26,19 @@ const API = {
     return await res.json();
   },
 
+  async getNotifications(username) {
+    const res = await fetch(`${API_URL}?action=getNotifications&username=${encodeURIComponent(username)}`);
+    return await res.json();
+  },
+
+  async markNotificationRead(username) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'markNotificationRead', username })
+    });
+    return await res.json();
+  },
+
   async uploadItemDatabase(payload) {
     const res = await fetch(API_URL, {
       method: 'POST',
