@@ -136,8 +136,8 @@ const FormHandler = {
       selected = selected.trim();
     }
 
-    // Bóc sạch mã màu nếu vô tình bôi đen cả thẻ color
-    const cleanItemName = selected.replace(/\[\/?color.*?\]/gi, '').trim();
+    // Bóc sạch mọi tag BBCode lồng nhau nếu người dùng bôi đen cả thẻ color/bold
+    const cleanItemName = selected.replace(/\[\/?(color|b|i|u|rw|set).*?\]/gi, '').trim();
     const normalizedKey = cleanItemName.toLowerCase();
 
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
@@ -409,16 +409,16 @@ const FormHandler = {
       const match = d.video.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
       if (match && match[2].length === 11) {
         videoEmbed = `
-          <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:4px; margin-top:14px;">
-            <iframe style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" src="https://www.youtube.com/embed/${match[2]}" allowfullscreen></iframe>
+          <div class="bb-video-embed">
+            <iframe src="https://www.youtube.com/embed/${match[2]}" allowfullscreen></iframe>
           </div>
         `;
       }
     }
 
     body.innerHTML = `
-      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 16px;">
-        <h2 style="color: var(--accent-gold); margin: 0 0 6px 0;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
+      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 2rem; margin: 0 0 6px 0;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
         <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
           <span>Class: <strong style="color: var(--text-bright);">${d.class_name}</strong></span>
           <span>Patch: <strong style="color: var(--text-bright);">${d.season} - ${d.patch}</strong></span>
@@ -427,64 +427,64 @@ const FormHandler = {
         </div>
       </div>
 
-      <div class="form-block" style="background: #111315;">
-        <div class="form-block-title">📖 TỔNG QUAN LỐI CHƠI</div>
-        <div style="line-height: 1.6;">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
+      <div class="detail-card">
+        <div class="detail-card-title">📖 TỔNG QUAN LỐI CHƠI</div>
+        <div class="markdown-rendered">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
-          <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid var(--accent-green); padding: 12px; border-radius: 4px;">
-            <strong style="color: var(--accent-green); font-size: 0.9rem;">ƯU ĐIỂM (PROS)</strong>
-            <div style="margin-top: 6px; font-size: 0.85rem;">${this.parseBBCode(d.pros || '• Chưa cập nhật')}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+          <div>
+            <strong style="color: var(--accent-green); font-size: 1rem; display: block; margin-bottom: 6px;">ƯU ĐIỂM (PROS)</strong>
+            <div class="markdown-rendered">${this.parseBBCode(d.pros || '• Chưa cập nhật')}</div>
           </div>
-          <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid #e74c3c; padding: 12px; border-radius: 4px;">
-            <strong style="color: #ff6b6b; font-size: 0.9rem;">NHƯỢC ĐIỂM (CONS)</strong>
-            <div style="margin-top: 6px; font-size: 0.85rem;">${this.parseBBCode(d.cons || '• Chưa cập nhật')}</div>
+          <div>
+            <strong style="color: #ff6b6b; font-size: 1rem; display: block; margin-bottom: 6px;">NHƯỢC ĐIỂM (CONS)</strong>
+            <div class="markdown-rendered">${this.parseBBCode(d.cons || '• Chưa cập nhật')}</div>
           </div>
         </div>
       </div>
 
-      <div class="form-block" style="background: #111315;">
-        <div class="form-block-title">📊 PHÂN BỔ STATS</div>
+      <div class="detail-card">
+        <div class="detail-card-title">📊 PHÂN BỔ STATS</div>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.str || '0'}</strong></div>
-          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.dex || '0'}</strong></div>
-          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.vit || '0'}</strong></div>
-          <div style="background: #181a1d; padding: 8px; border-radius: 4px; text-align: center;"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong style="color:var(--accent-gold); font-size:0.85rem;">${d.ene || '0'}</strong></div>
+          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold);">${d.str || '0'}</strong></div>
+          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold);">${d.dex || '0'}</strong></div>
+          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong style="color:var(--accent-gold);">${d.vit || '0'}</strong></div>
+          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong style="color:var(--accent-gold);">${d.ene || '0'}</strong></div>
         </div>
       </div>
 
-      <div class="form-block" style="background: #111315;">
-        <div class="form-block-title">⚡ KỸ NĂNG & ROTATION</div>
-        <div style="line-height: 1.6;">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
+      <div class="detail-card">
+        <div class="detail-card-title">⚡ KỸ NĂNG & ROTATION</div>
+        <div class="markdown-rendered">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
       </div>
 
-      <div class="form-block" style="background: #111315;">
-        <div class="form-block-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
+      <div class="detail-card">
+        <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
         
-        <div style="margin-bottom: 14px;">
-          <strong style="color: var(--accent-gold);">Mức 1: Level 0 - 50</strong>
-          <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
+        <div class="gear-stage-box">
+          <strong style="color: #e74c3c;">Mức 1: Level 0 - 50</strong>
+          <div class="markdown-rendered">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
         </div>
 
         ${d.gear_lv50_135 ? `
-          <div style="margin-bottom: 14px;">
-            <strong style="color: var(--accent-gold);">Mức 2: Level 50 - 135</strong>
-            <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv50_135)}</div>
+          <div class="gear-stage-box">
+            <strong style="color: #e74c3c;">Mức 2: Level 50 - 135</strong>
+            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
           </div>
         ` : ''}
 
         ${d.gear_lv135plus ? `
-          <div style="margin-bottom: 14px;">
-            <strong style="color: var(--accent-gold);">Mức 3: Level 135+</strong>
-            <div style="margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--accent-gold); font-size: 0.9rem; line-height: 1.6;">${this.parseBBCode(d.gear_lv135plus)}</div>
+          <div class="gear-stage-box">
+            <strong style="color: #e74c3c;">Mức 3: Level 135+</strong>
+            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv135plus)}</div>
           </div>
         ` : ''}
       </div>
 
       ${d.strategy || videoEmbed ? `
-        <div class="form-block" style="background: #111315;">
-          <div class="form-block-title">🎬 CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
-          ${d.strategy ? `<div style="line-height: 1.6; margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
+        <div class="detail-card">
+          <div class="detail-card-title">🎬 CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+          ${d.strategy ? `<div class="markdown-rendered" style="margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
           ${videoEmbed}
         </div>
       ` : ''}
@@ -497,30 +497,57 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // Parser xử lý hoàn hảo việc lồng ghép màu sắc và hover tooltip
+  // BBCODE PARSER HOÀN HẢO - HỖ TRỢ ĐA TẦNG LỒNG GHÉP
   parseBBCode(text) {
     if (!text) return '';
-    let parsed = String(text)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
-      .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
-      .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
-      .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
-      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
-      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>');
+    let str = String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Xử lý [item] với khả năng bóc sạch các tag lồng ghép bên trong để lấy key chuẩn
-    parsed = parsed.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+    // 1. Xử lý Quote & Spoiler lồng nhau
+    let prev;
+    do {
+      prev = str;
+      str = str
+        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
+    } while (str !== prev);
+
+    // 2. Xử lý [list] và [*]
+    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
+      const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
+      const liHtml = items.map(it => `<li>${it.trim()}</li>`).join('');
+      return `<ul class="bb-list">${liHtml}</ul>`;
+    });
+
+    // 3. Xử lý [youtube] URL hoặc Video ID
+    str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
+      const raw = urlOrId.trim();
+      let videoId = raw;
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (yMatch) videoId = yMatch[1];
+      return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+    });
+
+    // 4. Xử lý định dạng chữ & Màu sắc
+    str = str
+      .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
+      .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
+      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
+      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    // 5. Xử lý [item] bóc sạch mọi tag lồng bên trong để lấy data-item-key sạch
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    return parsed.replace(/\n/g, '<br>');
+    return str.replace(/\n/g, '<br>');
   },
 
   async handleSubmit(e) {
