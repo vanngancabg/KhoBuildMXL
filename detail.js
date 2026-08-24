@@ -218,7 +218,7 @@ const DetailHandler = {
       const canDelete = user && (user.role === 'Admin' || user.username === cmt.username);
       const div = document.createElement('div');
       div.style.padding = '10px 0';
-      div.style.borderBottom = '1px solid var(--border-color)';
+      div.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
       div.innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
           <strong style="color:var(--accent-gold); font-size:0.9rem;">${this.escapeHTML(cmt.user_name || cmt.username)}</strong>
@@ -227,7 +227,7 @@ const DetailHandler = {
             ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteComment('${cmt.comment_id}')">Xóa</button>` : ''}
           </div>
         </div>
-        <div>${this.parseBBCode(cmt.content)}</div>
+        <div class="markdown-rendered">${this.parseBBCode(cmt.content)}</div>
       `;
       list.appendChild(div);
     });
@@ -282,28 +282,52 @@ const DetailHandler = {
     await this.loadComments();
   },
 
+  // BBCODE PARSER ĐỒNG BỘ TRỌN VẸN
   parseBBCode(text) {
     if (!text) return '';
-    let parsed = String(text)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
-      .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
-      .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[rw\](.*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
-      .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
-      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
-      .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
-      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>');
+    let str = String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    parsed = parsed.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+    let prev;
+    do {
+      prev = str;
+      str = str
+        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
+    } while (str !== prev);
+
+    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
+      const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
+      const liHtml = items.map(it => `<li>${it.trim()}</li>`).join('');
+      return `<ul class="bb-list">${liHtml}</ul>`;
+    });
+
+    str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
+      const raw = urlOrId.trim();
+      let videoId = raw;
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (yMatch) videoId = yMatch[1];
+      return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+    });
+
+    str = str
+      .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
+      .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
+      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
+      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    return parsed.replace(/\n/g, '<br>');
+    return str.replace(/\n/g, '<br>');
   },
 
   escapeHTML(str) {
