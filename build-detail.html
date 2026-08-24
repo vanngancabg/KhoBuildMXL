@@ -5,13 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chi Tiết Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .detail-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 20px; margin-bottom: 20px; }
-    .detail-card-title { color: var(--accent-gold); font-size: 1.15rem; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-    .stat-pill { background: #111315; border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 4px; }
-    .stat-pill strong { color: var(--accent-gold); display: block; font-size: 0.8rem; margin-bottom: 2px; }
-    .gear-stage-box { background: #111315; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-gold); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
-  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -58,13 +51,13 @@
       <!-- KHỐI 2: TỔNG QUAN & PROS / CONS -->
       <div class="detail-card">
         <div class="detail-card-title">⚖️ TỔNG QUAN & ƯU / NHƯỢC ĐIỂM</div>
-        <div id="detail-intro" class="markdown-rendered" style="margin-bottom: 14px; line-height: 1.6;"></div>
+        <div id="detail-intro" class="markdown-rendered" style="margin-bottom: 14px;"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-          <div style="background: rgba(72, 187, 120, 0.05); border: 1px solid rgba(72, 187, 120, 0.3); border-radius: 4px; padding: 12px;">
+          <div>
             <strong style="color: var(--accent-green); display: block; margin-bottom: 6px;">✅ Ưu điểm (Pros):</strong>
             <div id="detail-pros" class="markdown-rendered"></div>
           </div>
-          <div style="background: rgba(255, 107, 107, 0.05); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 4px; padding: 12px;">
+          <div>
             <strong style="color: #ff6b6b; display: block; margin-bottom: 6px;">❌ Nhược điểm (Cons):</strong>
             <div id="detail-cons" class="markdown-rendered"></div>
           </div>
@@ -85,33 +78,39 @@
       <!-- KHỐI 4: SKILLS -->
       <div class="detail-card">
         <div class="detail-card-title">⚡ KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
-        <div id="detail-skills" class="markdown-rendered" style="line-height: 1.6;"></div>
+        <div id="detail-skills" class="markdown-rendered"></div>
       </div>
 
-      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ 3 MỨC -->
+      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ ACCORDION THU GỌN - MỞ RỘNG -->
       <div class="detail-card">
         <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL</div>
         
-        <div class="gear-stage-box" id="box-gear-0-50">
-          <strong style="color: var(--accent-gold); font-size: 0.95rem;">🔰 Mức 1: Level 0 - 50</strong>
-          <div id="detail-gear-0-50" class="markdown-rendered" style="margin-top: 8px; line-height: 1.6;"></div>
-        </div>
+        <details class="gear-accordion-item" id="box-gear-0-50">
+          <summary class="gear-accordion-header">🔰 Mức 1: Level 0 - 50</summary>
+          <div class="gear-accordion-body">
+            <div id="detail-gear-0-50" class="markdown-rendered"></div>
+          </div>
+        </details>
 
-        <div class="gear-stage-box" id="box-gear-50-135">
-          <strong style="color: var(--accent-gold); font-size: 0.95rem;">⚔️ Mức 2: Level 50 - 135</strong>
-          <div id="detail-gear-50-135" class="markdown-rendered" style="margin-top: 8px; line-height: 1.6;"></div>
-        </div>
+        <details class="gear-accordion-item" id="box-gear-50-135">
+          <summary class="gear-accordion-header">⚔️ Mức 2: Level 50 - 135</summary>
+          <div class="gear-accordion-body">
+            <div id="detail-gear-50-135" class="markdown-rendered"></div>
+          </div>
+        </details>
 
-        <div class="gear-stage-box" id="box-gear-135plus">
-          <strong style="color: var(--accent-gold); font-size: 0.95rem;">👑 Mức 3: Level 135+</strong>
-          <div id="detail-gear-135plus" class="markdown-rendered" style="margin-top: 8px; line-height: 1.6;"></div>
-        </div>
+        <details class="gear-accordion-item" id="box-gear-135plus">
+          <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
+          <div class="gear-accordion-body">
+            <div id="detail-gear-135plus" class="markdown-rendered"></div>
+          </div>
+        </details>
       </div>
 
       <!-- KHỐI 6: CHIẾN THUẬT BOSS & VIDEO -->
       <div class="detail-card" id="strategy-card">
         <div class="detail-card-title">🎬 CHIẾN THUẬT BOSS & GAMEPLAY</div>
-        <div id="detail-strategy" class="markdown-rendered" style="line-height: 1.6; margin-bottom: 14px;"></div>
+        <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
         <div id="video-container" style="display: none; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 4px;"></div>
       </div>
 
