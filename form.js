@@ -3,7 +3,6 @@ const FormHandler = {
   activeTextarea: null,
   pendingItemName: '',
 
-  // Mẫu khung 10 mục trang bị mặc định
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
 
@@ -132,18 +131,20 @@ const FormHandler = {
     let selected = el.value.substring(start, end).trim();
 
     if (!selected) {
-      selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Royal Circlet):');
+      selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Ra):');
       if (!selected) return;
       selected = selected.trim();
     }
 
-    const normalizedKey = selected.toLowerCase();
+    // Bóc sạch mã màu nếu vô tình bôi đen cả thẻ color
+    const cleanItemName = selected.replace(/\[\/?color.*?\]/gi, '').trim();
+    const normalizedKey = cleanItemName.toLowerCase();
 
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
       this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
     } else {
-      this.pendingItemName = selected;
-      document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
+      this.pendingItemName = cleanItemName;
+      document.getElementById('modal-item-name-preview').innerText = `"${cleanItemName}"`;
       document.getElementById('modal-item-upload').classList.add('active');
     }
   },
@@ -496,11 +497,12 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
+  // Parser xử lý hoàn hảo việc lồng ghép màu sắc và hover tooltip
   parseBBCode(text) {
     if (!text) return '';
-    return String(text)
+    let parsed = String(text)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\[item\](.*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
+      .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\](.*?)\[\/u\]/gi, '<u>$1</u>')
@@ -508,11 +510,17 @@ const FormHandler = {
       .replace(/\[set\](.*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-      .replace(/\[color=(.*?)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\](.*?)\[\/url\]/gi, '<a href="$1" target="_blank" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
-      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>')
-      .replace(/\n/g, '<br>');
+      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details style="background:#111315;border:1px solid var(--border-color);padding:8px;border-radius:4px;margin:8px 0;"><summary style="cursor:pointer;color:var(--accent-gold);font-weight:bold;">$1</summary><div style="margin-top:8px;">$2</div></details>');
+
+    // Xử lý [item] với khả năng bóc sạch các tag lồng ghép bên trong để lấy key chuẩn
+    parsed = parsed.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+      const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
+
+    return parsed.replace(/\n/g, '<br>');
   },
 
   async handleSubmit(e) {
