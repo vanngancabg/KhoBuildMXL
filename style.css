@@ -495,28 +495,75 @@ textarea.form-control {
 .markdown-rendered {
   font-size: 0.95rem;
   color: #b0bec5;
+  line-height: 1.7;
 }
 
-.markdown-rendered ul {
+/* BBCODE LIST STYLING */
+.bb-list {
   list-style-type: none;
   padding-left: 20px;
+  margin: 8px 0;
 }
 
-.markdown-rendered ul li {
+.bb-list li {
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  line-height: 1.6;
 }
 
-.markdown-rendered ul li::before {
+.bb-list li::before {
   content: '◦';
   position: absolute;
   left: -15px;
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
-.item-runeword { color: #ff8000 !important; }
-.item-set { color: #00aa00 !important; }
+/* BBCODE VIDEO EMBED */
+.bb-video-embed {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  margin: 14px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bb-video-embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* BBCODE SPOILER */
+.bb-spoiler-box {
+  background: #111315;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin: 10px 0;
+  padding: 8px 12px;
+}
+
+.bb-spoiler-title {
+  cursor: pointer;
+  color: var(--accent-gold);
+  font-weight: 600;
+  outline: none;
+}
+
+.bb-spoiler-content {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+/* BBCODE FORMATS */
+.item-runeword { color: #ff8000 !important; font-weight: 600; }
+.item-set { color: #00aa00 !important; font-weight: 600; }
 
 .gear-stage-box { 
   background: transparent; 
@@ -651,7 +698,7 @@ textarea.form-control {
   color: #fff;
 }
 
-/* HOVER ITEM TOOLTIP ẢNH (KHÔNG ÉP MÀU, CHO PHÉP MÀU TÙY BIẾN) */
+/* HOVER ITEM TOOLTIP ẢNH */
 .item-hover-trigger {
   color: inherit;
   cursor: help;
