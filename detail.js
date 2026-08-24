@@ -3,7 +3,7 @@ const DetailHandler = {
   currentBuild: null,
   allComments: [],
   currentCmtPage: 1,
-  cmtPageSize: 10, // 10 bình luận / 1 trang
+  cmtPageSize: 10,
 
   async init() {
     this.buildId = new URLSearchParams(window.location.search).get('id');
@@ -71,27 +71,29 @@ const DetailHandler = {
         try {
           gearObj = JSON.parse(b.gear_desc);
         } catch(e) {
-          gearObj = { lv105: b.gear_desc };
+          gearObj = { lv0_50: b.gear_desc };
         }
 
-        document.getElementById('detail-gear-105').innerHTML = this.parseBBCode(gearObj.lv105 || 'Chưa cập nhật.');
-        
-        if (gearObj.lv120) {
-          document.getElementById('detail-gear-120').innerHTML = this.parseBBCode(gearObj.lv120);
+        const g1 = gearObj.lv0_50 || gearObj.lv105;
+        const g2 = gearObj.lv50_135 || gearObj.lv120;
+        const g3 = gearObj.lv135plus || gearObj.lv130 || gearObj.lv150;
+
+        if (g1) {
+          document.getElementById('detail-gear-0-50').innerHTML = this.parseBBCode(g1);
         } else {
-          document.getElementById('box-gear-120').style.display = 'none';
+          document.getElementById('box-gear-0-50').style.display = 'none';
         }
 
-        if (gearObj.lv130) {
-          document.getElementById('detail-gear-130').innerHTML = this.parseBBCode(gearObj.lv130);
+        if (g2) {
+          document.getElementById('detail-gear-50-135').innerHTML = this.parseBBCode(g2);
         } else {
-          document.getElementById('box-gear-130').style.display = 'none';
+          document.getElementById('box-gear-50-135').style.display = 'none';
         }
 
-        if (gearObj.lv150) {
-          document.getElementById('detail-gear-150').innerHTML = this.parseBBCode(gearObj.lv150);
+        if (g3) {
+          document.getElementById('detail-gear-135plus').innerHTML = this.parseBBCode(g3);
         } else {
-          document.getElementById('box-gear-150').style.display = 'none';
+          document.getElementById('box-gear-135plus').style.display = 'none';
         }
 
         if (statsObj.strategy) {
