@@ -514,7 +514,7 @@ const FormHandler = {
     return color;
   },
 
-  // BBCODE -> HTML TRỰC QUAN
+  // BBCODE -> HTML TRỰC QUAN (Nạp bài viết lên editor)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -541,7 +541,7 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE (Duyệt DOM chuẩn xác chống in thẻ thô)
+  // HTML -> BBCODE (DUYỆT DOM CHUẨN XÁC, BẢO TOÀN LỒNG NHAU 100%)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -561,9 +561,11 @@ const FormHandler = {
         inner += serializeNode(child);
       });
 
+      // 1. Nếu là Widget đặc biệt
       if (node.classList.contains('item-hover-trigger')) {
-        const itemKey = node.getAttribute('data-item-key') || inner.trim();
-        return `[item]${node.textContent.trim() || itemKey}[/item]`;
+        const itemKey = node.getAttribute('data-item-key') || node.textContent.trim().toLowerCase();
+        // Giữ nguyên các định dạng màu sắc/in đậm bên trong thẻ item
+        return `[item]${inner.trim() || itemKey}[/item]`;
       }
       if (node.classList.contains('bb-indent') || tag === 'blockquote') {
         return `[indent]${inner}[/indent]`;
@@ -588,7 +590,7 @@ const FormHandler = {
 
       let res = inner;
 
-      // Xử lý styles nội dòng (font-weight, font-style, color, font-size...)
+      // 2. Xử lý styles nội dòng (font-weight, font-style, color, font-size...)
       if (node.style) {
         if (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 700) {
           res = `[b]${res}[/b]`;
@@ -611,6 +613,7 @@ const FormHandler = {
         }
       }
 
+      // 3. Xử lý thẻ HTML
       switch (tag) {
         case 'strong':
         case 'b':
@@ -882,7 +885,7 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // BBCODE PARSER HOÀN HẢO - NHẬN DIỆN MỌI THẺ VÀ MÃ MÀU
+  // BBCODE PARSER HOÀN HẢO - HỖ TRỢ ĐA TẦNG LỒNG NHAU
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -912,6 +915,13 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
+    // Parse [item] trước để bảo toàn nội dung bên trong, bóc sạch thẻ html để lấy data-item-key chuẩn
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+      const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
+
+    // Parse các định dạng văn bản
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
@@ -924,11 +934,6 @@ const FormHandler = {
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
-
-    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
-      const cleanKey = innerContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
-      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
-    });
 
     return str.replace(/\n/g, '<br>');
   },
