@@ -1,8 +1,8 @@
 const FormHandler = {
   editBuildId: null,
-  activeTextarea: null,
+  activeEditor: null,
+  savedRange: null,
   pendingItemName: '',
-  savedSelection: { start: 0, end: 0, el: null },
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -36,7 +36,7 @@ const FormHandler = {
       return;
     }
 
-    this.setupActiveFocusAndPaste();
+    this.setupWysiwygEditors();
     this.setupModalOutsideClick();
 
     const editId = new URLSearchParams(window.location.search).get('edit');
@@ -55,82 +55,63 @@ const FormHandler = {
     const g2 = document.getElementById('gear-lv50-135');
     const g3 = document.getElementById('gear-lv135plus');
 
-    if (g1 && !g1.value) g1.value = this.defaultGearTemplate;
-    if (g2 && !g2.value) g2.value = this.defaultGearTemplate;
-    if (g3 && !g3.value) g3.value = this.defaultGearTemplate;
+    if (g1 && !g1.innerText.trim()) g1.innerText = this.defaultGearTemplate;
+    if (g2 && !g2.innerText.trim()) g2.innerText = this.defaultGearTemplate;
+    if (g3 && !g3.innerText.trim()) g3.innerText = this.defaultGearTemplate;
   },
 
-  setupActiveFocusAndPaste() {
-    const textareas = document.querySelectorAll('textarea, input[type="text"]');
-    textareas.forEach(el => {
+  setupWysiwygEditors() {
+    const editors = document.querySelectorAll('.wysiwyg-editor');
+    editors.forEach(ed => {
       const updateSelection = () => {
-        this.activeTextarea = el;
-        this.savedSelection = {
-          start: el.selectionStart || 0,
-          end: el.selectionEnd || 0,
-          el: el
-        };
+        this.activeEditor = ed;
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+          this.savedRange = sel.getRangeAt(0);
+        }
       };
 
-      el.addEventListener('focus', updateSelection);
-      el.addEventListener('click', updateSelection);
-      el.addEventListener('keyup', updateSelection);
-      el.addEventListener('select', updateSelection);
+      ed.addEventListener('focus', updateSelection);
+      ed.addEventListener('mouseup', updateSelection);
+      ed.addEventListener('keyup', updateSelection);
 
-      el.addEventListener('keydown', (e) => {
+      // Bắt phím Tab để thụt đầu dòng tự nhiên
+      ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
-          this.insertBBIntoEl('    ', '', el);
+          document.execCommand('insertText', false, '    ');
         }
       });
-      
-      el.addEventListener('paste', async (e) => {
+
+      // Bắt dán ảnh trực tiếp từ Clipboard
+      ed.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
           if (item.type.indexOf('image') !== -1) {
             e.preventDefault();
             const file = item.getAsFile();
-            await this.processImageFile(file, el);
+            await this.processImageFile(file);
             break;
           }
         }
       });
     });
 
-    window.addEventListener('paste', async (e) => {
-      const modal = document.getElementById('modal-item-upload');
-      if (modal && modal.classList.contains('active')) {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            e.preventDefault();
-            const file = item.getAsFile();
-            await this.uploadItemToDatabase(file);
-            break;
-          }
-        }
-      }
-    });
-
-    this.activeTextarea = document.getElementById('build-intro');
+    this.activeEditor = document.getElementById('build-intro');
   },
 
   setupModalOutsideClick() {
     const previewModal = document.getElementById('modal-preview-full');
     if (previewModal) {
       previewModal.addEventListener('click', (e) => {
-        if (e.target === previewModal) {
-          this.closePreviewModal();
-        }
+        if (e.target === previewModal) this.closePreviewModal();
       });
     }
 
     const itemModal = document.getElementById('modal-item-upload');
     if (itemModal) {
       itemModal.addEventListener('click', (e) => {
-        if (e.target === itemModal) {
-          this.closeItemModal();
-        }
+        if (e.target === itemModal) this.closeItemModal();
       });
     }
 
@@ -142,13 +123,67 @@ const FormHandler = {
     });
   },
 
-  async handleTriggerItemTag() {
-    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
-    if (!el) return;
+  // THỰC THI LỆNH ĐỊNH DẠNG (BOLD, ITALIC, LIST...)
+  execCmd(command, value = null) {
+    this.restoreSelection();
+    document.execCommand(command, false, value);
+    this.saveSelection();
+  },
 
-    const start = el.selectionStart !== undefined ? el.selectionStart : this.savedSelection.start;
-    const end = el.selectionEnd !== undefined ? el.selectionEnd : this.savedSelection.end;
-    let selected = el.value.substring(start, end).trim();
+  // ÁP DỤNG MÀU CHỮ TRỰC TIẾP
+  applyTextColor(colorHex) {
+    this.restoreSelection();
+    document.execCommand('foreColor', false, colorHex);
+    this.saveSelection();
+  },
+
+  insertTextAtCursor(text) {
+    this.restoreSelection();
+    document.execCommand('insertText', false, text);
+    this.saveSelection();
+  },
+
+  insertQuoteBlock() {
+    this.restoreSelection();
+    const selText = window.getSelection().toString() || 'Nội dung trích dẫn...';
+    const quoteHTML = `<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">${selText}</div></div><p><br></p>`;
+    document.execCommand('insertHTML', false, quoteHTML);
+  },
+
+  insertSpoilerBlock() {
+    this.restoreSelection();
+    const title = prompt('Nhập tiêu đề khối Spoiler:', 'Chi tiết');
+    if (!title) return;
+    const spoilerHTML = `<details class="bb-spoiler-box"><summary class="bb-spoiler-title">${title}</summary><div class="bb-spoiler-content">Nội dung ẩn...</div></details><p><br></p>`;
+    document.execCommand('insertHTML', false, spoilerHTML);
+  },
+
+  insertLink() {
+    this.restoreSelection();
+    const url = prompt('Nhập đường link liên kết:', 'https://');
+    if (url) {
+      document.execCommand('createLink', false, url);
+    }
+  },
+
+  insertYoutubeVideo() {
+    this.restoreSelection();
+    const url = prompt('Dán link video YouTube:');
+    if (!url) return;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    const videoId = match ? match[1] : null;
+    if (videoId) {
+      const vHTML = `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div><p><br></p>`;
+      document.execCommand('insertHTML', false, vHTML);
+    } else {
+      alert('Link YouTube không hợp lệ!');
+    }
+  },
+
+  // GẮN TOOLTIP ITEM TRỰC QUAN
+  async handleTriggerItemTag() {
+    this.restoreSelection();
+    let selected = window.getSelection().toString().trim();
 
     if (!selected) {
       selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Ra):');
@@ -156,15 +191,14 @@ const FormHandler = {
       selected = selected.trim();
     }
 
-    const cleanItemName = selected.replace(/\[\/?(color|b|i|u|rw|set|indent).*?\]/gi, '').trim();
-    const normalizedKey = cleanItemName.toLowerCase();
+    const cleanItemName = selected.toLowerCase();
 
-    if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[normalizedKey]) {
-      this.insertBBIntoEl(`[item]${selected}[/item]`, '', el);
+    if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[cleanItemName]) {
+      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selected}</span>`;
+      document.execCommand('insertHTML', false, itemHTML);
     } else {
-      this.pendingItemName = cleanItemName;
-      this.savedSelection = { start, end, el };
-      document.getElementById('modal-item-name-preview').innerText = `"${cleanItemName}"`;
+      this.pendingItemName = selected;
+      document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
       document.getElementById('modal-item-upload').classList.add('active');
     }
   },
@@ -210,8 +244,9 @@ const FormHandler = {
             by: user.username
           };
 
-          const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
-          this.insertBBIntoEl(`[item]${itemName}[/item]`, '', el);
+          this.restoreSelection();
+          const itemHTML = `<span class="item-hover-trigger" data-item-key="${itemName.toLowerCase()}">${itemName}</span>`;
+          document.execCommand('insertHTML', false, itemHTML);
           this.closeItemModal();
 
           statusEl.innerText = `✅ Đã lưu ảnh món "${itemName}" thành công!`;
@@ -231,12 +266,12 @@ const FormHandler = {
   async handleImageUpload(e) {
     const file = e.target.files[0];
     if (file) {
-      await this.processImageFile(file, this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro'));
+      await this.processImageFile(file);
       e.target.value = '';
     }
   },
 
-  async processImageFile(file, targetEl) {
+  async processImageFile(file) {
     const statusEl = document.getElementById('upload-status');
     if (statusEl) {
       statusEl.style.display = 'inline';
@@ -249,7 +284,9 @@ const FormHandler = {
       try {
         const res = await API.uploadImage(base64Data, file.name, file.type);
         if (res.status === 'success' && res.url) {
-          this.insertBBIntoEl(`[img]${res.url}[/img]`, '', targetEl);
+          this.restoreSelection();
+          const imgHTML = `<img src="${res.url}" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;"><p><br></p>`;
+          document.execCommand('insertHTML', false, imgHTML);
           if (statusEl) {
             statusEl.innerText = '✅ Đã tải ảnh lên Drive thành công!';
             setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
@@ -266,51 +303,89 @@ const FormHandler = {
     reader.readAsDataURL(file);
   },
 
-  insertBB(startTag, endTag) {
-    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
-    this.insertBBIntoEl(startTag, endTag, el);
-  },
-
-  insertSmiley(icon) {
-    const el = this.savedSelection.el || this.activeTextarea || document.getElementById('build-intro');
-    if (!el) return;
-    this.insertBBIntoEl(' ' + icon + ' ', '', el);
-  },
-
-  insertBBIntoEl(startTag, endTag, el) {
-    if (!el) return;
-
-    const start = (el.selectionStart !== undefined) ? el.selectionStart : (this.savedSelection.start || 0);
-    const end = (el.selectionEnd !== undefined) ? el.selectionEnd : (this.savedSelection.end || 0);
-    const selected = el.value.substring(start, end);
-
-    const prevTextareaScroll = el.scrollTop;
-    const prevWindowScrollX = window.scrollX;
-    const prevWindowScrollY = window.scrollY;
-
-    const replacement = startTag + selected + endTag;
-    el.value = el.value.substring(0, start) + replacement + el.value.substring(end);
-
-    let newCursorStart, newCursorEnd;
-    if (selected.length > 0) {
-      newCursorStart = start + startTag.length;
-      newCursorEnd = newCursorStart + selected.length;
-    } else {
-      newCursorStart = start + startTag.length;
-      newCursorEnd = newCursorStart;
+  saveSelection() {
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0) {
+      this.savedRange = sel.getRangeAt(0);
     }
+  },
 
-    el.focus({ preventScroll: true });
-    el.setSelectionRange(newCursorStart, newCursorEnd);
+  restoreSelection() {
+    if (this.activeEditor) {
+      this.activeEditor.focus();
+    }
+    if (this.savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(this.savedRange);
+    }
+  },
 
-    el.scrollTop = prevTextareaScroll;
-    window.scrollTo(prevWindowScrollX, prevWindowScrollY);
+  // BỘ CHUYỂN ĐỔI: BBCODE CŨ -> HTML TRỰC QUAN KHI TẢI BÀI VIẾT
+  bbcodeToHTML(text) {
+    if (!text) return '';
+    let str = String(text);
+    str = str
+      .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
+      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
+      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank">$2</a>')
+      .replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
+      .replace(/\n/g, '<br>');
+    return str;
+  },
 
-    this.savedSelection = {
-      start: newCursorStart,
-      end: newCursorEnd,
-      el: el
-    };
+  // BỘ CHUYỂN ĐỔI: HTML TRỰC QUAN -> BBCODE ĐỂ LƯU VÀO DATABASE
+  htmlToBBCode(html) {
+    if (!html) return '';
+    let div = document.createElement('div');
+    div.innerHTML = html;
+
+    // Xử lý các tag trực quan
+    div.querySelectorAll('.item-hover-trigger').forEach(el => {
+      const name = el.innerText;
+      el.replaceWith(`[item]${name}[/item]`);
+    });
+
+    div.querySelectorAll('.bb-quote-container').forEach(el => {
+      const body = el.querySelector('.bb-quote-body')?.innerHTML || el.innerHTML;
+      el.replaceWith(`[quote]${this.htmlToBBCode(body)}[/quote]`);
+    });
+
+    div.querySelectorAll('.bb-spoiler-box').forEach(el => {
+      const title = el.querySelector('.bb-spoiler-title')?.innerText || 'Chi tiết';
+      const content = el.querySelector('.bb-spoiler-content')?.innerHTML || '';
+      el.replaceWith(`[spoiler=${title}]${this.htmlToBBCode(content)}[/spoiler]`);
+    });
+
+    let str = div.innerHTML;
+    str = str
+      .replace(/<font color="(.*?)">([\s\S]*?)<\/font>/gi, '[color=$1]$2[/color]')
+      .replace(/<span style="color:\s*(.*?);?">([\s\S]*?)<\/span>/gi, '[color=$1]$2[/color]')
+      .replace(/<strong>([\s\S]*?)<\/strong>/gi, '[b]$1[/b]')
+      .replace(/<b>([\s\S]*?)<\/b>/gi, '[b]$1[/b]')
+      .replace(/<em>([\s\S]*?)<\/em>/gi, '[i]$1[/i]')
+      .replace(/<i>([\s\S]*?)<\/i>/gi, '[i]$1[/i]')
+      .replace(/<u>([\s\S]*?)<\/u>/gi, '[u]$1[/u]')
+      .replace(/<span class="bb-indent">([\s\S]*?)<\/span>/gi, '[indent]$1[/indent]')
+      .replace(/<a href="(.*?)".*?>([\s\S]*?)<\/a>/gi, '[url=$1]$2[/url]')
+      .replace(/<img.*?src="(.*?)".*?>/gi, '[img]$1[/img]')
+      .replace(/<br\s*[\/]?>/gi, '\n')
+      .replace(/<div>/gi, '\n')
+      .replace(/<\/div>/gi, '')
+      .replace(/<p>/gi, '')
+      .replace(/<\/p>/gi, '\n');
+
+    // Bóc sạch tag rác còn sót lại
+    const temp = document.createElement('div');
+    temp.innerHTML = str;
+    return temp.textContent || temp.innerText || '';
   },
 
   async loadData(id, user) {
@@ -345,31 +420,31 @@ const FormHandler = {
           document.getElementById('build-patch').value = statsObj.patch || (patchVal !== seasonVal ? patchVal : '1.0');
           document.getElementById('build-purpose').value = statsObj.purpose || 'Speed Farming';
           document.getElementById('build-difficulty').value = statsObj.difficulty || 'Dễ';
-          document.getElementById('build-intro').value = statsObj.intro || '';
-          document.getElementById('build-pros').value = statsObj.pros || '';
-          document.getElementById('build-cons').value = statsObj.cons || '';
+          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(statsObj.intro || '');
+          document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(statsObj.pros || '');
+          document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(statsObj.cons || '');
           document.getElementById('stat-str').value = statsObj.str || '';
           document.getElementById('stat-dex').value = statsObj.dex || '';
           document.getElementById('stat-vit').value = statsObj.vit || '';
           document.getElementById('stat-ene').value = statsObj.ene || '';
-          document.getElementById('build-strategy').value = statsObj.strategy || '';
+          document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(statsObj.strategy || '');
         } catch(e) {
           document.getElementById('build-season').value = seasonVal || '';
           document.getElementById('build-patch').value = patchVal || '1.0';
-          document.getElementById('build-intro').value = b.stats_desc || '';
+          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(b.stats_desc || '');
         }
 
-        document.getElementById('build-skills-text').value = b.skills_desc || '';
+        document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(b.skills_desc || '');
 
         try {
           const gearObj = JSON.parse(b.gear_desc);
-          document.getElementById('gear-lv0-50').value = gearObj.lv0_50 || gearObj.lv105 || this.defaultGearTemplate;
-          document.getElementById('gear-lv50-135').value = gearObj.lv50_135 || gearObj.lv120 || this.defaultGearTemplate;
-          document.getElementById('gear-lv135plus').value = gearObj.lv135plus || gearObj.lv130 || gearObj.lv150 || this.defaultGearTemplate;
+          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(gearObj.lv0_50 || gearObj.lv105 || this.defaultGearTemplate);
+          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(gearObj.lv50_135 || gearObj.lv120 || this.defaultGearTemplate);
+          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(gearObj.lv135plus || gearObj.lv130 || gearObj.lv150 || this.defaultGearTemplate);
         } catch(e) {
-          document.getElementById('gear-lv0-50').value = b.gear_desc || this.defaultGearTemplate;
-          document.getElementById('gear-lv50-135').value = this.defaultGearTemplate;
-          document.getElementById('gear-lv135plus').value = this.defaultGearTemplate;
+          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(b.gear_desc || this.defaultGearTemplate);
+          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
+          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
         }
       }
     } catch (e) {
@@ -379,12 +454,12 @@ const FormHandler = {
 
   saveDraft() {
     const draft = this.collectFormData();
-    localStorage.setItem('d2_build_draft_v3', JSON.stringify(draft));
+    localStorage.setItem('d2_build_draft_wysiwyg', JSON.stringify(draft));
     alert('Đã lưu bản nháp vào trình duyệt!');
   },
 
   loadDraft() {
-    const saved = localStorage.getItem('d2_build_draft_v3');
+    const saved = localStorage.getItem('d2_build_draft_wysiwyg');
     if (saved) {
       try {
         const d = JSON.parse(saved);
@@ -395,18 +470,18 @@ const FormHandler = {
           if (d.patch) document.getElementById('build-patch').value = d.patch;
           if (d.purpose) document.getElementById('build-purpose').value = d.purpose;
           if (d.difficulty) document.getElementById('build-difficulty').value = d.difficulty;
-          if (d.intro) document.getElementById('build-intro').value = d.intro;
-          if (d.pros) document.getElementById('build-pros').value = d.pros;
-          if (d.cons) document.getElementById('build-cons').value = d.cons;
+          if (d.intro) document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(d.intro);
+          if (d.pros) document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(d.pros);
+          if (d.cons) document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(d.cons);
           if (d.str) document.getElementById('stat-str').value = d.str;
           if (d.dex) document.getElementById('stat-dex').value = d.dex;
           if (d.vit) document.getElementById('stat-vit').value = d.vit;
           if (d.ene) document.getElementById('stat-ene').value = d.ene;
-          if (d.skills) document.getElementById('build-skills-text').value = d.skills;
-          if (d.gear_lv0_50) document.getElementById('gear-lv0-50').value = d.gear_lv0_50;
-          if (d.gear_lv50_135) document.getElementById('gear-lv50-135').value = d.gear_lv50_135;
-          if (d.gear_lv135plus) document.getElementById('gear-lv135plus').value = d.gear_lv135plus;
-          if (d.strategy) document.getElementById('build-strategy').value = d.strategy;
+          if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
+          if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
+          if (d.gear_lv50_135) document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(d.gear_lv50_135);
+          if (d.gear_lv135plus) document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(d.gear_lv135plus);
+          if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
           if (d.video) document.getElementById('build-video').value = d.video;
         }
       } catch (e) {}
@@ -423,8 +498,8 @@ const FormHandler = {
       if (d.class_name) document.getElementById('build-class').value = d.class_name;
       if (d.season) document.getElementById('build-season').value = d.season;
       if (d.patch) document.getElementById('build-patch').value = d.patch;
-      if (d.skills) document.getElementById('build-skills-text').value = d.skills;
-      if (d.gear_lv0_50) document.getElementById('gear-lv0-50').value = d.gear_lv0_50;
+      if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
+      if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
       alert('Đã nhập mã build thành công!');
     } catch (err) {
       alert('Mã Build không hợp lệ!');
@@ -439,18 +514,18 @@ const FormHandler = {
       patch: document.getElementById('build-patch').value.trim(),
       purpose: document.getElementById('build-purpose').value,
       difficulty: document.getElementById('build-difficulty').value,
-      intro: document.getElementById('build-intro').value.trim(),
-      pros: document.getElementById('build-pros').value.trim(),
-      cons: document.getElementById('build-cons').value.trim(),
+      intro: this.htmlToBBCode(document.getElementById('build-intro').innerHTML),
+      pros: this.htmlToBBCode(document.getElementById('build-pros').innerHTML),
+      cons: this.htmlToBBCode(document.getElementById('build-cons').innerHTML),
       str: document.getElementById('stat-str').value.trim(),
       dex: document.getElementById('stat-dex').value.trim(),
       vit: document.getElementById('stat-vit').value.trim(),
       ene: document.getElementById('stat-ene').value.trim(),
-      skills: document.getElementById('build-skills-text').value.trim(),
-      gear_lv0_50: document.getElementById('gear-lv0-50').value.trim(),
-      gear_lv50_135: document.getElementById('gear-lv50-135').value.trim(),
-      gear_lv135plus: document.getElementById('gear-lv135plus').value.trim(),
-      strategy: document.getElementById('build-strategy').value.trim(),
+      skills: this.htmlToBBCode(document.getElementById('build-skills-text').innerHTML),
+      gear_lv0_50: this.htmlToBBCode(document.getElementById('gear-lv0-50').innerHTML),
+      gear_lv50_135: this.htmlToBBCode(document.getElementById('gear-lv50-135').innerHTML),
+      gear_lv135plus: this.htmlToBBCode(document.getElementById('gear-lv135plus').innerHTML),
+      strategy: this.htmlToBBCode(document.getElementById('build-strategy').innerHTML),
       video: document.getElementById('build-video').value.trim()
     };
   },
@@ -663,7 +738,7 @@ const FormHandler = {
     try {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
-        localStorage.removeItem('d2_build_draft_v3');
+        localStorage.removeItem('d2_build_draft_wysiwyg');
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
         alert(res.message || 'Lưu thất bại!');
