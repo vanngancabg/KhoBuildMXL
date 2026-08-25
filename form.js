@@ -326,12 +326,24 @@ const FormHandler = {
 
         document.getElementById('build-title').value = b.title || '';
         document.getElementById('build-class').value = b.class_name || 'Amazon';
-        document.getElementById('build-patch').value = b.patch_version || '';
         document.getElementById('build-video').value = b.video_url || '';
+
+        // Tự động phân tách và làm sạch Season & Patch (chống lặp chuỗi)
+        let seasonVal = '';
+        let patchVal = '1.0';
+
+        if (b.patch_version) {
+          const parts = String(b.patch_version).split('-').map(s => s.trim()).filter(s => s);
+          if (parts.length > 0) {
+            seasonVal = parts[0];
+            patchVal = parts[parts.length - 1];
+          }
+        }
 
         try {
           const statsObj = JSON.parse(b.stats_desc);
-          document.getElementById('build-season').value = statsObj.season || '';
+          document.getElementById('build-season').value = statsObj.season || seasonVal || '';
+          document.getElementById('build-patch').value = statsObj.patch || (patchVal !== seasonVal ? patchVal : '1.0');
           document.getElementById('build-purpose').value = statsObj.purpose || 'Speed Farming';
           document.getElementById('build-difficulty').value = statsObj.difficulty || 'Dễ';
           document.getElementById('build-intro').value = statsObj.intro || '';
@@ -343,6 +355,8 @@ const FormHandler = {
           document.getElementById('stat-ene').value = statsObj.ene || '';
           document.getElementById('build-strategy').value = statsObj.strategy || '';
         } catch(e) {
+          document.getElementById('build-season').value = seasonVal || '';
+          document.getElementById('build-patch').value = patchVal || '1.0';
           document.getElementById('build-intro').value = b.stats_desc || '';
         }
 
@@ -459,12 +473,17 @@ const FormHandler = {
       }
     }
 
+    let seasonDisplay = d.season;
+    if (seasonDisplay && !seasonDisplay.toLowerCase().startsWith('mùa') && !seasonDisplay.toLowerCase().startsWith('season')) {
+      seasonDisplay = 'Mùa ' + seasonDisplay;
+    }
+
     body.innerHTML = `
       <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 20px;">
         <h2 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 2rem; margin: 0 0 6px 0;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
         <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
           <span>Class: <strong style="color: var(--text-bright);">${d.class_name}</strong></span>
-          <span>Patch: <strong style="color: var(--text-bright);">${d.season} - ${d.patch}</strong></span>
+          <span>Mùa giải: <strong style="color: var(--text-bright);">${seasonDisplay || 'Chưa đặt'}</strong></span>
           <span>Mục đích: <strong style="color: var(--text-bright);">${d.purpose}</strong></span>
           <span>Độ khó: <strong style="color: var(--text-bright);">${d.difficulty}</strong></span>
         </div>
@@ -607,6 +626,7 @@ const FormHandler = {
 
     const statsPayload = {
       season: d.season,
+      patch: d.patch,
       purpose: d.purpose,
       difficulty: d.difficulty,
       intro: d.intro,
@@ -625,11 +645,14 @@ const FormHandler = {
       lv135plus: d.gear_lv135plus
     };
 
+    // Chuẩn hóa lưu: chỉ lưu season sạch sẽ không nối lặp
+    const cleanSeason = d.season || 'Mùa mới';
+
     const payload = {
       build_id: this.editBuildId,
       title: d.title,
       class_name: d.class_name,
-      patch_version: `${d.season} - ${d.patch}`,
+      patch_version: cleanSeason,
       author_username: user.username,
       author_name: user.display_name,
       role: user.role || 'Member',
