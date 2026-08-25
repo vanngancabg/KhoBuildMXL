@@ -77,6 +77,7 @@ const FormHandler = {
       ed.addEventListener('mouseup', updateSelection);
       ed.addEventListener('keyup', updateSelection);
 
+      // Phím Tab thụt lề
       ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -84,6 +85,7 @@ const FormHandler = {
         }
       });
 
+      // Dán ảnh từ Clipboard
       ed.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -123,19 +125,18 @@ const FormHandler = {
     });
   },
 
-  // AUTO-SAVE MỖI 30 GIÂY LÊN ĐÁM MÂY
+  // AUTO-SAVE MỖI 30 GIÂY
   startAutoSave(user) {
     if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
     this.autoSaveTimer = setInterval(async () => {
       if (!this.editBuildId) {
         await this.silentSaveCloudDraft(user);
       }
-    }, 30000); // 30s
+    }, 30000);
   },
 
   async silentSaveCloudDraft(user) {
     const draft = this.collectFormData();
-    // Chỉ lưu khi đã có ít nhất tiêu đề hoặc nội dung
     if (!draft.title && !draft.intro) return;
 
     try {
@@ -169,7 +170,7 @@ const FormHandler = {
       if (res.status === 'success') {
         alert('✅ Đã lưu bản nháp thành công vào tài khoản của bạn! Bạn có thể mở bất kỳ máy tính nào để viết tiếp.');
       } else {
-        alert('Đã lưu nháp vào máy hiện tại (Lỗi đám mây: ' + res.message + ')');
+        alert('Đã lưu nháp vào máy hiện tại.');
       }
     } catch(e) {
       alert('Đã lưu nháp vào máy tính hiện tại!');
@@ -219,50 +220,58 @@ const FormHandler = {
     }
   },
 
+  // THỰC THI LỆNH ĐỊNH DẠNG CƠ BẢN
   execCmd(command, value = null) {
     this.restoreSelection();
     document.execCommand(command, false, value);
     this.saveSelection();
   },
 
+  // ÁP DỤNG CỠ CHỮ KHÔNG MẤT ĐỊNH DẠNG LỒNG NHAU
   applyFontSize(fontSize) {
     this.restoreSelection();
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
     const range = sel.getRangeAt(0);
-    const selectedText = range.toString();
+    if (range.collapsed) return;
 
-    if (selectedText.length > 0) {
-      const span = document.createElement('span');
-      span.style.fontSize = fontSize;
-      span.textContent = selectedText;
-      range.deleteContents();
-      range.insertNode(span);
-    }
+    const span = document.createElement('span');
+    span.style.fontSize = fontSize;
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+
+    sel.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    sel.addRange(newRange);
     this.saveSelection();
   },
 
+  // THỤT LỀ KHÔNG MẤT ĐỊNH DẠNG LỒNG NHAU
   execIndent() {
     this.restoreSelection();
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
     const range = sel.getRangeAt(0);
-    const selectedText = range.toString();
-
-    if (selectedText.length > 0) {
+    if (!range.collapsed) {
       const span = document.createElement('span');
       span.className = 'bb-indent';
-      span.textContent = selectedText;
-      range.deleteContents();
+      span.appendChild(range.extractContents());
       range.insertNode(span);
+
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.addRange(newRange);
     } else {
       document.execCommand('insertText', false, '    ');
     }
     this.saveSelection();
   },
 
+  // LÙI LỀ
   execOutdent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -283,6 +292,7 @@ const FormHandler = {
     this.saveSelection();
   },
 
+  // ÁP DỤNG MÀU CHỮ
   applyTextColor(colorHex) {
     this.restoreSelection();
     document.execCommand('foreColor', false, colorHex);
@@ -338,24 +348,39 @@ const FormHandler = {
     }
   },
 
+  // GẮN TOOLTIP ITEM BẢO TOÀN ĐỊNH DẠNG LỒNG NHAU
   async handleTriggerItemTag() {
     this.restoreSelection();
-    let selected = window.getSelection().toString().trim();
+    const sel = window.getSelection();
+    let selectedText = sel ? sel.toString().trim() : '';
 
-    if (!selected) {
-      selected = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Ra):');
-      if (!selected) return;
-      selected = selected.trim();
+    if (!selectedText) {
+      selectedText = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Ra):');
+      if (!selectedText) return;
+      selectedText = selectedText.trim();
     }
 
-    const cleanItemName = selected.toLowerCase();
+    const cleanItemName = selectedText.toLowerCase();
 
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[cleanItemName]) {
-      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selected}</span>&nbsp;`;
-      document.execCommand('insertHTML', false, itemHTML);
+      if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
+        const range = sel.getRangeAt(0);
+        const span = document.createElement('span');
+        span.className = 'item-hover-trigger';
+        span.setAttribute('data-item-key', cleanItemName);
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+
+        const space = document.createTextNode('\u00A0');
+        span.parentNode.insertBefore(space, span.nextSibling);
+      } else {
+        const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selectedText}</span>&nbsp;`;
+        document.execCommand('insertHTML', false, itemHTML);
+      }
+      this.saveSelection();
     } else {
-      this.pendingItemName = selected;
-      document.getElementById('modal-item-name-preview').innerText = `"${selected}"`;
+      this.pendingItemName = selectedText;
+      document.getElementById('modal-item-name-preview').innerText = `"${selectedText}"`;
       document.getElementById('modal-item-upload').classList.add('active');
     }
   },
@@ -478,12 +503,24 @@ const FormHandler = {
     }
   },
 
+  // HÀM CHUYỂN RGB SANG HEX
+  rgbToHex(color) {
+    if (!color) return '';
+    if (color.startsWith('#')) return color;
+    const rgb = color.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+      return '#' + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+    }
+    return color;
+  },
+
+  // BBCODE -> HTML TRỰC QUAN
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-      .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
@@ -504,6 +541,7 @@ const FormHandler = {
     return str;
   },
 
+  // HTML -> BBCODE (Duyệt DOM chuẩn xác chống in thẻ thô)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -548,44 +586,58 @@ const FormHandler = {
         return `[youtube]${src}[/youtube]`;
       }
 
+      let res = inner;
+
+      // Xử lý styles nội dòng (font-weight, font-style, color, font-size...)
+      if (node.style) {
+        if (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 700) {
+          res = `[b]${res}[/b]`;
+        }
+        if (node.style.fontStyle === 'italic') {
+          res = `[i]${res}[/i]`;
+        }
+        if (node.style.textDecoration && node.style.textDecoration.includes('underline')) {
+          res = `[u]${res}[/u]`;
+        }
+        if (node.style.textDecoration && node.style.textDecoration.includes('line-through')) {
+          res = `[s]${res}[/s]`;
+        }
+        if (node.style.fontSize) {
+          const numSize = parseInt(node.style.fontSize, 10);
+          if (numSize) res = `[size=${numSize}]${res}[/size]`;
+        }
+        if (node.style.color) {
+          res = `[color=${this.rgbToHex(node.style.color)}]${res}[/color]`;
+        }
+      }
+
       switch (tag) {
         case 'strong':
         case 'b':
-          return `[b]${inner}[/b]`;
+          return `[b]${res}[/b]`;
         case 'em':
         case 'i':
-          return `[i]${inner}[/i]`;
+          return `[i]${res}[/i]`;
         case 'u':
-          return `[u]${inner}[/u]`;
+          return `[u]${res}[/u]`;
         case 's':
         case 'strike':
-          return `[s]${inner}[/s]`;
+          return `[s]${res}[/s]`;
         case 'a':
-          return `[url=${node.getAttribute('href') || ''}]${inner}[/url]`;
+          return `[url=${node.getAttribute('href') || ''}]${res}[/url]`;
         case 'img':
           return `[img]${node.getAttribute('src') || ''}[/img]`;
         case 'font': {
-          let res = inner;
+          let fontRes = res;
           if (node.hasAttribute('color')) {
-            res = `[color=${node.getAttribute('color')}]${res}[/color]`;
+            fontRes = `[color=${this.rgbToHex(node.getAttribute('color'))}]${fontRes}[/color]`;
           }
           if (node.hasAttribute('size')) {
             const sizeMap = { '1': '10', '2': '12', '3': '15', '4': '18', '5': '22', '6': '26', '7': '32' };
             const sizeVal = sizeMap[node.getAttribute('size')] || '15';
-            res = `[size=${sizeVal}]${res}[/size]`;
+            fontRes = `[size=${sizeVal}]${fontRes}[/size]`;
           }
-          return res;
-        }
-        case 'span': {
-          let res = inner;
-          if (node.style && node.style.fontSize) {
-            const numSize = parseInt(node.style.fontSize, 10);
-            if (numSize) res = `[size=${numSize}]${res}[/size]`;
-          }
-          if (node.style && node.style.color) {
-            res = `[color=${node.style.color}]${res}[/color]`;
-          }
-          return res;
+          return fontRes;
         }
         case 'ul':
         case 'ol': {
@@ -596,14 +648,14 @@ const FormHandler = {
           return `[list]\n${listItems}[/list]`;
         }
         case 'li':
-          return inner;
+          return res;
         case 'br':
           return '\n';
         case 'p':
         case 'div':
-          return inner + '\n';
+          return res + '\n';
         default:
-          return inner;
+          return res;
       }
     };
 
@@ -830,6 +882,7 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
+  // BBCODE PARSER HOÀN HẢO - NHẬN DIỆN MỌI THẺ VÀ MÃ MÀU
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -861,7 +914,7 @@ const FormHandler = {
 
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-      .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
@@ -932,7 +985,6 @@ const FormHandler = {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
         localStorage.removeItem('d2_build_draft_wysiwyg');
-        // Tự động dọn nháp trên Cloud khi đã đăng bài thành công
         await API.deleteCloudDraft(user.username);
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
