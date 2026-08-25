@@ -129,6 +129,25 @@ const FormHandler = {
     this.saveSelection();
   },
 
+  // ÁP DỤNG CỠ CHỮ TRỰC QUAN (FONT SIZE)
+  applyFontSize(fontSize) {
+    this.restoreSelection();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (selectedText.length > 0) {
+      const span = document.createElement('span');
+      span.style.fontSize = fontSize;
+      span.textContent = selectedText;
+      range.deleteContents();
+      range.insertNode(span);
+    }
+    this.saveSelection();
+  },
+
   execIndent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -364,11 +383,12 @@ const FormHandler = {
     }
   },
 
-  // BBCODE -> HTML (Khi nạp bài viết lên editor)
+  // BBCODE -> HTML (Nạp bài lên editor)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
     str = str
+      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
@@ -390,7 +410,7 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE (Duyệt cây DOM chuẩn xác 100%, chống in thẻ thô)
+  // HTML -> BBCODE (Duyệt cây DOM chuẩn xác 100%)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -451,16 +471,29 @@ const FormHandler = {
           return `[url=${node.getAttribute('href') || ''}]${inner}[/url]`;
         case 'img':
           return `[img]${node.getAttribute('src') || ''}[/img]`;
-        case 'font':
+        case 'font': {
+          let res = inner;
           if (node.hasAttribute('color')) {
-            return `[color=${node.getAttribute('color')}]${inner}[/color]`;
+            res = `[color=${node.getAttribute('color')}]${res}[/color]`;
           }
-          return inner;
-        case 'span':
+          if (node.hasAttribute('size')) {
+            const sizeMap = { '1': '10', '2': '12', '3': '15', '4': '18', '5': '22', '6': '26', '7': '32' };
+            const sizeVal = sizeMap[node.getAttribute('size')] || '15';
+            res = `[size=${sizeVal}]${res}[/size]`;
+          }
+          return res;
+        }
+        case 'span': {
+          let res = inner;
+          if (node.style && node.style.fontSize) {
+            const numSize = parseInt(node.style.fontSize, 10);
+            if (numSize) res = `[size=${numSize}]${res}[/size]`;
+          }
           if (node.style && node.style.color) {
-            return `[color=${node.style.color}]${inner}[/color]`;
+            res = `[color=${node.style.color}]${res}[/color]`;
           }
-          return inner;
+          return res;
+        }
         case 'ul':
         case 'ol': {
           let listItems = '';
@@ -770,6 +803,7 @@ const FormHandler = {
     });
 
     str = str
+      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([#\w]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
