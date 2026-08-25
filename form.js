@@ -3,6 +3,7 @@ const FormHandler = {
   activeEditor: null,
   savedRange: null,
   pendingItemName: '',
+  autoSaveTimer: null,
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -46,7 +47,8 @@ const FormHandler = {
       await this.loadData(editId, user);
     } else {
       this.populateDefaultGearTemplates();
-      this.loadDraft();
+      await this.loadCloudDraft(user);
+      this.startAutoSave(user);
     }
   },
 
@@ -75,7 +77,6 @@ const FormHandler = {
       ed.addEventListener('mouseup', updateSelection);
       ed.addEventListener('keyup', updateSelection);
 
-      // Phím Tab thụt lề
       ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -83,7 +84,6 @@ const FormHandler = {
         }
       });
 
-      // Dán ảnh từ Clipboard
       ed.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -123,13 +123,108 @@ const FormHandler = {
     });
   },
 
+  // AUTO-SAVE MỖI 30 GIÂY LÊN ĐÁM MÂY
+  startAutoSave(user) {
+    if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
+    this.autoSaveTimer = setInterval(async () => {
+      if (!this.editBuildId) {
+        await this.silentSaveCloudDraft(user);
+      }
+    }, 30000); // 30s
+  },
+
+  async silentSaveCloudDraft(user) {
+    const draft = this.collectFormData();
+    // Chỉ lưu khi đã có ít nhất tiêu đề hoặc nội dung
+    if (!draft.title && !draft.intro) return;
+
+    try {
+      const res = await API.saveCloudDraft(user.username, draft);
+      if (res.status === 'success') {
+        const statusEl = document.getElementById('upload-status');
+        if (statusEl) {
+          statusEl.style.display = 'inline';
+          statusEl.innerText = `☁️ Đã tự động lưu nháp lúc ${res.updated_at.split(' ')[0]}`;
+          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        }
+      }
+    } catch(e) {}
+  },
+
+  async saveDraft() {
+    const user = Auth.getCurrentUser();
+    if (!user) return Auth.openModal('login');
+
+    const draft = this.collectFormData();
+    localStorage.setItem('d2_build_draft_wysiwyg', JSON.stringify(draft));
+
+    const statusEl = document.getElementById('upload-status');
+    if (statusEl) {
+      statusEl.style.display = 'inline';
+      statusEl.innerText = '⏳ Đang lưu bản nháp lên đám mây...';
+    }
+
+    try {
+      const res = await API.saveCloudDraft(user.username, draft);
+      if (res.status === 'success') {
+        alert('✅ Đã lưu bản nháp thành công vào tài khoản của bạn! Bạn có thể mở bất kỳ máy tính nào để viết tiếp.');
+      } else {
+        alert('Đã lưu nháp vào máy hiện tại (Lỗi đám mây: ' + res.message + ')');
+      }
+    } catch(e) {
+      alert('Đã lưu nháp vào máy tính hiện tại!');
+    } finally {
+      if (statusEl) statusEl.style.display = 'none';
+    }
+  },
+
+  async loadCloudDraft(user) {
+    let cloudData = null;
+    try {
+      const res = await API.getCloudDraft(user.username);
+      if (res.status === 'success' && res.data) {
+        cloudData = res.data;
+      }
+    } catch(e) {}
+
+    const localSaved = localStorage.getItem('d2_build_draft_wysiwyg');
+    let localData = null;
+    if (localSaved) {
+      try { localData = JSON.parse(localSaved); } catch(e) {}
+    }
+
+    const d = cloudData || localData;
+    if (d && (d.title || d.intro || d.skills)) {
+      if (confirm('Tìm thấy bản nháp đang viết dở trong tài khoản của bạn. Bạn có muốn khôi phục lại để viết tiếp không?')) {
+        if (d.title) document.getElementById('build-title').value = d.title;
+        if (d.class_name) document.getElementById('build-class').value = d.class_name;
+        if (d.season) document.getElementById('build-season').value = d.season;
+        if (d.patch) document.getElementById('build-patch').value = d.patch;
+        if (d.purpose) document.getElementById('build-purpose').value = d.purpose;
+        if (d.difficulty) document.getElementById('build-difficulty').value = d.difficulty;
+        if (d.intro) document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(d.intro);
+        if (d.pros) document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(d.pros);
+        if (d.cons) document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(d.cons);
+        if (d.str) document.getElementById('stat-str').value = d.str;
+        if (d.dex) document.getElementById('stat-dex').value = d.dex;
+        if (d.vit) document.getElementById('stat-vit').value = d.vit;
+        if (d.ene) document.getElementById('stat-ene').value = d.ene;
+        if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
+        if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
+        if (d.gear_lv50_135) document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(d.gear_lv50_135);
+        if (d.gear_lv135plus) document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(d.gear_lv135plus);
+        if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
+        if (d.video) document.getElementById('build-video').value = d.video;
+      }
+    }
+  },
+
   execCmd(command, value = null) {
     this.restoreSelection();
     document.execCommand(command, false, value);
     this.saveSelection();
   },
 
-  // ÁP DỤNG CỠ CHỮ TRỰC QUAN (FONT SIZE)
   applyFontSize(fontSize) {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -383,7 +478,6 @@ const FormHandler = {
     }
   },
 
-  // BBCODE -> HTML (Nạp bài lên editor)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -410,7 +504,6 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE (Duyệt cây DOM chuẩn xác 100%)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -583,42 +676,6 @@ const FormHandler = {
       }
     } catch (e) {
       alert('Không thể tải bài viết để sửa!');
-    }
-  },
-
-  saveDraft() {
-    const draft = this.collectFormData();
-    localStorage.setItem('d2_build_draft_wysiwyg', JSON.stringify(draft));
-    alert('Đã lưu bản nháp vào trình duyệt!');
-  },
-
-  loadDraft() {
-    const saved = localStorage.getItem('d2_build_draft_wysiwyg');
-    if (saved) {
-      try {
-        const d = JSON.parse(saved);
-        if (confirm('Tìm thấy một bản nháp chưa hoàn thành. Bạn có muốn khôi phục không?')) {
-          if (d.title) document.getElementById('build-title').value = d.title;
-          if (d.class_name) document.getElementById('build-class').value = d.class_name;
-          if (d.season) document.getElementById('build-season').value = d.season;
-          if (d.patch) document.getElementById('build-patch').value = d.patch;
-          if (d.purpose) document.getElementById('build-purpose').value = d.purpose;
-          if (d.difficulty) document.getElementById('build-difficulty').value = d.difficulty;
-          if (d.intro) document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(d.intro);
-          if (d.pros) document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(d.pros);
-          if (d.cons) document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(d.cons);
-          if (d.str) document.getElementById('stat-str').value = d.str;
-          if (d.dex) document.getElementById('stat-dex').value = d.dex;
-          if (d.vit) document.getElementById('stat-vit').value = d.vit;
-          if (d.ene) document.getElementById('stat-ene').value = d.ene;
-          if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
-          if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
-          if (d.gear_lv50_135) document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(d.gear_lv50_135);
-          if (d.gear_lv135plus) document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(d.gear_lv135plus);
-          if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
-          if (d.video) document.getElementById('build-video').value = d.video;
-        }
-      } catch (e) {}
     }
   },
 
@@ -875,6 +932,8 @@ const FormHandler = {
       const res = await API.saveBuild(payload);
       if (res.status === 'success') {
         localStorage.removeItem('d2_build_draft_wysiwyg');
+        // Tự động dọn nháp trên Cloud khi đã đăng bài thành công
+        await API.deleteCloudDraft(user.username);
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
         alert(res.message || 'Lưu thất bại!');
