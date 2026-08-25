@@ -6,11 +6,23 @@ const DetailHandler = {
   cmtPageSize: 10,
 
   async init() {
+    const user = Auth.getCurrentUser();
+    const loginGate = document.getElementById('detail-login-gate');
+    const loading = document.getElementById('detail-loading');
+
+    // Chặn người dùng chưa đăng nhập
+    if (!user) {
+      if (loading) loading.style.display = 'none';
+      if (loginGate) loginGate.style.display = 'block';
+      return;
+    }
+
     this.buildId = new URLSearchParams(window.location.search).get('id');
     if (!this.buildId) {
       window.location.href = 'index.html';
       return;
     }
+
     this.checkCommentAuth();
     await Promise.all([this.loadBuild(), this.loadComments()]);
   },
@@ -37,7 +49,6 @@ const DetailHandler = {
         document.getElementById('detail-title').innerText = b.title || 'Không có tiêu đề';
         document.getElementById('detail-class').innerText = b.class_name || 'Class';
 
-        // Bóc tách làm sạch hiển thị Mùa (loại bỏ chuỗi nối lặp)
         let cleanSeason = 'Mùa mới';
         if (b.patch_version) {
           const raw = String(b.patch_version).split('-')[0].trim();
