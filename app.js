@@ -7,8 +7,21 @@ const App = {
   pageSize: 20,
 
   async init() {
-    await Promise.all([this.loadBuilds(), this.loadShoutbox()]);
+    await Promise.all([this.trackVisit(), this.loadBuilds(), this.loadShoutbox()]);
     setInterval(() => this.loadShoutbox(), 15000);
+  },
+
+  async trackVisit() {
+    try {
+      const res = await API.trackSiteVisit();
+      if (res.status === 'success') {
+        const el = document.getElementById('site-total-visits');
+        if (el) el.innerText = (res.total_visits || 1).toLocaleString('vi-VN');
+      }
+    } catch (e) {
+      const el = document.getElementById('site-total-visits');
+      if (el) el.innerText = '1,000+';
+    }
   },
 
   async loadBuilds() {
@@ -27,7 +40,6 @@ const App = {
     }
   },
 
-  // Xử lý chuyển trang chi tiết: Bắt buộc đăng nhập mới được vào
   handleCardClick(event, buildId) {
     event.preventDefault();
     const user = Auth.getCurrentUser();
