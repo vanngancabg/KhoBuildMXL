@@ -4,7 +4,7 @@ const App = {
   currentClass: 'All',
   sortByVotes: false,
   currentPage: 1,
-  pageSize: 20, // 20 bài viết trên 1 trang
+  pageSize: 20,
 
   async init() {
     await Promise.all([this.loadBuilds(), this.loadShoutbox()]);
@@ -27,6 +27,18 @@ const App = {
     }
   },
 
+  // Xử lý chuyển trang chi tiết: Bắt buộc đăng nhập mới được vào
+  handleCardClick(event, buildId) {
+    event.preventDefault();
+    const user = Auth.getCurrentUser();
+    if (!user) {
+      alert('Bạn cần đăng nhập để xem chi tiết hướng dẫn Build này!');
+      Auth.openModal('login');
+      return;
+    }
+    window.location.href = `build-detail.html?id=${buildId}`;
+  },
+
   renderBuilds() {
     const buildsGrid = document.getElementById('builds-grid');
     const emptyState = document.getElementById('empty-state');
@@ -47,10 +59,10 @@ const App = {
       const card = document.createElement('a');
       card.className = 'card';
       card.href = `build-detail.html?id=${build.build_id}`;
+      card.onclick = (e) => this.handleCardClick(e, build.build_id);
       
       const isNew = this.checkIsNew(build.updated_at);
       
-      // 1. Xử lý hiển thị Season (Bỏ phần sau dấu gạch ngang nếu có và thêm chữ Mùa)
       let seasonBadgeText = '';
       if (build.patch_version) {
         let rawSeason = String(build.patch_version).split('-')[0].trim();
@@ -61,13 +73,11 @@ const App = {
         }
       }
 
-      // 2. Xử lý hiển thị Ngày cập nhật (Bóc tách chính xác phần ngày dd/mm/yyyy)
       let formattedDate = '';
       if (build.updated_at) {
         const rawDate = String(build.updated_at).trim();
         if (rawDate.includes(' ')) {
           const parts = rawDate.split(' ');
-          // Tìm phần chứa dấu / hoặc -
           const datePart = parts.find(p => p.includes('/') || p.includes('-'));
           formattedDate = datePart || parts[0];
         } else {
