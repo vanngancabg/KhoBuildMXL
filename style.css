@@ -393,7 +393,7 @@ body {
   background: #14161a;
 }
 
-/* KHUNG SOẠN THẢO WYSIWYG TRỰC QUAN */
+/* KHUNG SOẠN THẢO WYSIWYG */
 .wysiwyg-editor {
   min-height: 100px;
   outline: none;
@@ -615,7 +615,7 @@ body {
 
 /* BBCODE SPOILER */
 .bb-spoiler-box {
-  background: #111315;
+  background: #111215;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   margin: 10px 0;
@@ -635,7 +635,7 @@ body {
   border-top: 1px dashed rgba(255, 255, 255, 0.06);
 }
 
-/* FORMATS & STAT PILLS */
+/* STAT PILLS */
 .stat-pill { 
   background: transparent; 
   border: 1px solid rgba(255,255,255,0.05); 
@@ -747,11 +747,10 @@ body {
   color: #fff;
 }
 
-/* HOVER ITEM TOOLTIP */
+/* HOVER ITEM TOOLTIP (GIỮ NGUYÊN MÀU SẮC ĐƯỢC CHỌN) */
 .item-hover-trigger {
-  color: inherit;
   cursor: help;
-  border-bottom: 1px dashed rgba(212, 175, 55, 0.6);
+  border-bottom: 1px dashed rgba(212, 175, 55, 0.7);
   transition: opacity 0.2s;
   display: inline-block;
 }
