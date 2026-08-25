@@ -75,7 +75,7 @@ const FormHandler = {
       ed.addEventListener('mouseup', updateSelection);
       ed.addEventListener('keyup', updateSelection);
 
-      // Bắt phím Tab để thụt đầu dòng tự nhiên
+      // Phím Tab thụt lề
       ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -83,7 +83,7 @@ const FormHandler = {
         }
       });
 
-      // Bắt dán ảnh trực tiếp từ Clipboard
+      // Dán ảnh từ Clipboard
       ed.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -123,14 +123,12 @@ const FormHandler = {
     });
   },
 
-  // THỰC THI LỆNH ĐỊNH DẠNG
   execCmd(command, value = null) {
     this.restoreSelection();
     document.execCommand(command, false, value);
     this.saveSelection();
   },
 
-  // XỬ LÝ THỤT LỀ CHUẨN XÁC
   execIndent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -151,7 +149,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // XỬ LÝ LÙI LỀ
   execOutdent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -159,7 +156,7 @@ const FormHandler = {
 
     let node = sel.anchorNode;
     while (node && node !== this.activeEditor) {
-      if (node.nodeType === 1 && node.classList.contains('bb-indent')) {
+      if (node.nodeType === 1 && (node.classList.contains('bb-indent') || node.tagName === 'BLOCKQUOTE')) {
         const parent = node.parentNode;
         while (node.firstChild) {
           parent.insertBefore(node.firstChild, node);
@@ -172,7 +169,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // ÁP DỤNG MÀU CHỮ TRỰC TIẾP
   applyTextColor(colorHex) {
     this.restoreSelection();
     document.execCommand('foreColor', false, colorHex);
@@ -228,7 +224,6 @@ const FormHandler = {
     }
   },
 
-  // GẮN TOOLTIP ITEM TRỰC QUAN
   async handleTriggerItemTag() {
     this.restoreSelection();
     let selected = window.getSelection().toString().trim();
@@ -369,7 +364,7 @@ const FormHandler = {
     }
   },
 
-  // BỘ CHUYỂN ĐỔI: BBCODE CŨ -> HTML TRỰC QUAN
+  // BBCODE -> HTML (Khi nạp bài viết lên editor)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -395,83 +390,103 @@ const FormHandler = {
     return str;
   },
 
-  // BỘ CHUYỂN ĐỔI CHUẨN XÁC 100%: HTML TRỰC QUAN -> BBCODE ĐỂ LƯU DATABASE
+  // HTML -> BBCODE (Duyệt cây DOM chuẩn xác 100%, chống in thẻ thô)
   htmlToBBCode(html) {
     if (!html) return '';
-    let div = document.createElement('div');
-    div.innerHTML = html;
-
-    // 1. Chuyển đổi các widget khối
-    div.querySelectorAll('.item-hover-trigger').forEach(el => {
-      const name = el.innerText;
-      el.replaceWith(`[item]${name}[/item]`);
-    });
-
-    div.querySelectorAll('.bb-quote-container').forEach(el => {
-      const body = el.querySelector('.bb-quote-body')?.innerHTML || el.innerHTML;
-      el.replaceWith(`[quote]${this.htmlToBBCode(body)}[/quote]`);
-    });
-
-    div.querySelectorAll('.bb-spoiler-box').forEach(el => {
-      const title = el.querySelector('.bb-spoiler-title')?.innerText || 'Chi tiết';
-      const content = el.querySelector('.bb-spoiler-content')?.innerHTML || '';
-      el.replaceWith(`[spoiler=${title}]${this.htmlToBBCode(content)}[/spoiler]`);
-    });
-
-    div.querySelectorAll('.bb-video-embed iframe').forEach(el => {
-      const src = el.getAttribute('src') || '';
-      el.parentElement.replaceWith(`[youtube]${src}[/youtube]`);
-    });
-
-    // 2. Chuyển đổi Thụt lề và Danh sách
-    div.querySelectorAll('.bb-indent').forEach(el => {
-      el.replaceWith(`[indent]${el.innerHTML}[/indent]`);
-    });
-
-    div.querySelectorAll('blockquote').forEach(el => {
-      el.replaceWith(`[indent]${el.innerHTML}[/indent]`);
-    });
-
-    div.querySelectorAll('ul').forEach(el => {
-      let listItems = '';
-      el.querySelectorAll('li').forEach(li => {
-        listItems += `[*] ${li.innerHTML}\n`;
-      });
-      el.replaceWith(`[list]\n${listItems}[/list]`);
-    });
-
-    div.querySelectorAll('ol').forEach(el => {
-      let listItems = '';
-      el.querySelectorAll('li').forEach(li => {
-        listItems += `[*] ${li.innerHTML}\n`;
-      });
-      el.replaceWith(`[list]\n${listItems}[/list]`);
-    });
-
-    let str = div.innerHTML;
-
-    // 3. Chuyển đổi định dạng chữ & Màu sắc
-    str = str
-      .replace(/<font\s+color=["'](.*?)["']>([\s\S]*?)<\/font>/gi, '[color=$1]$2[/color]')
-      .replace(/<span\s+style=["']color:\s*(.*?);?["']>([\s\S]*?)<\/span>/gi, '[color=$1]$2[/color]')
-      .replace(/<strong>([\s\S]*?)<\/strong>/gi, '[b]$1[/b]')
-      .replace(/<b>([\s\S]*?)<\/b>/gi, '[b]$1[/b]')
-      .replace(/<em>([\s\S]*?)<\/em>/gi, '[i]$1[/i]')
-      .replace(/<i>([\s\S]*?)<\/i>/gi, '[i]$1[/i]')
-      .replace(/<u>([\s\S]*?)<\/u>/gi, '[u]$1[/u]')
-      .replace(/<s>([\s\S]*?)<\/s>/gi, '[s]$1[/s]')
-      .replace(/<strike>([\s\S]*?)<\/strike>/gi, '[s]$1[/s]')
-      .replace(/<a\s+href=["'](.*?)["'].*?>([\s\S]*?)<\/a>/gi, '[url=$1]$2[/url]')
-      .replace(/<img\s+.*?src=["'](.*?)["'].*?>/gi, '[img]$1[/img]')
-      .replace(/<br\s*[\/]?>/gi, '\n')
-      .replace(/<div>/gi, '\n')
-      .replace(/<\/div>/gi, '')
-      .replace(/<p>/gi, '')
-      .replace(/<\/p>/gi, '\n');
-
     const temp = document.createElement('div');
-    temp.innerHTML = str;
-    return (temp.textContent || temp.innerText || '').trim();
+    temp.innerHTML = html;
+
+    const serializeNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.nodeValue;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return '';
+      }
+
+      const tag = node.tagName.toLowerCase();
+      let inner = '';
+      node.childNodes.forEach(child => {
+        inner += serializeNode(child);
+      });
+
+      if (node.classList.contains('item-hover-trigger')) {
+        const itemKey = node.getAttribute('data-item-key') || inner.trim();
+        return `[item]${node.textContent.trim() || itemKey}[/item]`;
+      }
+      if (node.classList.contains('bb-indent') || tag === 'blockquote') {
+        return `[indent]${inner}[/indent]`;
+      }
+      if (node.classList.contains('bb-quote-container')) {
+        const body = node.querySelector('.bb-quote-body');
+        const quoteText = body ? serializeNode(body) : inner;
+        return `[quote]${quoteText}[/quote]`;
+      }
+      if (node.classList.contains('bb-spoiler-box') || tag === 'details') {
+        const titleEl = node.querySelector('.bb-spoiler-title') || node.querySelector('summary');
+        const title = titleEl ? titleEl.textContent.trim() : 'Chi tiết';
+        const contentEl = node.querySelector('.bb-spoiler-content') || node.querySelector('div');
+        const content = contentEl ? serializeNode(contentEl) : inner;
+        return `[spoiler=${title}]${content}[/spoiler]`;
+      }
+      if (node.classList.contains('bb-video-embed')) {
+        const iframe = node.querySelector('iframe');
+        const src = iframe ? iframe.getAttribute('src') : '';
+        return `[youtube]${src}[/youtube]`;
+      }
+
+      switch (tag) {
+        case 'strong':
+        case 'b':
+          return `[b]${inner}[/b]`;
+        case 'em':
+        case 'i':
+          return `[i]${inner}[/i]`;
+        case 'u':
+          return `[u]${inner}[/u]`;
+        case 's':
+        case 'strike':
+          return `[s]${inner}[/s]`;
+        case 'a':
+          return `[url=${node.getAttribute('href') || ''}]${inner}[/url]`;
+        case 'img':
+          return `[img]${node.getAttribute('src') || ''}[/img]`;
+        case 'font':
+          if (node.hasAttribute('color')) {
+            return `[color=${node.getAttribute('color')}]${inner}[/color]`;
+          }
+          return inner;
+        case 'span':
+          if (node.style && node.style.color) {
+            return `[color=${node.style.color}]${inner}[/color]`;
+          }
+          return inner;
+        case 'ul':
+        case 'ol': {
+          let listItems = '';
+          node.querySelectorAll(':scope > li').forEach(li => {
+            listItems += `[*] ${serializeNode(li).trim()}\n`;
+          });
+          return `[list]\n${listItems}[/list]`;
+        }
+        case 'li':
+          return inner;
+        case 'br':
+          return '\n';
+        case 'p':
+        case 'div':
+          return inner + '\n';
+        default:
+          return inner;
+      }
+    };
+
+    let result = '';
+    temp.childNodes.forEach(child => {
+      result += serializeNode(child);
+    });
+
+    return result.replace(/\n{3,}/g, '\n\n').trim();
   },
 
   async loadData(id, user) {
