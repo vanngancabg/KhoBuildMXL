@@ -328,7 +328,6 @@ const FormHandler = {
         document.getElementById('build-class').value = b.class_name || 'Amazon';
         document.getElementById('build-video').value = b.video_url || '';
 
-        // Tự động phân tách và làm sạch Season & Patch (chống lặp chuỗi)
         let seasonVal = '';
         let patchVal = '1.0';
 
@@ -524,7 +523,7 @@ const FormHandler = {
         <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
         
         <details class="gear-accordion-item" open>
-          <summary class="gear-accordion-header">🔰 Mức 1: Level 0 - 50</summary>
+          <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
           <div class="gear-accordion-body">
             <div class="markdown-rendered">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
           </div>
@@ -532,7 +531,7 @@ const FormHandler = {
 
         ${d.gear_lv50_135 ? `
           <details class="gear-accordion-item">
-            <summary class="gear-accordion-header">⚔️ Mức 2: Level 50 - 135</summary>
+            <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
             <div class="gear-accordion-body">
               <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
             </div>
@@ -645,7 +644,6 @@ const FormHandler = {
       lv135plus: d.gear_lv135plus
     };
 
-    // Chuẩn hóa lưu: chỉ lưu season sạch sẽ không nối lặp
     const cleanSeason = d.season || 'Mùa mới';
 
     const payload = {
