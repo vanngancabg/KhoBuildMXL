@@ -32,7 +32,7 @@
     <input type="file" id="image-upload-input" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
     <input type="file" id="item-db-file-input" accept="image/*" style="display: none;" onchange="FormHandler.handleItemDbFileUpload(event)">
 
-    <!-- THANH CÔNG CỤ SOẠN THẢO TRỰC QUAN STICKY -->
+    <!-- THANH CÔNG CỤ SOẠN THẢO TRỰC QUAN STICKY (CÓ CỠ CHỮ) -->
     <div class="sticky-toolbar-wrapper">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: bold;">🛠️ Thanh Công Cụ Soạn Thảo (Word-Style)</span>
@@ -44,8 +44,8 @@
         <button type="button" class="bb-btn" title="Gạch chân (Ctrl+U)" onclick="FormHandler.execCmd('underline')"><u>U</u></button>
         <button type="button" class="bb-btn" title="Gạch ngang" onclick="FormHandler.execCmd('strikeThrough')"><s>S</s></button>
         <button type="button" class="bb-btn" title="Danh sách gạch đầu dòng" onclick="FormHandler.execCmd('insertUnorderedList')">📜 List</button>
-        <button type="button" class="bb-btn" title="Thụt lề dòng văn bản" onclick="FormHandler.execCmd('indent')">➡️ Thụt lề</button>
-        <button type="button" class="bb-btn" title="Lùi lề dòng văn bản" onclick="FormHandler.execCmd('outdent')">⬅️ Lùi lề</button>
+        <button type="button" class="bb-btn" title="Thụt lề dòng văn bản" onclick="FormHandler.execIndent()">➡️ Thụt lề</button>
+        <button type="button" class="bb-btn" title="Lùi lề dòng văn bản" onclick="FormHandler.execOutdent()">⬅️ Lùi lề</button>
         <button type="button" class="bb-btn" title="Khối trích dẫn" onclick="FormHandler.insertQuoteBlock()">💬 Quote</button>
         
         <!-- NÚT GẮN ẢNH HOVER ITEM TRỰC QUAN -->
@@ -55,6 +55,16 @@
         <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertLink()">🔗 Link</button>
         <button type="button" class="bb-btn" title="Nhúng Video Youtube" onclick="FormHandler.insertYoutubeVideo()">▶️ Video</button>
         <button type="button" class="bb-btn" title="Khối Spoiler ẩn hiện" onclick="FormHandler.insertSpoilerBlock()">📁 Spoiler</button>
+
+        <!-- BẢNG CHỌN CỠ CHỮ (FONT SIZE) -->
+        <select class="bb-select" onchange="if(this.value){ FormHandler.applyFontSize(this.value); this.value=''; }">
+          <option value="">🔤 Cỡ Chữ</option>
+          <option value="12px">12px (Nhỏ)</option>
+          <option value="15px">15px (Chuẩn)</option>
+          <option value="18px">18px (Vừa)</option>
+          <option value="22px">22px (Lớn)</option>
+          <option value="26px">26px (Tiêu đề)</option>
+        </select>
 
         <!-- BẢNG CHỌN MÀU ĐẶC TRƯNG MEDIAN XL -->
         <select class="bb-select" onchange="if(this.value){ FormHandler.applyTextColor(this.value); this.value=''; }">
