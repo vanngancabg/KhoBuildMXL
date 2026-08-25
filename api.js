@@ -44,6 +44,28 @@ const API = {
     return await res.json();
   },
 
+  // API CLOUD DRAFTS
+  async getCloudDraft(username) {
+    const res = await fetch(`${API_URL}?action=getCloudDraft&username=${encodeURIComponent(username)}`);
+    return await res.json();
+  },
+
+  async saveCloudDraft(username, draft) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveCloudDraft', username, draft })
+    });
+    return await res.json();
+  },
+
+  async deleteCloudDraft(username) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteCloudDraft', username })
+    });
+    return await res.json();
+  },
+
   async uploadItemDatabase(payload) {
     const res = await fetch(API_URL, {
       method: 'POST',
