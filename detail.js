@@ -10,7 +10,6 @@ const DetailHandler = {
     const loginGate = document.getElementById('detail-login-gate');
     const loading = document.getElementById('detail-loading');
 
-    // Chặn người dùng chưa đăng nhập
     if (!user) {
       if (loading) loading.style.display = 'none';
       if (loginGate) loginGate.style.display = 'block';
@@ -325,6 +324,7 @@ const DetailHandler = {
     await this.loadComments();
   },
 
+  // BBCODE PARSER BẢO TOÀN THỤT LỀ, DANH SÁCH VÀ LINK CHUẨN XÁC 100%
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -359,6 +359,7 @@ const DetailHandler = {
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
       .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
