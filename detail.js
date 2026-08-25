@@ -36,7 +36,18 @@ const DetailHandler = {
         document.title = `${b.title} - Median XL Build`;
         document.getElementById('detail-title').innerText = b.title || 'Không có tiêu đề';
         document.getElementById('detail-class').innerText = b.class_name || 'Class';
-        document.getElementById('detail-season-patch').innerText = b.patch_version || 'Mùa giải';
+
+        // Bóc tách làm sạch hiển thị Mùa (loại bỏ chuỗi nối lặp)
+        let cleanSeason = 'Mùa mới';
+        if (b.patch_version) {
+          const raw = String(b.patch_version).split('-')[0].trim();
+          if (raw.toLowerCase().startsWith('season') || raw.toLowerCase().startsWith('mùa')) {
+            cleanSeason = raw.replace(/season/i, 'Mùa').trim();
+          } else {
+            cleanSeason = 'Mùa ' + raw;
+          }
+        }
+        document.getElementById('detail-season-patch').innerText = cleanSeason;
         
         const authorLink = document.getElementById('detail-author');
         if (authorLink) {
@@ -47,7 +58,6 @@ const DetailHandler = {
         document.getElementById('detail-views').innerText = b.views_count || 0;
         document.getElementById('vote-count').innerText = b.votes_count || 0;
 
-        // KIỂM TRA TRẠNG THÁI THẢ TIM CỦA USER HIỆN TẠI
         const currentUser = Auth.getCurrentUser();
         const btnVote = document.getElementById('btn-vote');
         if (currentUser && b.votes) {
@@ -168,7 +178,7 @@ const DetailHandler = {
     if (!this.currentBuild) return;
     const b = this.currentBuild;
     const url = window.location.href;
-    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Patch:** ${b.patch_version}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem bài viết:** ${url}`;
+    const discordText = `**[MEDIAN XL BUILD] ${b.title}**\n> **Class:** ${b.class_name} | **Mùa:** ${b.patch_version}\n> **Tác giả:** ${b.author_name || b.author_id}\n> **Xem bài viết:** ${url}`;
 
     navigator.clipboard.writeText(discordText).then(() => {
       alert('Đã copy bài viết chuẩn định dạng Discord!');
