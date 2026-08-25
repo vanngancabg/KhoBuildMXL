@@ -66,7 +66,7 @@ const FormHandler = {
       const updateSelection = () => {
         this.activeEditor = ed;
         const sel = window.getSelection();
-        if (sel.rangeCount > 0) {
+        if (sel && sel.rangeCount > 0) {
           this.savedRange = sel.getRangeAt(0);
         }
       };
@@ -79,7 +79,7 @@ const FormHandler = {
       ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
-          document.execCommand('insertText', false, '    ');
+          this.execIndent();
         }
       });
 
@@ -123,10 +123,52 @@ const FormHandler = {
     });
   },
 
-  // THỰC THI LỆNH ĐỊNH DẠNG (BOLD, ITALIC, LIST...)
+  // THỰC THI LỆNH ĐỊNH DẠNG
   execCmd(command, value = null) {
     this.restoreSelection();
     document.execCommand(command, false, value);
+    this.saveSelection();
+  },
+
+  // XỬ LÝ THỤT LỀ CHUẨN XÁC
+  execIndent() {
+    this.restoreSelection();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    const range = sel.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (selectedText.length > 0) {
+      const span = document.createElement('span');
+      span.className = 'bb-indent';
+      span.textContent = selectedText;
+      range.deleteContents();
+      range.insertNode(span);
+    } else {
+      document.execCommand('insertText', false, '    ');
+    }
+    this.saveSelection();
+  },
+
+  // XỬ LÝ LÙI LỀ
+  execOutdent() {
+    this.restoreSelection();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    let node = sel.anchorNode;
+    while (node && node !== this.activeEditor) {
+      if (node.nodeType === 1 && node.classList.contains('bb-indent')) {
+        const parent = node.parentNode;
+        while (node.firstChild) {
+          parent.insertBefore(node.firstChild, node);
+        }
+        parent.removeChild(node);
+        break;
+      }
+      node = node.parentNode;
+    }
     this.saveSelection();
   },
 
@@ -160,10 +202,16 @@ const FormHandler = {
 
   insertLink() {
     this.restoreSelection();
-    const url = prompt('Nhập đường link liên kết:', 'https://');
-    if (url) {
-      document.execCommand('createLink', false, url);
+    let url = prompt('Nhập đường link liên kết (URL):', 'https://');
+    if (!url) return;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
     }
+
+    const sel = window.getSelection();
+    let linkText = sel.toString().trim() || url;
+    const linkHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">${linkText}</a>&nbsp;`;
+    document.execCommand('insertHTML', false, linkHTML);
   },
 
   insertYoutubeVideo() {
@@ -194,7 +242,7 @@ const FormHandler = {
     const cleanItemName = selected.toLowerCase();
 
     if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[cleanItemName]) {
-      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selected}</span>`;
+      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selected}</span>&nbsp;`;
       document.execCommand('insertHTML', false, itemHTML);
     } else {
       this.pendingItemName = selected;
@@ -245,7 +293,7 @@ const FormHandler = {
           };
 
           this.restoreSelection();
-          const itemHTML = `<span class="item-hover-trigger" data-item-key="${itemName.toLowerCase()}">${itemName}</span>`;
+          const itemHTML = `<span class="item-hover-trigger" data-item-key="${itemName.toLowerCase()}">${itemName}</span>&nbsp;`;
           document.execCommand('insertHTML', false, itemHTML);
           this.closeItemModal();
 
@@ -305,7 +353,7 @@ const FormHandler = {
 
   saveSelection() {
     const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
+    if (sel && sel.rangeCount > 0) {
       this.savedRange = sel.getRangeAt(0);
     }
   },
@@ -321,7 +369,7 @@ const FormHandler = {
     }
   },
 
-  // BỘ CHUYỂN ĐỔI: BBCODE CŨ -> HTML TRỰC QUAN KHI TẢI BÀI VIẾT
+  // BỘ CHUYỂN ĐỔI: BBCODE CŨ -> HTML TRỰC QUAN
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -330,24 +378,30 @@ const FormHandler = {
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
       .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
       .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
-      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank">$2</a>')
+      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
+      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>')
       .replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
+      .replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (m, body) => {
+        const items = body.split(/\[\*\]/).filter(x => x.trim().length > 0);
+        return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
+      })
       .replace(/\n/g, '<br>');
     return str;
   },
 
-  // BỘ CHUYỂN ĐỔI: HTML TRỰC QUAN -> BBCODE ĐỂ LƯU VÀO DATABASE
+  // BỘ CHUYỂN ĐỔI CHUẨN XÁC 100%: HTML TRỰC QUAN -> BBCODE ĐỂ LƯU DATABASE
   htmlToBBCode(html) {
     if (!html) return '';
     let div = document.createElement('div');
     div.innerHTML = html;
 
-    // Xử lý các tag trực quan
+    // 1. Chuyển đổi các widget khối
     div.querySelectorAll('.item-hover-trigger').forEach(el => {
       const name = el.innerText;
       el.replaceWith(`[item]${name}[/item]`);
@@ -364,28 +418,60 @@ const FormHandler = {
       el.replaceWith(`[spoiler=${title}]${this.htmlToBBCode(content)}[/spoiler]`);
     });
 
+    div.querySelectorAll('.bb-video-embed iframe').forEach(el => {
+      const src = el.getAttribute('src') || '';
+      el.parentElement.replaceWith(`[youtube]${src}[/youtube]`);
+    });
+
+    // 2. Chuyển đổi Thụt lề và Danh sách
+    div.querySelectorAll('.bb-indent').forEach(el => {
+      el.replaceWith(`[indent]${el.innerHTML}[/indent]`);
+    });
+
+    div.querySelectorAll('blockquote').forEach(el => {
+      el.replaceWith(`[indent]${el.innerHTML}[/indent]`);
+    });
+
+    div.querySelectorAll('ul').forEach(el => {
+      let listItems = '';
+      el.querySelectorAll('li').forEach(li => {
+        listItems += `[*] ${li.innerHTML}\n`;
+      });
+      el.replaceWith(`[list]\n${listItems}[/list]`);
+    });
+
+    div.querySelectorAll('ol').forEach(el => {
+      let listItems = '';
+      el.querySelectorAll('li').forEach(li => {
+        listItems += `[*] ${li.innerHTML}\n`;
+      });
+      el.replaceWith(`[list]\n${listItems}[/list]`);
+    });
+
     let str = div.innerHTML;
+
+    // 3. Chuyển đổi định dạng chữ & Màu sắc
     str = str
-      .replace(/<font color="(.*?)">([\s\S]*?)<\/font>/gi, '[color=$1]$2[/color]')
-      .replace(/<span style="color:\s*(.*?);?">([\s\S]*?)<\/span>/gi, '[color=$1]$2[/color]')
+      .replace(/<font\s+color=["'](.*?)["']>([\s\S]*?)<\/font>/gi, '[color=$1]$2[/color]')
+      .replace(/<span\s+style=["']color:\s*(.*?);?["']>([\s\S]*?)<\/span>/gi, '[color=$1]$2[/color]')
       .replace(/<strong>([\s\S]*?)<\/strong>/gi, '[b]$1[/b]')
       .replace(/<b>([\s\S]*?)<\/b>/gi, '[b]$1[/b]')
       .replace(/<em>([\s\S]*?)<\/em>/gi, '[i]$1[/i]')
       .replace(/<i>([\s\S]*?)<\/i>/gi, '[i]$1[/i]')
       .replace(/<u>([\s\S]*?)<\/u>/gi, '[u]$1[/u]')
-      .replace(/<span class="bb-indent">([\s\S]*?)<\/span>/gi, '[indent]$1[/indent]')
-      .replace(/<a href="(.*?)".*?>([\s\S]*?)<\/a>/gi, '[url=$1]$2[/url]')
-      .replace(/<img.*?src="(.*?)".*?>/gi, '[img]$1[/img]')
+      .replace(/<s>([\s\S]*?)<\/s>/gi, '[s]$1[/s]')
+      .replace(/<strike>([\s\S]*?)<\/strike>/gi, '[s]$1[/s]')
+      .replace(/<a\s+href=["'](.*?)["'].*?>([\s\S]*?)<\/a>/gi, '[url=$1]$2[/url]')
+      .replace(/<img\s+.*?src=["'](.*?)["'].*?>/gi, '[img]$1[/img]')
       .replace(/<br\s*[\/]?>/gi, '\n')
       .replace(/<div>/gi, '\n')
       .replace(/<\/div>/gi, '')
       .replace(/<p>/gi, '')
       .replace(/<\/p>/gi, '\n');
 
-    // Bóc sạch tag rác còn sót lại
     const temp = document.createElement('div');
     temp.innerHTML = str;
-    return temp.textContent || temp.innerText || '';
+    return (temp.textContent || temp.innerText || '').trim();
   },
 
   async loadData(id, user) {
@@ -673,6 +759,7 @@ const FormHandler = {
       .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
       .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
       .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
