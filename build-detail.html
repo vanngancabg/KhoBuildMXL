@@ -17,6 +17,13 @@
   </nav>
 
   <div class="container" style="max-width: 950px;">
+    <!-- Khung cảnh báo khi chưa đăng nhập -->
+    <div id="detail-login-gate" style="display: none; background: #111215; border: 1px solid rgba(212, 175, 55, 0.4); padding: 40px 20px; border-radius: 6px; text-align: center; margin-top: 40px;">
+      <h2 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.8rem; margin-bottom: 10px;">🔒 NỘI DUNG YÊU CẦU ĐĂNG NHẬP</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Vui lòng đăng nhập để mở khóa và xem chi tiết hướng dẫn Build đầy đủ.</p>
+      <button class="btn btn-primary" style="padding: 8px 24px; font-size: 1rem;" onclick="Auth.openModal('login')">🔑 Đăng nhập ngay</button>
+    </div>
+
     <div id="detail-loading" style="text-align: center; padding: 40px; color: var(--accent-gold);">Đang tải dữ liệu bài viết...</div>
 
     <div id="detail-wrapper" style="display: none;">
@@ -85,7 +92,7 @@
       <div class="detail-card">
         <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL</div>
         
-        <details class="gear-accordion-item" id="box-gear-0-50">
+        <details class="gear-accordion-item" id="box-gear-0-50" open>
           <summary class="gear-accordion-header">🔰 Mức 1: Level 0 - 50</summary>
           <div class="gear-accordion-body">
             <div id="detail-gear-0-50" class="markdown-rendered"></div>
