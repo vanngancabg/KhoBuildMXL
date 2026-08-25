@@ -39,6 +39,11 @@ const API = {
     return await res.json();
   },
 
+  async trackSiteVisit() {
+    const res = await fetch(`${API_URL}?action=trackSiteVisit`);
+    return await res.json();
+  },
+
   async uploadItemDatabase(payload) {
     const res = await fetch(API_URL, {
       method: 'POST',
