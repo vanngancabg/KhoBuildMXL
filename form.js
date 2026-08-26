@@ -343,7 +343,6 @@ const FormHandler = {
     }
   },
 
-  // CƠ CHẾ CẮM BOOKMARK MARKER CỐ ĐỊNH VỊ TRÍ CON TRỎ CHUỘT
   insertCursorMarker() {
     this.removeCursorMarker();
     const sel = window.getSelection();
@@ -361,7 +360,6 @@ const FormHandler = {
     if (m) m.remove();
   },
 
-  // GẮN MÓN ĐỒ VÀO ĐÚNG CHÍNH XÁC VỊ TRÍ MARKER
   handleTriggerItemTag() {
     this.saveSelection();
     this.insertCursorMarker();
@@ -427,7 +425,6 @@ const FormHandler = {
     itemName = itemName.trim();
     if (!user) return;
 
-    const category = document.getElementById('item-upload-category')?.value || 'Sacred Unique';
     const patch = document.getElementById('item-upload-patch')?.value || '2.13';
 
     const statusEl = document.getElementById('upload-status');
@@ -440,7 +437,7 @@ const FormHandler = {
       try {
         const res = await API.uploadItemDatabase({
           itemName: itemName,
-          category: category,
+          category: 'Sacred Unique',
           patch: patch,
           base64Data: base64Data,
           mimeType: file.type,
@@ -451,7 +448,7 @@ const FormHandler = {
         if (res.status === 'success') {
           ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
             name: itemName,
-            category: category,
+            category: 'Sacred Unique',
             url: res.url,
             patch: patch,
             by: user.username
@@ -586,7 +583,6 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE (ĐÃ SỬA TRIỆT ĐỂ LỖI LẶP THẺ ITEM)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -600,7 +596,6 @@ const FormHandler = {
         return '';
       }
 
-      // Xử lý món đồ: bóc tách thẻ item đơn nhất, không lồng thêm
       if (node.classList.contains('item-hover-trigger')) {
         const text = node.textContent.trim();
         return `[item]${text}[/item]`;
@@ -957,7 +952,6 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // Parse [item] chuẩn xác
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
