@@ -1,17 +1,18 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwPUxNUaYGUTSWGT4vvFBeuuRcGTR2e2ZK8OR7XJuFE49FbkDHz3ZpKm1tsx2bYZL83mA/exec';
 
 const API = {
-  // Hàm fetch có Timeout 8s chống treo trình duyệt
-  async request(url, options = {}) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 8000); // 8s timeout
+  // Cơ chế Fetch chịu lỗi cao, tự động Retry 2 lần nếu Google Apps Script phản hồi chậm
+  async request(url, options = {}, retries = 2) {
     try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(id);
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error('HTTP Error ' + response.status);
       return await response.json();
     } catch (err) {
-      clearTimeout(id);
-      return { status: 'error', message: 'Mạng chậm hoặc mất kết nối máy chủ Google!' };
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        return await this.request(url, options, retries - 1);
+      }
+      return { status: 'error', message: 'Không thể kết nối tới Google Server. Vui lòng tải lại trang!' };
     }
   },
 
@@ -47,7 +48,6 @@ const API = {
   },
 
   async trackSiteVisit() {
-    // Chỉ track 1 lần mỗi phiên duyệt web
     if (sessionStorage.getItem('d2_visited')) return { status: 'success' };
     sessionStorage.setItem('d2_visited', 'true');
     return await this.request(`${API_URL}?action=trackSiteVisit`);
@@ -76,7 +76,7 @@ const API = {
   },
 
   async uploadItemDatabase(payload) {
-    localStorage.removeItem('d2_cached_itemdb'); // Xóa cache client khi có item mới
+    localStorage.removeItem('d2_cached_itemdb');
     return await this.request(API_URL, {
       method: 'POST',
       body: JSON.stringify({
