@@ -91,7 +91,6 @@ const FormHandler = {
     this.activeEditor = document.getElementById('build-intro');
   },
 
-  // THIẾT LẬP BỘ LẮNG NGHE DÁN ẢNH (CTRL + V) TOÀN CỤC CHUẨN XÁC
   setupGlobalPasteAndEvents() {
     window.addEventListener('paste', async (e) => {
       const itemModal = document.getElementById('modal-item-upload');
@@ -108,14 +107,14 @@ const FormHandler = {
 
       if (!imageFile) return;
 
-      // TRƯỜNG HỢP 1: Đang mở Bảng Đóng góp / Đề xuất ảnh món đồ
+      // 1. Đang mở Bảng Đóng góp/Đề xuất ảnh món đồ
       if (itemModal && itemModal.classList.contains('active')) {
         e.preventDefault();
         await this.uploadItemToDatabase(imageFile);
         return;
       }
 
-      // TRƯỜNG HỢP 2: Đang trỏ chuột gõ bài trong ô WYSIWYG
+      // 2. Đang gõ bài trong ô WYSIWYG
       const activeEl = document.activeElement;
       if (activeEl && activeEl.classList.contains('wysiwyg-editor')) {
         e.preventDefault();
@@ -466,7 +465,6 @@ const FormHandler = {
     document.getElementById('modal-item-upload').classList.remove('active');
     this.pendingItemName = '';
     this.isUpdatingItem = false;
-    this.removeCursorMarker();
   },
 
   async handleItemDbFileUpload(e) {
@@ -488,7 +486,6 @@ const FormHandler = {
     if (!user) return;
 
     const patch = document.getElementById('item-upload-patch')?.value || '2.13';
-
     const statusEl = document.getElementById('upload-status');
     statusEl.style.display = 'inline';
     statusEl.innerText = `⏳ Đang tải ảnh cho "${itemName}" lên kho...`;
@@ -516,29 +513,20 @@ const FormHandler = {
             by: user.username
           };
 
-          const marker = document.getElementById(this.markerId);
-          const cleanKey = itemName.trim().toLowerCase();
-          const itemSpan = document.createElement('span');
-          itemSpan.className = 'item-hover-trigger';
-          itemSpan.setAttribute('data-item-key', cleanKey);
-          itemSpan.innerText = itemName;
-          const space = document.createTextNode('\u00A0');
-
-          if (marker && marker.parentNode) {
-            marker.parentNode.insertBefore(itemSpan, marker);
-            marker.parentNode.insertBefore(space, marker);
-            marker.remove();
-          } else if (this.activeEditor) {
-            this.activeEditor.appendChild(itemSpan);
-            this.activeEditor.appendChild(space);
-          }
-
           this.closeItemModal();
           statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+
+          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ VÀ CHỌN SẴN MÓN ĐỒ NÀY ĐỂ BẤM CHÈN
+          ItemTooltipManager.openPickerModal(null, itemName, itemName);
+
         } else if (res.status === 'pending') {
           this.closeItemModal();
-          alert(res.message);
+          alert('Đề xuất của bạn đã được gửi và đang chờ duyệt. Trong lúc này bạn vẫn có thể dùng ảnh hiện tại của món đồ.');
+          statusEl.style.display = 'none';
+
+          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ ĐỂ NGƯỜI DÙNG BẤM CHÈN VÀO BÀI
+          ItemTooltipManager.openPickerModal(null, itemName, itemName);
         } else {
           alert('Lỗi: ' + res.message);
           statusEl.style.display = 'none';
