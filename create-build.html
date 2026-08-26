@@ -32,7 +32,7 @@
     <input type="file" id="image-upload-input" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
     <input type="file" id="item-db-file-input" accept="image/*" style="display: none;" onchange="FormHandler.handleItemDbFileUpload(event)">
 
-    <!-- THANH CÔNG CỤ SOẠN THẢO TRỰC QUAN STICKY (CÓ CỠ CHỮ) -->
+    <!-- THANH CÔNG CỤ SOẠN THẢO TRỰC QUAN STICKY -->
     <div class="sticky-toolbar-wrapper">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: bold;">🛠️ Thanh Công Cụ Soạn Thảo (Word-Style)</span>
@@ -48,15 +48,15 @@
         <button type="button" class="bb-btn" title="Lùi lề dòng văn bản" onclick="FormHandler.execOutdent()">⬅️ Lùi lề</button>
         <button type="button" class="bb-btn" title="Khối trích dẫn" onclick="FormHandler.insertQuoteBlock()">💬 Quote</button>
         
-        <!-- NÚT GẮN ẢNH HOVER ITEM TRỰC QUAN -->
-        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Gắn Tooltip ảnh khi rê chuột" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
+        <!-- NÚT GẮN ẢNH HOVER ITEM MỞ CỬA SỔ CHỌN ĐỒ -->
+        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Chọn hoặc tìm kiếm món đồ trong kho" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
 
         <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh lên Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh</button>
         <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertLink()">🔗 Link</button>
         <button type="button" class="bb-btn" title="Nhúng Video Youtube" onclick="FormHandler.insertYoutubeVideo()">▶️ Video</button>
         <button type="button" class="bb-btn" title="Khối Spoiler ẩn hiện" onclick="FormHandler.insertSpoilerBlock()">📁 Spoiler</button>
 
-        <!-- BẢNG CHỌN CỠ CHỮ (FONT SIZE) -->
+        <!-- BẢNG CHỌN CỠ CHỮ -->
         <select class="bb-select" onchange="if(this.value){ FormHandler.applyFontSize(this.value); this.value=''; }">
           <option value="">🔤 Cỡ Chữ</option>
           <option value="12px">12px (Nhỏ)</option>
@@ -95,16 +95,33 @@
       </div>
     </div>
 
-    <!-- MODAL ĐÓNG GÓP ẢNH ITEM DATABASE -->
+    <!-- MODAL ĐÓNG GÓP / ĐỀ XUẤT ẢNH ITEM -->
     <div id="modal-item-upload" class="modal">
-      <div class="modal-content" style="max-width: 450px;">
-        <h3 style="color: var(--accent-gold); margin-bottom: 8px;">🗡️ Đóng Góp Ảnh Trang Bị</h3>
+      <div class="modal-content" style="max-width: 480px;">
+        <h3 id="modal-item-upload-title" style="color: var(--accent-gold); margin-bottom: 8px;">🗡️ Đóng Góp Ảnh Trang Bị</h3>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-          Món đồ <strong id="modal-item-name-preview" style="color: var(--text-bright);"></strong> chưa có ảnh trong kho dữ liệu chung. Hãy tải ảnh chụp chỉ số món đồ này lên:
+          Món đồ <strong id="modal-item-name-preview" style="color: var(--text-bright);"></strong>:
         </p>
 
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div class="form-group" style="margin: 0;">
+            <label>Phân loại món đồ</label>
+            <select id="item-upload-category" class="form-control" style="padding: 6px 10px;">
+              <option value="Sacred Unique">Sacred Unique (SU/SSU/SSSU)</option>
+              <option value="Tiered Unique">Tiered Unique (TU 1-4)</option>
+              <option value="Set Item">Set Item (Đồ bộ)</option>
+              <option value="Runeword">Runeword</option>
+              <option value="Uber Charm">Uber Charm / Trophy</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Bản Patch chụp ảnh</label>
+            <input type="text" id="item-upload-patch" class="form-control" style="padding: 6px 10px;" value="2.13">
+          </div>
+        </div>
+
         <div id="item-drop-zone" style="border: 2px dashed var(--accent-gold); padding: 20px; text-align: center; border-radius: 6px; cursor: pointer; background: #0f1012; margin-bottom: 14px;" onclick="document.getElementById('item-db-file-input').click()">
-          <p style="color: var(--text-bright); font-size: 0.9rem; margin-bottom: 4px;">📁 Bấm để chọn file ảnh</p>
+          <p style="color: var(--text-bright); font-size: 0.9rem; margin-bottom: 4px;">📁 Bấm để chọn file ảnh chụp trong game</p>
           <span style="font-size: 0.75rem; color: var(--text-muted);">(Hoặc nhấn <b>Ctrl + V</b> trực tiếp tại đây)</span>
         </div>
 
