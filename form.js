@@ -107,7 +107,7 @@ const FormHandler = {
 
       if (!imageFile) return;
 
-      // 1. Đang mở Bảng Đóng góp/Đề xuất ảnh món đồ
+      // 1. Đang mở Bảng Đóng góp / Đề xuất ảnh món đồ
       if (itemModal && itemModal.classList.contains('active')) {
         e.preventDefault();
         await this.uploadItemToDatabase(imageFile);
@@ -404,6 +404,7 @@ const FormHandler = {
     }
   },
 
+  // CẮM THẺ ĐÁNH DẤU VỊ TRÍ CON TRỎ CHUỘT
   insertCursorMarker() {
     this.removeCursorMarker();
     const sel = window.getSelection();
@@ -421,31 +422,36 @@ const FormHandler = {
     if (m) m.remove();
   },
 
+  // GẮN THẺ MÓN ĐỒ VÀO ĐÚNG VỊ TRÍ CON TRỎ CHUỘT
   handleTriggerItemTag() {
     this.saveSelection();
     this.insertCursorMarker();
     
     ItemTooltipManager.openPickerModal((selectedItemName) => {
-      const marker = document.getElementById(this.markerId);
-      const cleanKey = selectedItemName.trim().toLowerCase();
-      
-      const itemSpan = document.createElement('span');
-      itemSpan.className = 'item-hover-trigger';
-      itemSpan.setAttribute('data-item-key', cleanKey);
-      itemSpan.innerText = selectedItemName;
-      
-      const space = document.createTextNode('\u00A0');
-
-      if (marker && marker.parentNode) {
-        marker.parentNode.insertBefore(itemSpan, marker);
-        marker.parentNode.insertBefore(space, marker);
-        marker.remove();
-      } else if (this.activeEditor) {
-        this.activeEditor.appendChild(itemSpan);
-        this.activeEditor.appendChild(space);
-      }
-      this.saveSelection();
+      this.insertItemAtMarker(selectedItemName);
     });
+  },
+
+  insertItemAtMarker(selectedItemName) {
+    const marker = document.getElementById(this.markerId);
+    const cleanKey = selectedItemName.trim().toLowerCase();
+    
+    const itemSpan = document.createElement('span');
+    itemSpan.className = 'item-hover-trigger';
+    itemSpan.setAttribute('data-item-key', cleanKey);
+    itemSpan.innerText = selectedItemName;
+    
+    const space = document.createTextNode('\u00A0');
+
+    if (marker && marker.parentNode) {
+      marker.parentNode.insertBefore(itemSpan, marker);
+      marker.parentNode.insertBefore(space, marker);
+      marker.remove();
+    } else if (this.activeEditor) {
+      this.activeEditor.appendChild(itemSpan);
+      this.activeEditor.appendChild(space);
+    }
+    this.saveSelection();
   },
 
   openDirectUploadModal(itemName = '', isUpdate = false) {
@@ -465,6 +471,7 @@ const FormHandler = {
     document.getElementById('modal-item-upload').classList.remove('active');
     this.pendingItemName = '';
     this.isUpdatingItem = false;
+    // KHÔNG xóa marker ở đây để giữ vị trí con trỏ khi chuyển về Item Picker Modal
   },
 
   async handleItemDbFileUpload(e) {
@@ -517,16 +524,19 @@ const FormHandler = {
           statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
-          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ VÀ CHỌN SẴN MÓN ĐỒ NÀY ĐỂ BẤM CHÈN
-          ItemTooltipManager.openPickerModal(null, itemName, itemName);
+          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ VÀ CHỌN SẴN ĐỂ BẤM CHÈN
+          ItemTooltipManager.openPickerModal((name) => {
+            this.insertItemAtMarker(name);
+          }, itemName, itemName);
 
         } else if (res.status === 'pending') {
           this.closeItemModal();
           alert('Đề xuất của bạn đã được gửi và đang chờ duyệt. Trong lúc này bạn vẫn có thể dùng ảnh hiện tại của món đồ.');
           statusEl.style.display = 'none';
 
-          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ ĐỂ NGƯỜI DÙNG BẤM CHÈN VÀO BÀI
-          ItemTooltipManager.openPickerModal(null, itemName, itemName);
+          ItemTooltipManager.openPickerModal((name) => {
+            this.insertItemAtMarker(name);
+          }, itemName, itemName);
         } else {
           alert('Lỗi: ' + res.message);
           statusEl.style.display = 'none';
@@ -607,9 +617,18 @@ const FormHandler = {
     return color;
   },
 
+  // BBCODE -> HTML (ĐÃ SỬA TRIỆT ĐỂ LỖI LẶP THẺ [indent])
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
+
+    // Xử lý đệ quy tất cả các tầng [indent]
+    let prev;
+    do {
+      prev = str;
+      str = str.replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>');
+    } while (str !== prev);
+
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
@@ -617,7 +636,6 @@ const FormHandler = {
       .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
       .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
       .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
-      .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
       .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
       .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
@@ -633,6 +651,7 @@ const FormHandler = {
     return str;
   },
 
+  // HTML -> BBCODE
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
