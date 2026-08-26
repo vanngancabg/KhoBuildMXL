@@ -95,7 +95,7 @@ const ItemTooltipManager = {
         <div class="modal-content" style="max-width: 850px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
             <h3 style="color: var(--accent-gold); margin: 0; font-family: var(--font-heading);">🗡️ THƯ VIỆN TRANG BỊ MEDIAN XL</h3>
-            <button class="btn btn-sm" onclick="ItemTooltipManager.closePickerModal()">✖ Đóng</button>
+            <button class="btn btn-sm" onclick="ItemTooltipManager.closePickerModal(true)">✖ Đóng</button>
           </div>
 
           <div style="margin-bottom: 14px;">
@@ -123,7 +123,7 @@ const ItemTooltipManager = {
       document.body.appendChild(modal);
 
       modal.addEventListener('click', (e) => {
-        if (e.target === modal) this.closePickerModal();
+        if (e.target === modal) this.closePickerModal(true);
       });
     }
 
@@ -145,10 +145,13 @@ const ItemTooltipManager = {
     }, 100);
   },
 
-  closePickerModal() {
+  // Giữ lại marker con trỏ nếu chỉ chuyển tiếp sang bảng upload
+  closePickerModal(shouldClearMarker = false) {
     const modal = document.getElementById('modal-item-picker');
     if (modal) modal.classList.remove('active');
-    FormHandler.removeCursorMarker();
+    if (shouldClearMarker) {
+      FormHandler.removeCursorMarker();
+    }
   },
 
   renderPickerItems() {
@@ -169,7 +172,7 @@ const ItemTooltipManager = {
       list.innerHTML = `
         <div style="text-align: center; padding: 40px 10px;">
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Chưa có món đồ "${query}" trong kho dữ liệu.</p>
-          <button class="btn btn-primary" onclick="ItemTooltipManager.closePickerModal(); FormHandler.openDirectUploadModal('${query}')">➕ Tải Ảnh Đóng Góp Món Này</button>
+          <button class="btn btn-primary" onclick="ItemTooltipManager.closePickerModal(false); FormHandler.openDirectUploadModal('${query}')">➕ Tải Ảnh Đóng Góp Món Này</button>
         </div>
       `;
       return;
@@ -222,7 +225,7 @@ const ItemTooltipManager = {
     actions.style.display = 'block';
 
     btnUpdate.onclick = () => {
-      this.closePickerModal();
+      this.closePickerModal(false);
       FormHandler.openDirectUploadModal(item.name, true);
     };
   },
