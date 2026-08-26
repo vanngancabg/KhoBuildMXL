@@ -81,7 +81,6 @@ const ItemTooltipManager = {
     tooltip.style.top = `${Math.max(10, top)}px`;
   },
 
-  // CỬA SỔ THƯ VIỆN ĐỒ GỌN GÀNG (ĐÃ BỎ PHÂN LOẠI)
   openPickerModal(onSelectCallback) {
     this.onSelectCallback = onSelectCallback;
     this.selectedItemForInsert = null;
@@ -153,9 +152,15 @@ const ItemTooltipManager = {
     });
 
     if (items.length === 0) {
+      // Khi không tìm thấy: ẩn khung xem trước bên phải để không lưu ảnh món trước
+      const box = document.getElementById('picker-preview-box');
+      const actions = document.getElementById('picker-preview-actions');
+      if (box) box.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Chưa có dữ liệu ảnh.</div>';
+      if (actions) actions.style.display = 'none';
+
       list.innerHTML = `
         <div style="text-align: center; padding: 40px 10px;">
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Chưa có món đồ này trong kho dữ liệu.</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Chưa có món đồ "${query}" trong kho dữ liệu.</p>
           <button class="btn btn-primary" onclick="ItemTooltipManager.closePickerModal(); FormHandler.openDirectUploadModal('${query}')">➕ Tải Ảnh Đóng Góp Món Này</button>
         </div>
       `;
@@ -175,7 +180,6 @@ const ItemTooltipManager = {
       itemRow.style.alignItems = 'center';
       itemRow.style.transition = 'all 0.2s';
 
-      // Click vào chỉ xem trước và chọn (chưa chèn vào bài)
       itemRow.onclick = () => {
         document.querySelectorAll('.picker-item-row').forEach(r => r.style.borderColor = 'rgba(255,255,255,0.04)');
         itemRow.style.borderColor = 'var(--accent-gold)';
