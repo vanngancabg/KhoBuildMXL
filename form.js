@@ -179,6 +179,40 @@ const FormHandler = {
     }
   },
 
+  // CHỨC NĂNG XÓA BẢN NHÁP DỨT ĐIỂM
+  async deleteDraft() {
+    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bản nháp này? Nội dung đang viết dở sẽ bị xóa sạch.')) return;
+    const user = Auth.getCurrentUser();
+
+    localStorage.removeItem('d2_build_draft_wysiwyg');
+    if (user) {
+      try {
+        await API.deleteCloudDraft(user.username);
+      } catch(e) {}
+    }
+
+    // Reset lại form về trạng thái trống ban đầu
+    document.getElementById('build-title').value = '';
+    document.getElementById('build-class').value = 'Amazon';
+    document.getElementById('build-season').value = '';
+    document.getElementById('build-patch').value = '2.9.1';
+    document.getElementById('build-intro').innerHTML = '';
+    document.getElementById('build-pros').innerHTML = '';
+    document.getElementById('build-cons').innerHTML = '';
+    document.getElementById('stat-str').value = '';
+    document.getElementById('stat-dex').value = '';
+    document.getElementById('stat-vit').value = '';
+    document.getElementById('stat-ene').value = '';
+    document.getElementById('build-skills-text').innerHTML = '';
+    document.getElementById('gear-lv0-50').innerText = this.defaultGearTemplate;
+    document.getElementById('gear-lv50-135').innerText = this.defaultGearTemplate;
+    document.getElementById('gear-lv135plus').innerText = this.defaultGearTemplate;
+    document.getElementById('build-strategy').innerHTML = '';
+    document.getElementById('build-video').value = '';
+
+    alert('✅ Đã xóa bản nháp thành công!');
+  },
+
   async loadCloudDraft(user) {
     let cloudData = null;
     try {
@@ -216,6 +250,14 @@ const FormHandler = {
         if (d.gear_lv135plus) document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(d.gear_lv135plus);
         if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
         if (d.video) document.getElementById('build-video').value = d.video;
+      } else {
+        // Nếu người dùng chọn Cancel -> Hỏi có muốn xóa luôn bản nháp cũ này không
+        if (confirm('Bạn có muốn xóa luôn bản nháp cũ này để không hỏi lại ở những lần sau không?')) {
+          localStorage.removeItem('d2_build_draft_wysiwyg');
+          if (user) {
+            try { await API.deleteCloudDraft(user.username); } catch(e) {}
+          }
+        }
       }
     }
   },
