@@ -81,9 +81,11 @@ const ItemTooltipManager = {
     tooltip.style.top = `${Math.max(10, top)}px`;
   },
 
-  openPickerModal(onSelectCallback) {
-    this.onSelectCallback = onSelectCallback;
-    this.selectedItemForInsert = null;
+  openPickerModal(onSelectCallback, initialSearch = '', autoSelectItem = '') {
+    if (onSelectCallback) {
+      this.onSelectCallback = onSelectCallback;
+    }
+    this.selectedItemForInsert = autoSelectItem || null;
     let modal = document.getElementById('modal-item-picker');
     if (!modal) {
       modal = document.createElement('div');
@@ -96,16 +98,13 @@ const ItemTooltipManager = {
             <button class="btn btn-sm" onclick="ItemTooltipManager.closePickerModal()">✖ Đóng</button>
           </div>
 
-          <!-- THANH TÌM KIẾM NHANH DUY NHẤT -->
           <div style="margin-bottom: 14px;">
             <input type="text" id="picker-search-input" class="form-control" placeholder="🔍 Gõ tên món đồ để tìm nhanh (VD: Iceflayer, Shadowfang...)" oninput="ItemTooltipManager.renderPickerItems()">
           </div>
 
-          <!-- KHU VỰC 2 CỘT: DANH SÁCH & XEM TRƯỚC -->
           <div style="display: grid; grid-template-columns: 1fr 340px; gap: 16px; flex: 1; overflow: hidden; min-height: 380px;">
             <div id="picker-items-list" style="overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 6px;"></div>
             
-            <!-- KHUNG XEM TRƯỚC ẢNH & THAO TÁC -->
             <div style="background: #0d0e10; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
               <div id="picker-preview-box" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;">
                 <div style="color: var(--text-muted); font-size: 0.85rem;">Chọn một món đồ bên trái để xem trước ảnh chỉ số</div>
@@ -129,9 +128,19 @@ const ItemTooltipManager = {
     }
 
     modal.classList.add('active');
+    const inp = document.getElementById('picker-search-input');
+    if (inp) {
+      inp.value = initialSearch || '';
+    }
+    
     this.renderPickerItems();
+
+    if (autoSelectItem && this.itemsDb[autoSelectItem.toLowerCase()]) {
+      this.selectedItemForInsert = autoSelectItem;
+      this.showPickerPreview(this.itemsDb[autoSelectItem.toLowerCase()]);
+    }
+
     setTimeout(() => {
-      const inp = document.getElementById('picker-search-input');
       if (inp) inp.focus();
     }, 100);
   },
@@ -152,7 +161,6 @@ const ItemTooltipManager = {
     });
 
     if (items.length === 0) {
-      // Khi không tìm thấy: ẩn khung xem trước bên phải để không lưu ảnh món trước
       const box = document.getElementById('picker-preview-box');
       const actions = document.getElementById('picker-preview-actions');
       if (box) box.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Chưa có dữ liệu ảnh.</div>';
@@ -168,11 +176,12 @@ const ItemTooltipManager = {
     }
 
     items.forEach(item => {
+      const isSelected = this.selectedItemForInsert && this.selectedItemForInsert.toLowerCase() === item.name.toLowerCase();
       const itemRow = document.createElement('div');
       itemRow.className = 'picker-item-row';
       itemRow.style.padding = '10px 14px';
       itemRow.style.background = '#14161a';
-      itemRow.style.border = '1px solid rgba(255,255,255,0.04)';
+      itemRow.style.border = isSelected ? '1px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.04)';
       itemRow.style.borderRadius = '3px';
       itemRow.style.cursor = 'pointer';
       itemRow.style.display = 'flex';
