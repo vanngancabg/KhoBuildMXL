@@ -95,7 +95,7 @@
       </div>
     </div>
 
-    <!-- MODAL ĐÓNG GÓP / ĐỀ XUẤT ẢNH ITEM (ĐÃ BỎ PHÂN LOẠI ĐỒ) -->
+    <!-- MODAL ĐÓNG GÓP / ĐỀ XUẤT ẢNH ITEM -->
     <div id="modal-item-upload" class="modal">
       <div class="modal-content" style="max-width: 450px;">
         <h3 id="modal-item-upload-title" style="color: var(--accent-gold); margin-bottom: 8px;">🗡️ Đóng Góp Ảnh Trang Bị</h3>
@@ -251,9 +251,11 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 40px;">
+      <!-- THANH HÀNH ĐỘNG DƯỚI CÙNG (ĐÃ THÊM NÚT XÓA BẢN NHÁP) -->
+      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap;">
         <button type="button" class="btn" onclick="FormHandler.openPreviewModal()">👁️ Preview / Xem Trước Bài Viết</button>
         <button type="button" class="btn" onclick="FormHandler.saveDraft()">💾 Lưu Bản Nháp</button>
+        <button type="button" class="btn btn-danger" onclick="FormHandler.deleteDraft()">🗑️ Xóa Bản Nháp</button>
         <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 32px; font-size: 1rem;">🚀 Submit / Đăng Bài Viết</button>
       </div>
     </form>
