@@ -96,8 +96,7 @@ const Auth = {
       if (n.type === 'item_proposal' && n.extra_id) {
         actionButtons = `
           <div style="display:flex; gap:6px; margin-top:6px;">
-            <button class="btn btn-sm btn-primary" style="padding:2px 8px; font-size:0.75rem;" onclick="Auth.approveItemProposal(event, '${n.extra_id}')">✔ Duyệt Thay Thế</button>
-            <button class="btn btn-sm btn-danger" style="padding:2px 8px; font-size:0.75rem;" onclick="Auth.rejectItemProposal(event, '${n.extra_id}')">✖ Từ Chối</button>
+            <button class="btn btn-sm btn-primary" style="padding:3px 10px; font-size:0.75rem;" onclick="Auth.openCompareModal(event, '${n.extra_id}')">🔍 Xem & So Sánh Ảnh</button>
           </div>
         `;
       }
@@ -118,25 +117,108 @@ const Auth = {
     });
   },
 
-  async approveItemProposal(e, pendingId) {
+  // CỬA SỔ POPUP SO SÁNH 2 ẢNH CŨ & MỚI ĐỐI CHIẾU
+  async openCompareModal(e, pendingId) {
     e.stopPropagation();
-    if (!confirm('Bạn có đồng ý áp dụng ảnh mới này và xóa ảnh cũ trên Drive không?')) return;
+    const p = document.getElementById('notif-popup');
+    if (p) p.classList.remove('active');
+
+    let modal = document.getElementById('modal-item-compare');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'modal-item-compare';
+      modal.className = 'modal active';
+      document.body.appendChild(modal);
+    } else {
+      modal.classList.add('active');
+    }
+
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 800px; width: 95%;">
+        <div style="text-align: center; color: var(--accent-gold); padding: 40px;">⏳ Đang tải dữ liệu so sánh ảnh...</div>
+      </div>
+    `;
+
+    try {
+      const res = await API.getPendingItemDetail(pendingId);
+      if (res.status === 'success' && res.data) {
+        const d = res.data;
+        modal.innerHTML = `
+          <div class="modal-content" style="max-width: 850px; width: 95%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:16px;">
+              <h3 style="color:var(--accent-gold); margin:0; font-family:var(--font-heading);">⚖️ ĐỐI CHIẾU ẢNH: "${this.escapeHTML(d.item_name)}"</h3>
+              <button class="btn btn-sm" onclick="document.getElementById('modal-item-compare').classList.remove('active')">✖ Đóng</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+              <!-- CỘT ẢNH HIỆN TẠI (CŨ) -->
+              <div style="background:#0d0e10; border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:14px; text-align:center;">
+                <h4 style="color:#ff6b6b; margin-bottom:8px;">📷 ẢNH HIỆN TẠI (CŨ)</h4>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                  Đăng bởi: <b style="color:var(--text-bright);">${this.escapeHTML(d.original_contributor || 'Cộng đồng')}</b>
+                </div>
+                <div style="min-height:220px; display:flex; align-items:center; justify-content:center;">
+                  ${d.old_url ? `<img src="${d.old_url}" alt="Ảnh cũ" style="max-width:100%; max-height:260px; object-fit:contain; border-radius:3px;">` : '<span style="color:var(--text-muted);">Không có ảnh cũ</span>'}
+                </div>
+              </div>
+
+              <!-- CỘT ẢNH ĐỀ XUẤT (MỚI) -->
+              <div style="background:#0d0e10; border:1px solid rgba(46,204,113,0.4); border-radius:4px; padding:14px; text-align:center;">
+                <h4 style="color:var(--accent-green); margin-bottom:8px;">✨ ẢNH ĐỀ XUẤT (MỚI)</h4>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+                  Đề xuất bởi: <b style="color:var(--text-bright);">${this.escapeHTML(d.new_contributor)}</b> | Patch: <b style="color:var(--accent-gold);">${d.new_patch || '2.13'}</b>
+                </div>
+                <div style="min-height:220px; display:flex; align-items:center; justify-content:center;">
+                  <img src="${d.new_url}" alt="Ảnh mới" style="max-width:100%; max-height:260px; object-fit:contain; border-radius:3px;">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border-color); padding-top:14px;">
+              <button class="btn btn-danger" onclick="Auth.rejectItemFromModal('${d.pending_id}')">✖ Từ Chối Đề Xuất</button>
+              <button class="btn btn-primary" style="padding:6px 20px; font-weight:bold;" onclick="Auth.approveItemFromModal('${d.pending_id}')">✔ Đồng Ý Duyệt & Áp Dụng Ảnh Mới</button>
+            </div>
+          </div>
+        `;
+      } else {
+        modal.innerHTML = `
+          <div class="modal-content" style="max-width: 400px; text-align:center;">
+            <p style="color:var(--text-muted); margin-bottom:16px;">${res.message || 'Yêu cầu không còn tồn tại'}</p>
+            <button class="btn btn-sm" onclick="document.getElementById('modal-item-compare').classList.remove('active')">Đóng</button>
+          </div>
+        `;
+      }
+    } catch(err) {
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 400px; text-align:center;">
+          <p style="color:#ff6b6b; margin-bottom:16px;">Lỗi kết nối máy chủ!</p>
+          <button class="btn btn-sm" onclick="document.getElementById('modal-item-compare').classList.remove('active')">Đóng</button>
+        </div>
+      `;
+    }
+  },
+
+  async approveItemFromModal(pendingId) {
+    if (!confirm('Bạn có chắc chắn muốn duyệt và thay thế ảnh mới này cho món đồ?')) return;
     try {
       const res = await API.approvePendingItem(pendingId, this.currentUser.username, this.currentUser.role);
       alert(res.message);
+      document.getElementById('modal-item-compare').classList.remove('active');
       await this.loadNotifications();
-      await ItemTooltipManager.init();
+      if (typeof ItemTooltipManager !== 'undefined') {
+        await ItemTooltipManager.loadDatabase();
+      }
     } catch(err) {
       alert('Lỗi khi duyệt ảnh!');
     }
   },
 
-  async rejectItemProposal(e, pendingId) {
-    e.stopPropagation();
-    if (!confirm('Từ chối đề xuất ảnh này?')) return;
+  async rejectItemFromModal(pendingId) {
+    if (!confirm('Bạn có chắc chắn muốn từ chối ảnh đề xuất này?')) return;
     try {
       const res = await API.rejectPendingItem(pendingId, this.currentUser.username, this.currentUser.role);
       alert(res.message);
+      document.getElementById('modal-item-compare').classList.remove('active');
       await this.loadNotifications();
     } catch(err) {
       alert('Lỗi khi từ chối ảnh!');
