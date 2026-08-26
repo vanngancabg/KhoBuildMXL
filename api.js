@@ -34,7 +34,7 @@ const API = {
   async markNotificationRead(username) {
     const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'markNotificationRead', username })
+      body: JSON.stringify({ action: 'clearNotifications', username })
     });
     return await res.json();
   },
