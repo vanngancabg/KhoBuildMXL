@@ -1,266 +1,266 @@
 const Auth = {
+  currentUser: null,
+  notifInterval: null,
+
+  init() {
+    const saved = localStorage.getItem('d2_current_user');
+    if (saved) {
+      try { this.currentUser = JSON.parse(saved); } catch (e) { this.currentUser = null; }
+    }
+    this.renderNavbar();
+    if (this.currentUser) {
+      this.loadNotifications();
+      this.notifInterval = setInterval(() => this.loadNotifications(), 20000);
+    }
+  },
+
   getCurrentUser() {
-    const user = localStorage.getItem('d2_current_user');
-    return user ? JSON.parse(user) : null;
+    return this.currentUser;
   },
 
-  setCurrentUser(user) {
-    localStorage.setItem('d2_current_user', JSON.stringify(user));
-  },
-
-  logout() {
-    localStorage.removeItem('d2_current_user');
-    window.location.reload();
-  },
-
-  renderNavUser() {
+  renderNavbar() {
     const container = document.getElementById('auth-section');
     if (!container) return;
 
-    const user = this.getCurrentUser();
-    if (user) {
+    if (this.currentUser) {
       container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <!-- CHUÔNG THÔNG BÁO -->
-          <div class="notif-wrapper" style="position: relative;">
-            <button id="btn-notif-bell" class="btn btn-sm" onclick="Auth.toggleNotificationPopup()" title="Thông báo" style="position: relative; font-size: 1rem; padding: 4px 8px;">
-              🔔
-              <span id="notif-badge" class="notif-badge" style="display: none;">0</span>
+        <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+          <!-- NÚT CHUÔNG THÔNG BÁO -->
+          <div style="position: relative;">
+            <button class="btn btn-sm" onclick="Auth.toggleNotifPopup(event)" title="Thông báo" style="position: relative;">
+              🔔 <span id="notif-count" class="notif-badge" style="display: none;">0</span>
             </button>
             <div id="notif-popup" class="notif-popup">
               <div class="notif-header">
-                <span>🔔 Thông báo của bạn</span>
-                <span style="font-size: 0.75rem; color: var(--accent-gold); cursor: pointer;" onclick="Auth.markAllRead()">Đã đọc tất cả</span>
+                <span>Thông Báo Của Bạn</span>
+                <span style="font-size: 0.75rem; color: var(--accent-gold); cursor: pointer;" onclick="Auth.markAllRead()">Đánh dấu đã đọc</span>
               </div>
-              <div id="notif-list" class="notif-list">
-                <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 12px;">Đang tải...</div>
+              <div class="notif-list" id="notif-list">
+                <div style="padding: 14px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Đang tải...</div>
               </div>
             </div>
           </div>
 
           <div class="user-badge">
-            <img src="${user.avatar || 'https://i.imgur.com/6VBx3io.png'}" alt="Avatar">
-            <a href="profile.html?user=${encodeURIComponent(user.username)}" style="color: var(--accent-gold); font-weight: 600; text-decoration: none;">${user.display_name}</a>
-            <button class="btn btn-danger btn-sm" onclick="Auth.logout()">Đăng xuất</button>
+            <img src="${this.currentUser.avatar || 'https://i.imgur.com/6VBx3io.png'}" alt="Avatar">
+            <a href="profile.html?user=${encodeURIComponent(this.currentUser.username)}" style="color: var(--accent-gold); text-decoration: none; font-weight: 600; font-size: 0.9rem;">${this.escapeHTML(this.currentUser.display_name)}</a>
+            ${this.currentUser.role === 'Admin' ? '<span style="background:var(--accent-red); color:#fff; font-size:0.65rem; padding:1px 5px; border-radius:3px; font-weight:bold;">Admin</span>' : ''}
           </div>
+          <button class="btn btn-sm" onclick="Auth.logout()">Đăng Xuất</button>
         </div>
       `;
-      this.fetchNotifications(user);
     } else {
       container.innerHTML = `
-        <button class="btn" onclick="Auth.openModal('login')">Đăng nhập</button>
-        <button class="btn btn-primary" onclick="Auth.openModal('register')">Đăng ký</button>
+        <button class="btn btn-sm" onclick="Auth.openModal('login')">Đăng Nhập</button>
+        <button class="btn btn-sm btn-primary" onclick="Auth.openModal('register')">Đăng Ký</button>
       `;
     }
   },
 
-  async fetchNotifications(user) {
+  async loadNotifications() {
+    if (!this.currentUser) return;
     try {
-      const res = await API.getNotifications(user.username);
-      const buildsRes = await API.getBuilds();
-      const notifListEl = document.getElementById('notif-list');
-      const badgeEl = document.getElementById('notif-badge');
-
-      let notifications = [];
+      const res = await API.getNotifications(this.currentUser.username);
       if (res.status === 'success' && res.data) {
-        notifications = res.data;
-      }
-
-      // 1. Kiểm tra bài viết mới kể từ lần truy cập trước
-      const lastVisit = localStorage.getItem('d2_last_visit_time');
-      const now = new Date().getTime();
-      let newBuildsCount = 0;
-
-      if (buildsRes.status === 'success' && buildsRes.data) {
-        buildsRes.data.forEach(b => {
-          if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase()) {
-            if (lastVisit) {
-              const buildCreated = new Date(b.created_at || b.updated_at).getTime();
-              if (buildCreated > Number(lastVisit)) {
-                newBuildsCount++;
-              }
-            }
+        const list = res.data;
+        const unreadCount = list.filter(n => !n.is_read).length;
+        const badge = document.getElementById('notif-count');
+        if (badge) {
+          if (unreadCount > 0) {
+            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'inline-block';
+          } else {
+            badge.style.display = 'none';
           }
-        });
+        }
+        this.renderNotifList(list);
       }
+    } catch(e) {}
+  },
 
-      // 2. Đếm số thông báo chưa đọc
-      const unreadComments = notifications.filter(n => !n.is_read).length;
-      const totalUnread = unreadComments + newBuildsCount;
+  renderNotifList(list) {
+    const box = document.getElementById('notif-list');
+    if (!box) return;
 
-      if (totalUnread > 0) {
-        badgeEl.innerText = totalUnread > 99 ? '99+' : totalUnread;
-        badgeEl.style.display = 'inline-block';
-      } else {
-        badgeEl.style.display = 'none';
-      }
+    if (list.length === 0) {
+      box.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Chưa có thông báo nào.</div>';
+      return;
+    }
 
-      // 3. Hiển thị danh sách thông báo
-      let html = '';
-      if (newBuildsCount > 0) {
-        html += `
-          <div class="notif-item unread" onclick="window.location.href='index.html'">
-            <div style="font-size: 0.85rem; color: var(--accent-gold); font-weight: bold;">✨ Có ${newBuildsCount} bài Build mới được đăng!</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Bấm để ra trang chủ khám phá ngay</div>
+    box.innerHTML = '';
+    list.forEach(n => {
+      const div = document.createElement('div');
+      div.className = `notif-item ${!n.is_read ? 'unread' : ''}`;
+      
+      let actionButtons = '';
+      if (n.type === 'item_proposal' && n.extra_id) {
+        actionButtons = `
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <button class="btn btn-sm btn-primary" style="padding:2px 8px; font-size:0.75rem;" onclick="Auth.approveItemProposal(event, '${n.extra_id}')">✔ Duyệt Thay Thế</button>
+            <button class="btn btn-sm btn-danger" style="padding:2px 8px; font-size:0.75rem;" onclick="Auth.rejectItemProposal(event, '${n.extra_id}')">✖ Từ Chối</button>
           </div>
         `;
       }
 
-      if (notifications.length === 0 && newBuildsCount === 0) {
-        html = '<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 14px;">Không có thông báo mới.</div>';
-      } else {
-        notifications.slice(0, 15).forEach(n => {
-          const isUnread = !n.is_read ? 'unread' : '';
-          html += `
-            <div class="notif-item ${isUnread}" onclick="window.location.href='build-detail.html?id=${n.build_id}'">
-              <div style="font-size: 0.85rem; color: var(--text-bright);">
-                <strong>${n.sender_name}</strong> đã bình luận trong: <span style="color: var(--accent-gold);">${n.build_title}</span>
-              </div>
-              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">🕒 ${n.created_at || ''}</div>
-            </div>
-          `;
-        });
-      }
+      div.innerHTML = `
+        <div style="font-size: 0.8rem; color: var(--text-bright); margin-bottom: 2px;">
+          <strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${n.type === 'comment' ? 'đã bình luận về bài viết:' : ''}
+          <div style="color: #90a4ae; font-weight: 500;">${this.escapeHTML(n.build_title)}</div>
+          ${actionButtons}
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-muted);">${n.created_at || ''}</div>
+      `;
 
-      notifListEl.innerHTML = html;
-      localStorage.setItem('d2_last_visit_time', String(now));
-    } catch (e) {}
+      if (n.type === 'comment' && n.build_id) {
+        div.onclick = () => { window.location.href = `build-detail.html?id=${n.build_id}`; };
+      }
+      box.appendChild(div);
+    });
   },
 
-  toggleNotificationPopup() {
-    const popup = document.getElementById('notif-popup');
-    if (popup) {
-      popup.classList.toggle('active');
+  async approveItemProposal(e, pendingId) {
+    e.stopPropagation();
+    if (!confirm('Bạn có đồng ý áp dụng ảnh mới này và xóa ảnh cũ trên Drive không?')) return;
+    try {
+      const res = await API.approvePendingItem(pendingId, this.currentUser.username, this.currentUser.role);
+      alert(res.message);
+      await this.loadNotifications();
+      await ItemTooltipManager.init();
+    } catch(err) {
+      alert('Lỗi khi duyệt ảnh!');
     }
+  },
+
+  async rejectItemProposal(e, pendingId) {
+    e.stopPropagation();
+    if (!confirm('Từ chối đề xuất ảnh này?')) return;
+    try {
+      const res = await API.rejectPendingItem(pendingId, this.currentUser.username, this.currentUser.role);
+      alert(res.message);
+      await this.loadNotifications();
+    } catch(err) {
+      alert('Lỗi khi từ chối ảnh!');
+    }
+  },
+
+  toggleNotifPopup(e) {
+    e.stopPropagation();
+    const p = document.getElementById('notif-popup');
+    if (p) p.classList.toggle('active');
   },
 
   async markAllRead() {
-    const user = this.getCurrentUser();
-    if (!user) return;
-    const badgeEl = document.getElementById('notif-badge');
-    badgeEl.style.display = 'none';
-
+    if (!this.currentUser) return;
+    await API.markNotificationRead(this.currentUser.username);
+    const badge = document.getElementById('notif-count');
+    if (badge) badge.style.display = 'none';
     document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-    await API.markNotificationRead(user.username);
   },
 
   openModal(type) {
-    const modal = document.getElementById('auth-modal');
-    const title = document.getElementById('modal-title');
-    const form = document.getElementById('auth-form');
-    const switchText = document.getElementById('auth-switch-text');
-    const nameGroup = document.getElementById('group-display-name');
+    const existing = document.getElementById('auth-modal');
+    if (existing) existing.remove();
 
-    if (!modal) return;
-    modal.classList.add('active');
+    const isLogin = type === 'login';
+    const modal = document.createElement('div');
+    modal.id = 'auth-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h2 style="color: var(--accent-gold); font-family: var(--font-heading); margin-bottom: 16px; text-align: center;">
+          ${isLogin ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ THÀNH VIÊN'}
+        </h2>
+        <form id="auth-form" onsubmit="Auth.handleAuthSubmit(event, '${type}')">
+          <div class="form-group">
+            <label>Tài khoản (*)</label>
+            <input type="text" id="auth-username" class="form-control" required placeholder="Tên đăng nhập không dấu">
+          </div>
+          ${!isLogin ? `
+            <div class="form-group">
+              <label>Tên hiển thị cộng đồng (*)</label>
+              <input type="text" id="auth-display" class="form-control" required placeholder="VD: Ken">
+            </div>
+          ` : ''}
+          <div class="form-group">
+            <label>Mật khẩu (*)</label>
+            <input type="password" id="auth-password" class="form-control" required placeholder="Nhập mật khẩu">
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+            <button type="button" class="btn" onclick="document.getElementById('auth-modal').remove()">Đóng</button>
+            <button type="submit" id="btn-auth-submit" class="btn btn-primary">${isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
 
-    if (type === 'register') {
-      title.innerText = 'Đăng ký tài khoản';
-      nameGroup.style.display = 'block';
-      form.dataset.mode = 'register';
-      switchText.innerHTML = 'Đã có tài khoản? <a href="javascript:void(0)" style="color: var(--accent-gold);" onclick="Auth.openModal(\'login\')">Đăng nhập ngay</a>';
-    } else {
-      title.innerText = 'Đăng nhập';
-      nameGroup.style.display = 'none';
-      form.dataset.mode = 'login';
-      switchText.innerHTML = 'Chưa có tài khoản? <a href="javascript:void(0)" style="color: var(--accent-gold);" onclick="Auth.openModal(\'register\')">Đăng ký mới</a>';
-    }
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
   },
 
-  closeModal() {
-    const modal = document.getElementById('auth-modal');
-    if (modal) modal.classList.remove('active');
-  },
+  async handleAuthSubmit(e, type) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-auth-submit');
+    btn.disabled = true;
+    btn.innerText = 'Đang xử lý...';
 
-  async handleAuthSubmit(event) {
-    event.preventDefault();
-    const mode = event.target.dataset.mode;
     const username = document.getElementById('auth-username').value.trim();
     const password = document.getElementById('auth-password').value;
-    const displayName = document.getElementById('auth-display-name')?.value.trim();
-    const btnSubmit = document.getElementById('btn-auth-submit');
-
-    if (!username || !password) {
-      alert('Vui lòng điền đầy đủ thông tin!');
-      return;
-    }
-
-    btnSubmit.disabled = true;
-    btnSubmit.innerText = 'Đang xử lý...';
 
     try {
-      if (mode === 'register') {
-        const res = await API.register({
-          username: username,
-          password: password,
-          display_name: displayName || username,
-          avatar: 'https://i.imgur.com/6VBx3io.png'
-        });
-
-        if (res.status === 'success') {
-          alert('Đăng ký thành công!');
-          this.setCurrentUser(res.user);
-          this.closeModal();
-          window.location.reload();
-        } else {
-          alert(res.message || 'Đăng ký thất bại!');
-        }
-      } else {
+      if (type === 'login') {
         const res = await API.login({ username, password });
         if (res.status === 'success') {
-          this.setCurrentUser(res.user);
-          this.closeModal();
+          this.currentUser = res.user;
+          localStorage.setItem('d2_current_user', JSON.stringify(res.user));
+          document.getElementById('auth-modal').remove();
+          this.renderNavbar();
           window.location.reload();
         } else {
           alert(res.message || 'Đăng nhập thất bại!');
+          btn.disabled = false;
+          btn.innerText = 'Đăng Nhập';
+        }
+      } else {
+        const displayName = document.getElementById('auth-display').value.trim();
+        const res = await API.register({ username, display_name: displayName, password });
+        if (res.status === 'success') {
+          alert('Đăng ký thành công! Bạn có thể sử dụng tài khoản ngay bây giờ.');
+          this.currentUser = res.user;
+          localStorage.setItem('d2_current_user', JSON.stringify(res.user));
+          document.getElementById('auth-modal').remove();
+          this.renderNavbar();
+          window.location.reload();
+        } else {
+          alert(res.message || 'Đăng ký thất bại!');
+          btn.disabled = false;
+          btn.innerText = 'Tạo Tài Khoản';
         }
       }
     } catch (err) {
-      alert('Lỗi kết nối tới máy chủ Google!');
-    } finally {
-      btnSubmit.disabled = false;
-      btnSubmit.innerText = mode === 'register' ? 'Đăng ký' : 'Đăng nhập';
+      alert('Lỗi kết nối máy chủ!');
+      btn.disabled = false;
+      btn.innerText = 'Thử lại';
     }
-  }
+  },
+
+  logout() {
+    this.currentUser = null;
+    localStorage.removeItem('d2_current_user');
+    if (this.notifInterval) clearInterval(this.notifInterval);
+    window.location.reload();
+  },
+
+  escapeHTML(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
 };
 
-// Tự động đóng popup thông báo khi click ra ngoài
-document.addEventListener('click', (e) => {
-  const popup = document.getElementById('notif-popup');
-  const btnBell = document.getElementById('btn-notif-bell');
-  if (popup && btnBell && !popup.contains(e.target) && !btnBell.contains(e.target)) {
-    popup.classList.remove('active');
-  }
-});
-
-// Tự động dựng khung modal xác thực vào trang web
 document.addEventListener('DOMContentLoaded', () => {
-  const modalHTML = `
-    <div id="auth-modal" class="modal">
-      <div class="modal-content">
-        <h3 id="modal-title" style="color: var(--accent-gold); margin-bottom: 16px;">Đăng nhập</h3>
-        <form id="auth-form" onsubmit="Auth.handleAuthSubmit(event)">
-          <div class="form-group" id="group-display-name" style="display: none;">
-            <label>Tên hiển thị (Nickname)</label>
-            <input type="text" id="auth-display-name" class="form-control" placeholder="VD: Sát Thủ Bóng Đêm">
-          </div>
-          <div class="form-group">
-            <label>Tên đăng nhập (viết liền không dấu)</label>
-            <input type="text" id="auth-username" class="form-control" required placeholder="VD: darkknight123">
-          </div>
-          <div class="form-group">
-            <label>Mật khẩu</label>
-            <input type="password" id="auth-password" class="form-control" required placeholder="••••••••">
-          </div>
-          <button type="submit" id="btn-auth-submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">Xác nhận</button>
-        </form>
-        <div style="margin-top: 16px; text-align: center; font-size: 0.85rem;" id="auth-switch-text"></div>
-        <div style="text-align: center; margin-top: 10px;">
-          <button class="btn" style="padding: 4px 12px; font-size: 0.8rem;" onclick="Auth.closeModal()">Đóng</button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  Auth.renderNavUser();
+  Auth.init();
+  window.addEventListener('click', (e) => {
+    const p = document.getElementById('notif-popup');
+    if (p && !e.target.closest('#notif-popup') && !e.target.closest('.notif-badge') && !e.target.closest('button[title="Thông báo"]')) {
+      p.classList.remove('active');
+    }
+  });
 });
