@@ -9,8 +9,16 @@ const Auth = {
     }
     this.renderNavbar();
     if (this.currentUser) {
-      this.loadNotifications();
-      this.notifInterval = setInterval(() => this.loadNotifications(), 20000);
+      // Tải ngay thông báo lần đầu
+      setTimeout(() => this.loadNotifications(), 500);
+
+      // Chỉ kiểm tra chu kỳ 60s và khi tab đang active
+      if (this.notifInterval) clearInterval(this.notifInterval);
+      this.notifInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          this.loadNotifications();
+        }
+      }, 60000);
     }
   },
 
@@ -121,7 +129,6 @@ const Auth = {
         <div style="font-size: 0.7rem; color: var(--text-muted);">${n.created_at || ''}</div>
       `;
 
-      // Bấm vào thông báo bài viết mới hoặc bình luận sẽ chuyển thẳng đến bài viết
       if ((n.type === 'comment' || n.type === 'new_build') && n.build_id) {
         div.onclick = () => { window.location.href = `build-detail.html?id=${n.build_id}`; };
       }
@@ -217,6 +224,7 @@ const Auth = {
       document.getElementById('modal-item-compare').classList.remove('active');
       await this.loadNotifications();
       if (typeof ItemTooltipManager !== 'undefined') {
+        localStorage.removeItem('d2_cached_itemdb');
         await ItemTooltipManager.loadDatabase();
       }
     } catch(err) {
@@ -242,7 +250,6 @@ const Auth = {
     if (p) p.classList.toggle('active');
   },
 
-  // XÓA SẠCH DANH SÁCH THÔNG BÁO
   async markAllRead() {
     if (!this.currentUser) return;
     const badge = document.getElementById('notif-count');
