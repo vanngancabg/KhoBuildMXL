@@ -125,7 +125,6 @@ const FormHandler = {
     });
   },
 
-  // AUTO-SAVE MỖI 30 GIÂY
   startAutoSave(user) {
     if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
     this.autoSaveTimer = setInterval(async () => {
@@ -220,7 +219,6 @@ const FormHandler = {
     }
   },
 
-  // THỰC THI LỆNH ĐỊNH DẠNG CƠ BẢN
   execCmd(command, value = null) {
     this.restoreSelection();
     document.execCommand(command, false, value);
@@ -344,14 +342,35 @@ const FormHandler = {
     }
   },
 
-  // MỞ CỬA SỔ THƯ VIỆN CHỌN ĐỒ HOẶC TẢI ĐỒ MỚI
+  // CHÈN ĐỒ VÀO ĐÚNG CHÍNH XÁC VỊ TRÍ CON TRỎ
   handleTriggerItemTag() {
     this.saveSelection();
     ItemTooltipManager.openPickerModal((selectedItemName) => {
       this.restoreSelection();
       const cleanKey = selectedItemName.trim().toLowerCase();
       const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanKey}">${selectedItemName}</span>&nbsp;`;
-      document.execCommand('insertHTML', false, itemHTML);
+      
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const el = document.createElement('div');
+        el.innerHTML = itemHTML;
+        const frag = document.createDocumentFragment();
+        let node, lastNode;
+        while ((node = el.firstChild)) {
+          lastNode = frag.appendChild(node);
+        }
+        range.insertNode(frag);
+        if (lastNode) {
+          range.setStartAfter(lastNode);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      } else {
+        document.execCommand('insertHTML', false, itemHTML);
+      }
       this.saveSelection();
     });
   },
@@ -539,6 +558,7 @@ const FormHandler = {
     return str;
   },
 
+  // DUYỆT DOM CHỐNG TRÙNG THẺ [item]
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -552,16 +572,18 @@ const FormHandler = {
         return '';
       }
 
+      // Xử lý thẻ hover item: chỉ lấy chuỗi text thuần để tránh lặp thẻ
+      if (node.classList.contains('item-hover-trigger')) {
+        const text = node.textContent.trim();
+        return `[item]${text}[/item]`;
+      }
+
       const tag = node.tagName.toLowerCase();
       let inner = '';
       node.childNodes.forEach(child => {
         inner += serializeNode(child);
       });
 
-      if (node.classList.contains('item-hover-trigger')) {
-        const itemKey = node.getAttribute('data-item-key') || node.textContent.trim().toLowerCase();
-        return `[item]${inner.trim() || itemKey}[/item]`;
-      }
       if (node.classList.contains('bb-indent') || tag === 'blockquote') {
         return `[indent]${inner}[/indent]`;
       }
@@ -878,6 +900,7 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
+  // BBCODE PARSER BẢO TOÀN THẺ ITEM & ĐỊNH DẠNG
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -907,7 +930,7 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // Parse [item] trước để bảo toàn nội dung bên trong, bóc sạch thẻ html để lấy data-item-key chuẩn
+    // Parse [item] trước: bóc sạch dấu ngoặc hoặc thẻ để lấy data-item-key chuẩn
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
