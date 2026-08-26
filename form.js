@@ -107,7 +107,7 @@ const FormHandler = {
 
       if (!imageFile) return;
 
-      // 1. Đang mở Bảng Đóng góp / Đề xuất ảnh món đồ
+      // 1. Đang mở Bảng Đóng góp/Đề xuất ảnh món đồ
       if (itemModal && itemModal.classList.contains('active')) {
         e.preventDefault();
         await this.uploadItemToDatabase(imageFile);
@@ -143,7 +143,7 @@ const FormHandler = {
       if (e.key === 'Escape') {
         this.closePreviewModal();
         this.closeItemModal();
-        ItemTooltipManager.closePickerModal();
+        ItemTooltipManager.closePickerModal(true);
       }
     });
   },
@@ -422,7 +422,6 @@ const FormHandler = {
     if (m) m.remove();
   },
 
-  // GẮN THẺ MÓN ĐỒ VÀO ĐÚNG VỊ TRÍ CON TRỎ CHUỘT
   handleTriggerItemTag() {
     this.saveSelection();
     this.insertCursorMarker();
@@ -471,7 +470,6 @@ const FormHandler = {
     document.getElementById('modal-item-upload').classList.remove('active');
     this.pendingItemName = '';
     this.isUpdatingItem = false;
-    // KHÔNG xóa marker ở đây để giữ vị trí con trỏ khi chuyển về Item Picker Modal
   },
 
   async handleItemDbFileUpload(e) {
@@ -524,7 +522,7 @@ const FormHandler = {
           statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
-          // QUAY LẠI CỬA SỔ THƯ VIỆN ĐỒ VÀ CHỌN SẴN ĐỂ BẤM CHÈN
+          // Tự động mở lại Picker và truyền tiếp callback chèn vào marker
           ItemTooltipManager.openPickerModal((name) => {
             this.insertItemAtMarker(name);
           }, itemName, itemName);
@@ -617,12 +615,11 @@ const FormHandler = {
     return color;
   },
 
-  // BBCODE -> HTML (ĐÃ SỬA TRIỆT ĐỂ LỖI LẶP THẺ [indent])
+  // BBCODE -> HTML (Xử lý đệ quy [indent] triệt để)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
 
-    // Xử lý đệ quy tất cả các tầng [indent]
     let prev;
     do {
       prev = str;
@@ -651,7 +648,6 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
