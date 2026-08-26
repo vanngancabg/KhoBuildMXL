@@ -18,10 +18,25 @@ const ItemTooltipManager = {
   },
 
   async loadDatabase() {
+    // 1. Kiểm tra bộ nhớ đệm trình duyệt trước để mở trang ngay lập tức
+    const cached = localStorage.getItem('d2_cached_itemdb');
+    const cacheTime = localStorage.getItem('d2_cached_itemdb_time');
+    const now = Date.now();
+
+    if (cached && cacheTime && (now - Number(cacheTime) < 300000)) { // 5 phút cache
+      try {
+        this.itemsDb = JSON.parse(cached);
+        return;
+      } catch(e) {}
+    }
+
+    // 2. Nếu hết hạn hoặc chưa có thì mới tải từ Google Sheets
     try {
       const res = await API.getItemDatabase();
       if (res.status === 'success' && res.data) {
         this.itemsDb = res.data;
+        localStorage.setItem('d2_cached_itemdb', JSON.stringify(res.data));
+        localStorage.setItem('d2_cached_itemdb_time', String(now));
       }
     } catch (err) {}
   },
@@ -145,11 +160,10 @@ const ItemTooltipManager = {
     }, 100);
   },
 
-  // Giữ lại marker con trỏ nếu chỉ chuyển tiếp sang bảng upload
   closePickerModal(shouldClearMarker = false) {
     const modal = document.getElementById('modal-item-picker');
     if (modal) modal.classList.remove('active');
-    if (shouldClearMarker) {
+    if (shouldClearMarker && typeof FormHandler !== 'undefined') {
       FormHandler.removeCursorMarker();
     }
   },
