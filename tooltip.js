@@ -81,7 +81,7 @@ const ItemTooltipManager = {
     tooltip.style.top = `${Math.max(10, top)}px`;
   },
 
-  // MỞ CỬA SỔ CHỌN ĐỒ TRỰC QUAN (ITEM DATABASE PICKER)
+  // MỞ CỬA SỔ THƯ VIỆN ĐỒ CHUẨN XÁC
   openPickerModal(onSelectCallback) {
     this.onSelectCallback = onSelectCallback;
     let modal = document.getElementById('modal-item-picker');
@@ -96,7 +96,6 @@ const ItemTooltipManager = {
             <button class="btn btn-sm" onclick="ItemTooltipManager.closePickerModal()">✖ Đóng</button>
           </div>
 
-          <!-- THANH TÌM KIẾM & BỘ LỌC PHÂN LOẠI -->
           <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;">
             <input type="text" id="picker-search-input" class="form-control" style="flex: 1; min-width: 220px;" placeholder="🔍 Gõ tên món đồ để tìm nhanh..." oninput="ItemTooltipManager.renderPickerItems()">
             <div class="filter-bar" style="margin: 0; gap: 6px;">
@@ -109,14 +108,12 @@ const ItemTooltipManager = {
             </div>
           </div>
 
-          <!-- KHU VỰC DANH SÁCH & XEM TRƯỚC 2 CỘT -->
           <div style="display: grid; grid-template-columns: 1fr 340px; gap: 16px; flex: 1; overflow: hidden; min-height: 380px;">
             <div id="picker-items-list" style="overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 6px;"></div>
             
-            <!-- KHUNG XEM TRƯỚC ẢNH & THÔNG TIN ĐÓNG GÓP -->
             <div style="background: #0d0e10; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
-              <div id="picker-preview-box" style="text-align: center;">
-                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 80px;">Rê chuột hoặc chọn một món đồ để xem trước ảnh chỉ số</div>
+              <div id="picker-preview-box" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <div style="color: var(--text-muted); font-size: 0.85rem;">Rê chuột hoặc chọn một món đồ để xem trước ảnh chỉ số</div>
               </div>
               <div id="picker-preview-actions" style="margin-top: 10px; display: none;">
                 <div id="picker-preview-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;"></div>
@@ -179,7 +176,7 @@ const ItemTooltipManager = {
 
     items.forEach(item => {
       const itemRow = document.createElement('div');
-      itemRow.style.padding = '8px 12px';
+      itemRow.style.padding = '10px 14px';
       itemRow.style.background = '#14161a';
       itemRow.style.border = '1px solid rgba(255,255,255,0.04)';
       itemRow.style.borderRadius = '3px';
@@ -198,9 +195,10 @@ const ItemTooltipManager = {
         this.selectItemToInsert(item.name);
       };
 
+      // Xóa bỏ đường dẫn link thô dài dòng, hiển thị gọn gàng chuyên nghiệp
       itemRow.innerHTML = `
         <div>
-          <strong style="color: var(--accent-gold); font-size: 0.9rem;">${item.name}</strong>
+          <strong style="color: var(--accent-gold); font-size: 0.95rem;">${item.name}</strong>
           <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 8px;">(${item.category || 'Item'})</span>
         </div>
         <span style="font-size: 0.7rem; color: #88929b; background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 3px;">Patch ${item.patch || '2.13'}</span>
@@ -216,7 +214,12 @@ const ItemTooltipManager = {
     const btnInsert = document.getElementById('picker-btn-insert');
     const btnUpdate = document.getElementById('picker-btn-update');
 
-    box.innerHTML = `<img src="${item.url}" alt="${item.name}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 2px;">`;
+    if (item.url) {
+      box.innerHTML = `<img src="${item.url}" alt="${item.name}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 2px;">`;
+    } else {
+      box.innerHTML = `<div style="color:var(--text-muted); font-size:0.85rem;">Món đồ này chưa có ảnh.</div>`;
+    }
+
     meta.innerHTML = `📸 Đóng góp bởi: <b style="color:var(--text-bright);">${item.by || 'Cộng đồng'}</b> | Patch: <b style="color:var(--accent-gold);">${item.patch || '2.13'}</b>`;
 
     actions.style.display = 'block';
