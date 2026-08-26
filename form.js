@@ -40,6 +40,7 @@ const FormHandler = {
     }
 
     this.setupWysiwygEditors();
+    this.setupGlobalPasteAndEvents();
     this.setupModalOutsideClick();
 
     const editId = new URLSearchParams(window.location.search).get('edit');
@@ -85,21 +86,43 @@ const FormHandler = {
           this.execIndent();
         }
       });
-
-      ed.addEventListener('paste', async (e) => {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            e.preventDefault();
-            const file = item.getAsFile();
-            await this.processImageFile(file);
-            break;
-          }
-        }
-      });
     });
 
     this.activeEditor = document.getElementById('build-intro');
+  },
+
+  // THIẾT LẬP BỘ LẮNG NGHE DÁN ẢNH (CTRL + V) TOÀN CỤC CHUẨN XÁC
+  setupGlobalPasteAndEvents() {
+    window.addEventListener('paste', async (e) => {
+      const itemModal = document.getElementById('modal-item-upload');
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+
+      let imageFile = null;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          imageFile = item.getAsFile();
+          break;
+        }
+      }
+
+      if (!imageFile) return;
+
+      // TRƯỜNG HỢP 1: Đang mở Bảng Đóng góp / Đề xuất ảnh món đồ
+      if (itemModal && itemModal.classList.contains('active')) {
+        e.preventDefault();
+        await this.uploadItemToDatabase(imageFile);
+        return;
+      }
+
+      // TRƯỜNG HỢP 2: Đang trỏ chuột gõ bài trong ô WYSIWYG
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.classList.contains('wysiwyg-editor')) {
+        e.preventDefault();
+        await this.processImageFile(imageFile);
+        return;
+      }
+    });
   },
 
   setupModalOutsideClick() {
@@ -179,7 +202,6 @@ const FormHandler = {
     }
   },
 
-  // CHỨC NĂNG XÓA BẢN NHÁP DỨT ĐIỂM
   async deleteDraft() {
     if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bản nháp này? Nội dung đang viết dở sẽ bị xóa sạch.')) return;
     const user = Auth.getCurrentUser();
@@ -191,7 +213,6 @@ const FormHandler = {
       } catch(e) {}
     }
 
-    // Reset lại form về trạng thái trống ban đầu
     document.getElementById('build-title').value = '';
     document.getElementById('build-class').value = 'Amazon';
     document.getElementById('build-season').value = '';
@@ -251,7 +272,6 @@ const FormHandler = {
         if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
         if (d.video) document.getElementById('build-video').value = d.video;
       } else {
-        // Nếu người dùng chọn Cancel -> Hỏi có muốn xóa luôn bản nháp cũ này không
         if (confirm('Bạn có muốn xóa luôn bản nháp cũ này để không hỏi lại ở những lần sau không?')) {
           localStorage.removeItem('d2_build_draft_wysiwyg');
           if (user) {
