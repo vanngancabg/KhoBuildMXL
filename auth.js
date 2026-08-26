@@ -93,24 +93,36 @@ const Auth = {
       div.className = `notif-item ${!n.is_read ? 'unread' : ''}`;
       
       let actionButtons = '';
-      if (n.type === 'item_proposal' && n.extra_id) {
-        actionButtons = `
-          <div style="display:flex; gap:6px; margin-top:6px;">
-            <button class="btn btn-sm btn-primary" style="padding:3px 10px; font-size:0.75rem;" onclick="Auth.openCompareModal(event, '${n.extra_id}')">🔍 Xem & So Sánh Ảnh</button>
-          </div>
-        `;
+      let messageTitle = '';
+
+      if (n.type === 'new_build') {
+        messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> vừa đăng hướng dẫn build mới:`;
+      } else if (n.type === 'comment') {
+        messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> đã bình luận về bài viết:`;
+      } else if (n.type === 'item_proposal') {
+        messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${this.escapeHTML(n.build_title)}`;
+        if (n.extra_id) {
+          actionButtons = `
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button class="btn btn-sm btn-primary" style="padding:3px 10px; font-size:0.75rem;" onclick="Auth.openCompareModal(event, '${n.extra_id}')">🔍 Xem & So Sánh Ảnh</button>
+            </div>
+          `;
+        }
+      } else {
+        messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${this.escapeHTML(n.build_title)}`;
       }
 
       div.innerHTML = `
         <div style="font-size: 0.8rem; color: var(--text-bright); margin-bottom: 2px;">
-          <strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${n.type === 'comment' ? 'đã bình luận về bài viết:' : ''}
-          <div style="color: #90a4ae; font-weight: 500;">${this.escapeHTML(n.build_title)}</div>
+          ${messageTitle}
+          ${n.type !== 'item_proposal' && n.type !== 'item_approved' && n.type !== 'item_rejected' ? `<div style="color: #90a4ae; font-weight: 500;">${this.escapeHTML(n.build_title)}</div>` : ''}
           ${actionButtons}
         </div>
         <div style="font-size: 0.7rem; color: var(--text-muted);">${n.created_at || ''}</div>
       `;
 
-      if (n.type === 'comment' && n.build_id) {
+      // Bấm vào thông báo bài viết mới hoặc bình luận sẽ chuyển thẳng đến bài viết
+      if ((n.type === 'comment' || n.type === 'new_build') && n.build_id) {
         div.onclick = () => { window.location.href = `build-detail.html?id=${n.build_id}`; };
       }
       box.appendChild(div);
@@ -230,7 +242,7 @@ const Auth = {
     if (p) p.classList.toggle('active');
   },
 
-  // XÓA SẠCH DANH SÁCH THÔNG BÁO KHI BẤM "ĐÁNH DẤU ĐÃ ĐỌC"
+  // XÓA SẠCH DANH SÁCH THÔNG BÁO
   async markAllRead() {
     if (!this.currentUser) return;
     const badge = document.getElementById('notif-count');
