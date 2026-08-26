@@ -5,6 +5,7 @@ const FormHandler = {
   pendingItemName: '',
   isUpdatingItem: false,
   autoSaveTimer: null,
+  markerId: 'item-insert-cursor-marker',
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -342,34 +343,47 @@ const FormHandler = {
     }
   },
 
-  // CHÈN ĐỒ VÀO ĐÚNG CHÍNH XÁC VỊ TRÍ CON TRỎ
+  // CƠ CHẾ CẮM BOOKMARK MARKER CỐ ĐỊNH VỊ TRÍ CON TRỎ CHUỘT
+  insertCursorMarker() {
+    this.removeCursorMarker();
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      const marker = document.createElement('span');
+      marker.id = this.markerId;
+      marker.style.display = 'none';
+      range.insertNode(marker);
+    }
+  },
+
+  removeCursorMarker() {
+    const m = document.getElementById(this.markerId);
+    if (m) m.remove();
+  },
+
+  // GẮN MÓN ĐỒ VÀO ĐÚNG CHÍNH XÁC VỊ TRÍ MARKER
   handleTriggerItemTag() {
     this.saveSelection();
+    this.insertCursorMarker();
+    
     ItemTooltipManager.openPickerModal((selectedItemName) => {
-      this.restoreSelection();
+      const marker = document.getElementById(this.markerId);
       const cleanKey = selectedItemName.trim().toLowerCase();
-      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanKey}">${selectedItemName}</span>&nbsp;`;
       
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0) {
-        const range = sel.getRangeAt(0);
-        range.deleteContents();
-        const el = document.createElement('div');
-        el.innerHTML = itemHTML;
-        const frag = document.createDocumentFragment();
-        let node, lastNode;
-        while ((node = el.firstChild)) {
-          lastNode = frag.appendChild(node);
-        }
-        range.insertNode(frag);
-        if (lastNode) {
-          range.setStartAfter(lastNode);
-          range.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-      } else {
-        document.execCommand('insertHTML', false, itemHTML);
+      const itemSpan = document.createElement('span');
+      itemSpan.className = 'item-hover-trigger';
+      itemSpan.setAttribute('data-item-key', cleanKey);
+      itemSpan.innerText = selectedItemName;
+      
+      const space = document.createTextNode('\u00A0');
+
+      if (marker && marker.parentNode) {
+        marker.parentNode.insertBefore(itemSpan, marker);
+        marker.parentNode.insertBefore(space, marker);
+        marker.remove();
+      } else if (this.activeEditor) {
+        this.activeEditor.appendChild(itemSpan);
+        this.activeEditor.appendChild(space);
       }
       this.saveSelection();
     });
@@ -392,6 +406,7 @@ const FormHandler = {
     document.getElementById('modal-item-upload').classList.remove('active');
     this.pendingItemName = '';
     this.isUpdatingItem = false;
+    this.removeCursorMarker();
   },
 
   async handleItemDbFileUpload(e) {
@@ -442,11 +457,24 @@ const FormHandler = {
             by: user.username
           };
 
-          this.restoreSelection();
-          const itemHTML = `<span class="item-hover-trigger" data-item-key="${itemName.toLowerCase()}">${itemName}</span>&nbsp;`;
-          document.execCommand('insertHTML', false, itemHTML);
-          this.closeItemModal();
+          const marker = document.getElementById(this.markerId);
+          const cleanKey = itemName.trim().toLowerCase();
+          const itemSpan = document.createElement('span');
+          itemSpan.className = 'item-hover-trigger';
+          itemSpan.setAttribute('data-item-key', cleanKey);
+          itemSpan.innerText = itemName;
+          const space = document.createTextNode('\u00A0');
 
+          if (marker && marker.parentNode) {
+            marker.parentNode.insertBefore(itemSpan, marker);
+            marker.parentNode.insertBefore(space, marker);
+            marker.remove();
+          } else if (this.activeEditor) {
+            this.activeEditor.appendChild(itemSpan);
+            this.activeEditor.appendChild(space);
+          }
+
+          this.closeItemModal();
           statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
         } else if (res.status === 'pending') {
@@ -558,7 +586,7 @@ const FormHandler = {
     return str;
   },
 
-  // DUYỆT DOM CHỐNG TRÙNG THẺ [item]
+  // HTML -> BBCODE (ĐÃ SỬA TRIỆT ĐỂ LỖI LẶP THẺ ITEM)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -572,7 +600,7 @@ const FormHandler = {
         return '';
       }
 
-      // Xử lý thẻ hover item: chỉ lấy chuỗi text thuần để tránh lặp thẻ
+      // Xử lý món đồ: bóc tách thẻ item đơn nhất, không lồng thêm
       if (node.classList.contains('item-hover-trigger')) {
         const text = node.textContent.trim();
         return `[item]${text}[/item]`;
@@ -900,7 +928,6 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // BBCODE PARSER BẢO TOÀN THẺ ITEM & ĐỊNH DẠNG
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -930,7 +957,7 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // Parse [item] trước: bóc sạch dấu ngoặc hoặc thẻ để lấy data-item-key chuẩn
+    // Parse [item] chuẩn xác
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
