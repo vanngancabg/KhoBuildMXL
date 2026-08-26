@@ -82,7 +82,7 @@ const Auth = {
     const box = document.getElementById('notif-list');
     if (!box) return;
 
-    if (list.length === 0) {
+    if (!list || list.length === 0) {
       box.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Chưa có thông báo nào.</div>';
       return;
     }
@@ -117,7 +117,6 @@ const Auth = {
     });
   },
 
-  // CỬA SỔ POPUP SO SÁNH 2 ẢNH CŨ & MỚI ĐỐI CHIẾU
   async openCompareModal(e, pendingId) {
     e.stopPropagation();
     const p = document.getElementById('notif-popup');
@@ -231,12 +230,20 @@ const Auth = {
     if (p) p.classList.toggle('active');
   },
 
+  // XÓA SẠCH DANH SÁCH THÔNG BÁO KHI BẤM "ĐÁNH DẤU ĐÃ ĐỌC"
   async markAllRead() {
     if (!this.currentUser) return;
-    await API.markNotificationRead(this.currentUser.username);
     const badge = document.getElementById('notif-count');
     if (badge) badge.style.display = 'none';
-    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+
+    const box = document.getElementById('notif-list');
+    if (box) {
+      box.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Chưa có thông báo nào.</div>';
+    }
+
+    try {
+      await API.markNotificationRead(this.currentUser.username);
+    } catch(e) {}
   },
 
   openModal(type) {
