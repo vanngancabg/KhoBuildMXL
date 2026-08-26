@@ -65,6 +65,11 @@ const API = {
     return await res.json();
   },
 
+  async getPendingItemDetail(pending_id) {
+    const res = await fetch(`${API_URL}?action=getPendingItemDetail&pending_id=${encodeURIComponent(pending_id)}`);
+    return await res.json();
+  },
+
   async uploadItemDatabase(payload) {
     const res = await fetch(API_URL, {
       method: 'POST',
