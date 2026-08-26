@@ -3,6 +3,7 @@ const FormHandler = {
   activeEditor: null,
   savedRange: null,
   pendingItemName: '',
+  isUpdatingItem: false,
   autoSaveTimer: null,
 
   defaultGearTemplate: 
@@ -77,7 +78,6 @@ const FormHandler = {
       ed.addEventListener('mouseup', updateSelection);
       ed.addEventListener('keyup', updateSelection);
 
-      // Phím Tab thụt lề
       ed.addEventListener('keydown', (e) => {
         if (e.key === 'Tab') {
           e.preventDefault();
@@ -85,7 +85,6 @@ const FormHandler = {
         }
       });
 
-      // Dán ảnh từ Clipboard
       ed.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -121,6 +120,7 @@ const FormHandler = {
       if (e.key === 'Escape') {
         this.closePreviewModal();
         this.closeItemModal();
+        ItemTooltipManager.closePickerModal();
       }
     });
   },
@@ -227,7 +227,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // ÁP DỤNG CỠ CHỮ KHÔNG MẤT ĐỊNH DẠNG LỒNG NHAU
   applyFontSize(fontSize) {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -248,7 +247,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // THỤT LỀ KHÔNG MẤT ĐỊNH DẠNG LỒNG NHAU
   execIndent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -271,7 +269,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // LÙI LỀ
   execOutdent() {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -292,7 +289,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // ÁP DỤNG MÀU CHỮ
   applyTextColor(colorHex) {
     this.restoreSelection();
     document.execCommand('foreColor', false, colorHex);
@@ -348,46 +344,35 @@ const FormHandler = {
     }
   },
 
-  // GẮN TOOLTIP ITEM BẢO TOÀN ĐỊNH DẠNG LỒNG NHAU
-  async handleTriggerItemTag() {
-    this.restoreSelection();
-    const sel = window.getSelection();
-    let selectedText = sel ? sel.toString().trim() : '';
-
-    if (!selectedText) {
-      selectedText = prompt('Nhập tên món đồ muốn gắn ảnh khi rê chuột (VD: Ra):');
-      if (!selectedText) return;
-      selectedText = selectedText.trim();
-    }
-
-    const cleanItemName = selectedText.toLowerCase();
-
-    if (ItemTooltipManager.itemsDb && ItemTooltipManager.itemsDb[cleanItemName]) {
-      if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
-        const range = sel.getRangeAt(0);
-        const span = document.createElement('span');
-        span.className = 'item-hover-trigger';
-        span.setAttribute('data-item-key', cleanItemName);
-        span.appendChild(range.extractContents());
-        range.insertNode(span);
-
-        const space = document.createTextNode('\u00A0');
-        span.parentNode.insertBefore(space, span.nextSibling);
-      } else {
-        const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanItemName}">${selectedText}</span>&nbsp;`;
-        document.execCommand('insertHTML', false, itemHTML);
-      }
+  // MỞ CỬA SỔ THƯ VIỆN CHỌN ĐỒ HOẶC TẢI ĐỒ MỚI
+  handleTriggerItemTag() {
+    this.saveSelection();
+    ItemTooltipManager.openPickerModal((selectedItemName) => {
+      this.restoreSelection();
+      const cleanKey = selectedItemName.trim().toLowerCase();
+      const itemHTML = `<span class="item-hover-trigger" data-item-key="${cleanKey}">${selectedItemName}</span>&nbsp;`;
+      document.execCommand('insertHTML', false, itemHTML);
       this.saveSelection();
-    } else {
-      this.pendingItemName = selectedText;
-      document.getElementById('modal-item-name-preview').innerText = `"${selectedText}"`;
-      document.getElementById('modal-item-upload').classList.add('active');
-    }
+    });
+  },
+
+  openDirectUploadModal(itemName = '', isUpdate = false) {
+    this.pendingItemName = itemName;
+    this.isUpdatingItem = isUpdate;
+    const modal = document.getElementById('modal-item-upload');
+    const title = document.getElementById('modal-item-upload-title');
+    const namePreview = document.getElementById('modal-item-name-preview');
+
+    if (namePreview) namePreview.innerText = itemName ? `"${itemName}"` : '';
+    if (title) title.innerText = isUpdate ? '🔄 Đề Xuất Ảnh Mới Cho Món Đồ' : '🗡️ Đóng Góp Ảnh Trang Bị Mới';
+
+    if (modal) modal.classList.add('active');
   },
 
   closeItemModal() {
     document.getElementById('modal-item-upload').classList.remove('active');
     this.pendingItemName = '';
+    this.isUpdatingItem = false;
   },
 
   async handleItemDbFileUpload(e) {
@@ -400,8 +385,16 @@ const FormHandler = {
 
   async uploadItemToDatabase(file) {
     const user = Auth.getCurrentUser();
-    const itemName = this.pendingItemName;
-    if (!itemName || !user) return;
+    let itemName = this.pendingItemName;
+    if (!itemName) {
+      itemName = prompt('Nhập chính xác tên món đồ trong game (VD: Iceflayer):');
+      if (!itemName) return;
+    }
+    itemName = itemName.trim();
+    if (!user) return;
+
+    const category = document.getElementById('item-upload-category')?.value || 'Sacred Unique';
+    const patch = document.getElementById('item-upload-patch')?.value || '2.13';
 
     const statusEl = document.getElementById('upload-status');
     statusEl.style.display = 'inline';
@@ -413,16 +406,20 @@ const FormHandler = {
       try {
         const res = await API.uploadItemDatabase({
           itemName: itemName,
+          category: category,
+          patch: patch,
           base64Data: base64Data,
           mimeType: file.type,
           username: user.username,
           role: user.role || 'Member'
         });
 
-        if (res.status === 'success' || res.status === 'exists') {
+        if (res.status === 'success') {
           ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
             name: itemName,
+            category: category,
             url: res.url,
+            patch: patch,
             by: user.username
           };
 
@@ -431,8 +428,11 @@ const FormHandler = {
           document.execCommand('insertHTML', false, itemHTML);
           this.closeItemModal();
 
-          statusEl.innerText = `✅ Đã lưu ảnh món "${itemName}" thành công!`;
+          statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        } else if (res.status === 'pending') {
+          this.closeItemModal();
+          alert(res.message);
         } else {
           alert('Lỗi: ' + res.message);
           statusEl.style.display = 'none';
@@ -503,7 +503,6 @@ const FormHandler = {
     }
   },
 
-  // HÀM CHUYỂN RGB SANG HEX
   rgbToHex(color) {
     if (!color) return '';
     if (color.startsWith('#')) return color;
@@ -514,7 +513,6 @@ const FormHandler = {
     return color;
   },
 
-  // BBCODE -> HTML TRỰC QUAN (Nạp bài viết lên editor)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -541,7 +539,6 @@ const FormHandler = {
     return str;
   },
 
-  // HTML -> BBCODE (DUYỆT DOM CHUẨN XÁC, BẢO TOÀN LỒNG NHAU 100%)
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -561,10 +558,8 @@ const FormHandler = {
         inner += serializeNode(child);
       });
 
-      // 1. Nếu là Widget đặc biệt
       if (node.classList.contains('item-hover-trigger')) {
         const itemKey = node.getAttribute('data-item-key') || node.textContent.trim().toLowerCase();
-        // Giữ nguyên các định dạng màu sắc/in đậm bên trong thẻ item
         return `[item]${inner.trim() || itemKey}[/item]`;
       }
       if (node.classList.contains('bb-indent') || tag === 'blockquote') {
@@ -590,7 +585,6 @@ const FormHandler = {
 
       let res = inner;
 
-      // 2. Xử lý styles nội dòng (font-weight, font-style, color, font-size...)
       if (node.style) {
         if (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 700) {
           res = `[b]${res}[/b]`;
@@ -613,7 +607,6 @@ const FormHandler = {
         }
       }
 
-      // 3. Xử lý thẻ HTML
       switch (tag) {
         case 'strong':
         case 'b':
@@ -885,7 +878,6 @@ const FormHandler = {
     document.getElementById('modal-preview-full').classList.remove('active');
   },
 
-  // BBCODE PARSER HOÀN HẢO - HỖ TRỢ ĐA TẦNG LỒNG NHAU
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
@@ -921,7 +913,6 @@ const FormHandler = {
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    // Parse các định dạng văn bản
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
