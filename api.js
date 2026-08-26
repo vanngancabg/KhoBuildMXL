@@ -44,7 +44,6 @@ const API = {
     return await res.json();
   },
 
-  // API CLOUD DRAFTS
   async getCloudDraft(username) {
     const res = await fetch(`${API_URL}?action=getCloudDraft&username=${encodeURIComponent(username)}`);
     return await res.json();
@@ -72,11 +71,29 @@ const API = {
       body: JSON.stringify({
         action: 'uploadItemDatabase',
         itemName: payload.itemName,
+        category: payload.category,
+        patch: payload.patch,
         base64Data: payload.base64Data,
         mimeType: payload.mimeType,
         username: payload.username,
         role: payload.role
       })
+    });
+    return await res.json();
+  },
+
+  async approvePendingItem(pending_id, username, role) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'approvePendingItem', pending_id, username, role })
+    });
+    return await res.json();
+  },
+
+  async rejectPendingItem(pending_id, username, role) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'rejectPendingItem', pending_id, username, role })
     });
     return await res.json();
   },
