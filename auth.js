@@ -9,7 +9,7 @@ const Auth = {
     }
     this.renderNavbar();
     if (this.currentUser) {
-      setTimeout(() => this.loadNotifications(), 500);
+      setTimeout(() => this.loadNotifications(), 600);
 
       if (this.notifInterval) clearInterval(this.notifInterval);
       this.notifInterval = setInterval(() => {
@@ -199,7 +199,7 @@ const Auth = {
       } else {
         modal.innerHTML = `
           <div class="modal-content" style="max-width: 400px; text-align:center;">
-            <p style="color:var(--text-muted); margin-bottom:16px;">${res.message || 'Yêu cầu không còn tồn tại'}</p>
+            <p style="color:var(--text-muted); margin-bottom:16px;">${res?.message || 'Yêu cầu không còn tồn tại'}</p>
             <button class="btn btn-sm" onclick="document.getElementById('modal-item-compare').classList.remove('active')">Đóng</button>
           </div>
         `;
@@ -264,7 +264,6 @@ const Auth = {
     } catch(e) {}
   },
 
-  // MODAL ĐĂNG NHẬP / ĐĂNG KÝ VỚI FONT TIẾNG VIỆT CHUẨN VÀ NÚT CHUYỂN ĐỔI TIỆN LỢI
   openModal(type) {
     const existing = document.getElementById('auth-modal');
     if (existing) existing.remove();
@@ -294,7 +293,6 @@ const Auth = {
             <input type="password" id="auth-password" class="form-control" required placeholder="Nhập mật khẩu của bạn">
           </div>
 
-          <!-- NÚT CHUYỂN ĐỔI ĐĂNG KÝ / ĐĂNG NHẬP -->
           <div style="margin: 12px 0; text-align: center; font-size: 0.85rem;">
             ${isLogin ? `
               <span style="color: var(--text-muted);">Chưa có tài khoản? </span>
@@ -340,7 +338,7 @@ const Auth = {
           this.renderNavbar();
           window.location.reload();
         } else {
-          alert(res.message || 'Đăng nhập thất bại!');
+          alert(res?.message || 'Đăng nhập thất bại!');
           btn.disabled = false;
           btn.innerText = 'Đăng Nhập';
         }
@@ -355,7 +353,7 @@ const Auth = {
           this.renderNavbar();
           window.location.reload();
         } else {
-          alert(res.message || 'Đăng ký thất bại!');
+          alert(res?.message || 'Đăng ký thất bại!');
           btn.disabled = false;
           btn.innerText = 'Tạo Tài Khoản';
         }
