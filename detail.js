@@ -10,177 +10,153 @@ const DetailHandler = {
       return;
     }
 
+    const user = Auth.getCurrentUser();
+    if (!user) {
+      const gate = document.getElementById('detail-login-gate');
+      const loading = document.getElementById('detail-loading');
+      if (loading) loading.style.display = 'none';
+      if (gate) gate.style.display = 'block';
+      return;
+    }
+
     await this.loadBuild();
-    await this.loadComments();
-    this.bindEvents();
+    this.loadComments();
   },
 
   async loadBuild() {
-    const container = document.getElementById('build-detail-container');
-    container.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--accent-gold);">⏳ Đang tải nội dung bài viết...</div>';
+    const loading = document.getElementById('detail-loading');
+    const wrapper = document.getElementById('detail-wrapper');
 
     try {
       const res = await API.getBuildDetail(this.buildId);
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && res.data) {
         this.currentBuild = res.data;
-        this.renderBuildDetail(res.data);
+        this.renderBuildData(res.data);
+        if (loading) loading.style.display = 'none';
+        if (wrapper) wrapper.style.display = 'block';
       } else {
-        container.innerHTML = `
-          <div style="text-align: center; padding: 60px 10px;">
-            <p style="color: #ff8b8b; font-size: 1.1rem; margin-bottom: 12px;">Bài viết không tồn tại hoặc đã bị xóa!</p>
-            <a href="index.html" class="btn btn-primary">⬅️ Trở về Trang Chủ</a>
-          </div>
-        `;
+        if (loading) {
+          loading.innerHTML = `
+            <div style="padding: 40px 10px;">
+              <p style="color: #ff8b8b; font-size: 1.1rem; margin-bottom: 12px;">Bài viết không tồn tại hoặc đã bị xóa!</p>
+              <a href="index.html" class="btn btn-primary">⬅️ Trở về Trang Chủ</a>
+            </div>
+          `;
+        }
       }
     } catch (err) {
-      container.innerHTML = '<div style="text-align: center; padding: 50px; color: #ff8b8b;">Lỗi kết nối máy chủ!</div>';
+      if (loading) loading.innerHTML = '<div style="color: #ff8b8b;">Lỗi kết nối máy chủ! Vui lòng tải lại trang.</div>';
     }
   },
 
-  renderBuildDetail(b) {
-    const container = document.getElementById('build-detail-container');
+  renderBuildData(b) {
     const user = Auth.getCurrentUser();
 
+    // 1. Phân tích Stats JSON
     let statsObj = { season: '', patch: '', purpose: 'Speed Farming', difficulty: 'Dễ', intro: '', pros: '', cons: '', str: '0', dex: '0', vit: '0', ene: '0', strategy: '' };
     try {
-      statsObj = { ...statsObj, ...JSON.parse(b.stats_desc) };
+      if (b.stats_desc && typeof b.stats_desc === 'string' && b.stats_desc.startsWith('{')) {
+        statsObj = { ...statsObj, ...JSON.parse(b.stats_desc) };
+      } else {
+        statsObj.intro = b.stats_desc || '';
+      }
     } catch (e) {
       statsObj.intro = b.stats_desc || '';
     }
 
+    // 2. Phân tích Gear JSON
     let gearObj = { lv0_50: '', lv50_135: '', lv135plus: '' };
     try {
-      gearObj = { ...gearObj, ...JSON.parse(b.gear_desc) };
+      if (b.gear_desc && typeof b.gear_desc === 'string' && b.gear_desc.startsWith('{')) {
+        gearObj = { ...gearObj, ...JSON.parse(b.gear_desc) };
+      } else {
+        gearObj.lv0_50 = b.gear_desc || '';
+      }
     } catch (e) {
       gearObj.lv0_50 = b.gear_desc || '';
     }
 
+    // 3. Hiển thị Header
     let seasonDisplay = statsObj.season || b.patch_version || 'Mới nhất';
     if (seasonDisplay && !seasonDisplay.toLowerCase().startsWith('mùa') && !seasonDisplay.toLowerCase().startsWith('season')) {
       seasonDisplay = 'Mùa ' + seasonDisplay;
     }
 
-    let videoEmbed = '';
-    if (b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be'))) {
-      const match = b.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-      if (match) {
-        videoEmbed = `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${match[1]}" allowfullscreen></iframe></div>`;
-      }
+    document.getElementById('detail-title').innerText = b.title || '';
+    document.getElementById('detail-class').innerText = b.class_name || 'Class';
+    document.getElementById('detail-season-patch').innerText = seasonDisplay;
+    document.getElementById('detail-purpose').innerText = statsObj.purpose || 'Speed Farming';
+    document.getElementById('detail-difficulty').innerText = statsObj.difficulty || 'Dễ';
+    document.getElementById('detail-author').innerText = b.author_name || b.author_username || 'Ẩn danh';
+    document.getElementById('detail-time').innerText = b.updated_at ? String(b.updated_at).split(' ')[0] : '';
+    document.getElementById('detail-views').innerText = b.views_count || 0;
+
+    // 4. Nút Thả Tim
+    const userVoted = user && b.votes && String(b.votes).split(',').map(x => x.trim().toLowerCase()).includes(user.username.toLowerCase());
+    const btnVote = document.getElementById('btn-vote');
+    const voteText = document.getElementById('vote-text');
+    const voteCount = document.getElementById('vote-count');
+    if (voteCount) voteCount.innerText = b.votes_count || 0;
+    if (userVoted && btnVote) {
+      btnVote.classList.add('btn-primary');
+      if (voteText) voteText.innerText = 'Đã Thích';
     }
 
+    // 5. Nút Quản lý của Tác giả / Admin
     const isAuthor = user && (String(user.username).toLowerCase() === String(b.author_username || b.author_id).toLowerCase() || user.role === 'Admin');
-    const userVoted = user && b.votes && b.votes.split(',').map(x => x.trim().toLowerCase()).includes(user.username.toLowerCase());
+    const authorActions = document.getElementById('author-actions');
+    const btnEdit = document.getElementById('btn-edit');
+    if (isAuthor && authorActions) {
+      authorActions.style.display = 'inline-flex';
+      if (btnEdit) btnEdit.href = `create-build.html?edit=${encodeURIComponent(b.build_id)}`;
+    }
 
-    container.innerHTML = `
-      <!-- HEADER BÀI VIẾT -->
-      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 14px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
-          <div>
-            <h1 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 2rem; margin: 0 0 8px 0;">${this.escapeHTML(b.title)}</h1>
-            <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 14px; flex-wrap: wrap;">
-              <span>Tác giả: <strong style="color: var(--accent-gold);">${this.escapeHTML(b.author_name || b.author_username)}</strong></span>
-              <span>Class: <strong style="color: var(--text-bright);">${b.class_name}</strong></span>
-              <span>Mùa giải: <strong style="color: var(--text-bright);">${seasonDisplay}</strong></span>
-              <span>Mục đích: <strong style="color: var(--text-bright);">${statsObj.purpose}</strong></span>
-              <span>Độ khó: <strong style="color: var(--text-bright);">${statsObj.difficulty}</strong></span>
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            ${isAuthor ? `
-              <a href="create-build.html?edit=${b.build_id}" class="btn btn-sm">✏️ Sửa Bài</a>
-              <button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteBuild()">🗑️ Xóa Bài</button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
+    // 6. Gán nội dung các khối
+    document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
+    document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật');
+    document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật');
 
-      <!-- KHỐI 1 & 2: MỞ SẴN CỐ ĐỊNH (TỔNG QUAN, PROS & CONS) -->
-      <div class="detail-card">
-        <div class="detail-card-title">📖 TỔNG QUAN & LỐI CHƠI</div>
-        <div class="markdown-rendered">${FormHandler.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.')}</div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-          <div>
-            <strong style="color: var(--accent-green); font-size: 1rem; display: block; margin-bottom: 6px;">ƯU ĐIỂM (PROS)</strong>
-            <div class="markdown-rendered">${FormHandler.parseBBCode(statsObj.pros || '• Chưa cập nhật')}</div>
-          </div>
-          <div>
-            <strong style="color: #ff6b6b; font-size: 1rem; display: block; margin-bottom: 6px;">NHƯỢC ĐIỂM (CONS)</strong>
-            <div class="markdown-rendered">${FormHandler.parseBBCode(statsObj.cons || '• Chưa cập nhật')}</div>
-          </div>
-        </div>
-      </div>
+    document.getElementById('detail-str').innerText = statsObj.str || '0';
+    document.getElementById('detail-dex').innerText = statsObj.dex || '0';
+    document.getElementById('detail-vit').innerText = statsObj.vit || '0';
+    document.getElementById('detail-ene').innerText = statsObj.ene || '0';
 
-      <!-- KHỐI 3: KÉO MỞ (STATS) -->
-      <details class="section-accordion">
-        <summary>📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
-        <div class="section-accordion-body">
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold);">${statsObj.str || '0'}</strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold);">${statsObj.dex || '0'}</strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong style="color:var(--accent-gold);">${statsObj.vit || '0'}</strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong style="color:var(--accent-gold);">${statsObj.ene || '0'}</strong></div>
-          </div>
-        </div>
-      </details>
+    document.getElementById('detail-skills').innerHTML = this.parseBBCode(b.skills_desc || 'Chưa cập nhật kỹ năng.');
 
-      <!-- KHỐI 4: KÉO MỞ (SKILLS & ROTATION) -->
-      <details class="section-accordion">
-        <summary>⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</summary>
-        <div class="section-accordion-body">
-          <div class="markdown-rendered">${FormHandler.parseBBCode(b.skills_desc || 'Chưa cập nhật kỹ năng.')}</div>
-        </div>
-      </details>
+    document.getElementById('detail-gear-0-50').innerHTML = this.parseBBCode(gearObj.lv0_50 || 'Chưa cập nhật');
+    if (gearObj.lv50_135) {
+      document.getElementById('detail-gear-50-135').innerHTML = this.parseBBCode(gearObj.lv50_135);
+      document.getElementById('box-gear-50-135').style.display = 'block';
+    } else {
+      document.getElementById('box-gear-50-135').style.display = 'none';
+    }
+    if (gearObj.lv135plus) {
+      document.getElementById('detail-gear-135plus').innerHTML = this.parseBBCode(gearObj.lv135plus);
+      document.getElementById('box-gear-135plus').style.display = 'block';
+    } else {
+      document.getElementById('box-gear-135plus').style.display = 'none';
+    }
 
-      <!-- KHỐI 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) -->
-      <details class="section-accordion">
-        <summary>🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</summary>
-        <div class="section-accordion-body">
-          <details class="gear-accordion-item" open>
-            <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
-            <div class="gear-accordion-body">
-              <div class="markdown-rendered">${FormHandler.parseBBCode(gearObj.lv0_50 || 'Chưa cập nhật')}</div>
-            </div>
-          </details>
+    // 7. Khối 6: Video & Chiến thuật
+    let hasStrategy = Boolean(statsObj.strategy && statsObj.strategy.trim());
+    let hasVideo = Boolean(b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be')));
 
-          ${gearObj.lv50_135 ? `
-            <details class="gear-accordion-item">
-              <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
-              <div class="gear-accordion-body">
-                <div class="markdown-rendered">${FormHandler.parseBBCode(gearObj.lv50_135)}</div>
-              </div>
-            </details>
-          ` : ''}
-
-          ${gearObj.lv135plus ? `
-            <details class="gear-accordion-item">
-              <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
-              <div class="gear-accordion-body">
-                <div class="markdown-rendered">${FormHandler.parseBBCode(gearObj.lv135plus)}</div>
-              </div>
-            </details>
-          ` : ''}
-        </div>
-      </details>
-
-      <!-- KHỐI 6: KÉO MỞ (CHIẾN THUẬT BOSS & VIDEO) -->
-      ${statsObj.strategy || videoEmbed ? `
-        <details class="section-accordion">
-          <summary>🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</summary>
-          <div class="section-accordion-body">
-            ${statsObj.strategy ? `<div class="markdown-rendered" style="margin-bottom: 14px;">${FormHandler.parseBBCode(statsObj.strategy)}</div>` : ''}
-            ${videoEmbed}
-          </div>
-        </details>
-      ` : ''}
-
-      <!-- TƯƠNG TÁC LIKE & XEM -->
-      <div style="display: flex; justify-content: center; gap: 16px; margin: 30px 0;">
-        <button id="btn-vote" class="btn ${userVoted ? 'btn-primary' : ''}" style="padding: 10px 24px; font-size: 1rem;" onclick="DetailHandler.handleVote()">
-          ❤️ <span id="vote-text">${userVoted ? 'Đã Thích' : 'Thích bài viết'}</span> (<span id="vote-count">${b.votes_count || 0}</span>)
-        </button>
-      </div>
-    `;
+    if (hasStrategy || hasVideo) {
+      document.getElementById('box-strategy-card').style.display = 'block';
+      if (hasStrategy) {
+        document.getElementById('detail-strategy').innerHTML = this.parseBBCode(statsObj.strategy);
+      }
+      if (hasVideo) {
+        const match = b.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        if (match) {
+          const vContainer = document.getElementById('video-container');
+          vContainer.style.display = 'block';
+          vContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${match[1]}" allowfullscreen></iframe>`;
+        }
+      }
+    } else {
+      document.getElementById('box-strategy-card').style.display = 'none';
+    }
   },
 
   async handleVote() {
@@ -193,14 +169,14 @@ const DetailHandler = {
 
     try {
       const res = await API.voteBuild(this.buildId, user.username);
-      if (res.status === 'success') {
-        countEl.innerText = res.votes_count;
+      if (res && res.status === 'success') {
+        if (countEl) countEl.innerText = res.votes_count;
         if (res.is_voted) {
-          btn.classList.add('btn-primary');
-          textEl.innerText = 'Đã Thích';
+          if (btn) btn.classList.add('btn-primary');
+          if (textEl) textEl.innerText = 'Đã Thích';
         } else {
-          btn.classList.remove('btn-primary');
-          textEl.innerText = 'Thích bài viết';
+          if (btn) btn.classList.remove('btn-primary');
+          if (textEl) textEl.innerText = 'Thích bài viết';
         }
       }
     } catch (e) {}
@@ -212,7 +188,7 @@ const DetailHandler = {
 
     try {
       const res = await API.deleteBuild(this.buildId, user.username, user.role);
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         alert('Đã xóa bài viết thành công!');
         window.location.href = 'index.html';
       } else {
@@ -229,16 +205,17 @@ const DetailHandler = {
 
     try {
       const res = await API.getComments(this.buildId);
-      if (res.status === 'success' && res.data) {
-        this.renderComments(res.data);
+      if (res && res.status === 'success' && Array.isArray(res.data)) {
+        this.renderCommentsList(res.data);
       }
     } catch (e) {}
   },
 
-  renderComments(list) {
+  renderCommentsList(list) {
     const box = document.getElementById('comments-list');
-    const countHeader = document.getElementById('comments-count-header');
-    if (countHeader) countHeader.innerText = `BÌNH LUẬN (${list.length})`;
+    const countHeader = document.getElementById('detail-comment-count');
+    if (countHeader) countHeader.innerText = list.length;
+    if (!box) return;
 
     if (list.length === 0) {
       box.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px 0;">Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ ý kiến!</div>';
@@ -271,13 +248,12 @@ const DetailHandler = {
     });
   },
 
-  async handleAddComment(e) {
-    e.preventDefault();
+  async handleAddComment() {
     const user = Auth.getCurrentUser();
     if (!user) return Auth.openModal('login');
 
     const inp = document.getElementById('comment-input');
-    const content = inp.value.trim();
+    const content = inp ? inp.value.trim() : '';
     if (!content) return;
 
     inp.disabled = true;
@@ -291,7 +267,7 @@ const DetailHandler = {
         content: content
       });
 
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         inp.value = '';
         await this.loadComments();
       }
@@ -309,7 +285,7 @@ const DetailHandler = {
 
     try {
       const res = await API.deleteComment(commentId, user.username, user.role);
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         await this.loadComments();
       }
     } catch (e) {
@@ -317,11 +293,53 @@ const DetailHandler = {
     }
   },
 
-  bindEvents() {
-    const form = document.getElementById('comment-form');
-    if (form) {
-      form.onsubmit = (e) => this.handleAddComment(e);
-    }
+  parseBBCode(text) {
+    if (!text) return '';
+    let str = String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    let prev;
+    do {
+      prev = str;
+      str = str
+        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
+        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
+    } while (str !== prev);
+
+    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
+      const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
+      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
+    });
+
+    str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
+      const raw = urlOrId.trim();
+      let videoId = raw;
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (yMatch) videoId = yMatch[1];
+      return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+    });
+
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+      const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
+
+    str = str
+      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
+      .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
+      .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
+      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
+      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
+      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    return str.replace(/\n/g, '<br>');
   },
 
   escapeHTML(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
