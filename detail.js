@@ -10,7 +10,12 @@ const DetailHandler = {
       return;
     }
 
-    const user = Auth.getCurrentUser();
+    const saved = localStorage.getItem('d2_current_user');
+    let user = null;
+    if (saved) {
+      try { user = JSON.parse(saved); } catch (e) {}
+    }
+
     if (!user) {
       const gate = document.getElementById('detail-login-gate');
       const loading = document.getElementById('detail-loading');
@@ -20,7 +25,9 @@ const DetailHandler = {
     }
 
     await this.loadBuild();
-    this.loadComments();
+    
+    // Tải bình luận ngầm sau 300ms
+    setTimeout(() => this.loadComments(), 300);
   },
 
   async loadBuild() {
@@ -50,7 +57,11 @@ const DetailHandler = {
   },
 
   renderBuildData(b) {
-    const user = Auth.getCurrentUser();
+    const saved = localStorage.getItem('d2_current_user');
+    let user = null;
+    if (saved) {
+      try { user = JSON.parse(saved); } catch (e) {}
+    }
 
     // 1. Phân tích Stats JSON
     let statsObj = { season: '', patch: '', purpose: 'Speed Farming', difficulty: 'Dễ', intro: '', pros: '', cons: '', str: '0', dex: '0', vit: '0', ene: '0', strategy: '' };
@@ -111,7 +122,7 @@ const DetailHandler = {
       if (btnEdit) btnEdit.href = `create-build.html?edit=${encodeURIComponent(b.build_id)}`;
     }
 
-    // 6. Gán nội dung các khối
+    // 6. Gán nội dung các khối (Khối 1 & 2 mở sẵn, Khối 3-6 dạng Accordion)
     document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
     document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật');
     document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật');
