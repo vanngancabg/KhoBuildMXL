@@ -464,7 +464,8 @@ const FormHandler = {
   },
 
   closeItemModal() {
-    document.getElementById('modal-item-upload').classList.remove('active');
+    const modal = document.getElementById('modal-item-upload');
+    if (modal) modal.classList.remove('active');
     this.pendingItemName = '';
     this.isUpdatingItem = false;
   },
@@ -489,8 +490,10 @@ const FormHandler = {
 
     const patch = document.getElementById('item-upload-patch')?.value || '2.13';
     const statusEl = document.getElementById('upload-status');
-    statusEl.style.display = 'inline';
-    statusEl.innerText = `⏳ Đang tải ảnh cho "${itemName}" lên kho...`;
+    if (statusEl) {
+      statusEl.style.display = 'inline';
+      statusEl.innerText = `⏳ Đang tải ảnh cho "${itemName}" lên kho...`;
+    }
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -516,8 +519,10 @@ const FormHandler = {
           };
 
           this.closeItemModal();
-          statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
-          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+          if (statusEl) {
+            statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
+            setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+          }
 
           ItemTooltipManager.openPickerModal((name) => {
             this.insertItemAtMarker(name);
@@ -526,18 +531,18 @@ const FormHandler = {
         } else if (res.status === 'pending') {
           this.closeItemModal();
           alert('Đề xuất của bạn đã được gửi và đang chờ duyệt. Trong lúc này bạn vẫn có thể dùng ảnh hiện tại của món đồ.');
-          statusEl.style.display = 'none';
+          if (statusEl) statusEl.style.display = 'none';
 
           ItemTooltipManager.openPickerModal((name) => {
             this.insertItemAtMarker(name);
           }, itemName, itemName);
         } else {
           alert('Lỗi: ' + res.message);
-          statusEl.style.display = 'none';
+          if (statusEl) statusEl.style.display = 'none';
         }
       } catch (err) {
         alert('Lỗi kết nối máy chủ khi lưu ảnh!');
-        statusEl.style.display = 'none';
+        if (statusEl) statusEl.style.display = 'none';
       }
     };
     reader.readAsDataURL(file);
