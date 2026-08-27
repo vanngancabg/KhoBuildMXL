@@ -879,7 +879,7 @@ const FormHandler = {
     };
   },
 
-  // PREVIEW KHI ĐANG VIẾT BÀI: MỞ BUNG SẴN 100% TẤT CẢ CÁC KHỐI ĐỂ RÀ SOÁT
+  // PREVIEW KHI ĐANG VIẾT BÀI: BỎ CHỮ KHỐI, MỞ BUNG 100% CÁC PHẦN
   openPreviewModal() {
     const d = this.collectFormData();
     const modal = document.getElementById('modal-preview-full');
@@ -904,7 +904,7 @@ const FormHandler = {
 
     body.innerHTML = `
       <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 20px;">
-        <h2 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 2rem; margin: 0 0 6px 0;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
+        <h2 style="color: var(--accent-gold); font-size: 1.85rem; margin: 0 0 6px 0; font-weight: 700;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
         <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
           <span>Class: <strong style="color: var(--text-bright);">${d.class_name}</strong></span>
           <span>Mùa giải: <strong style="color: var(--text-bright);">${seasonDisplay || 'Chưa đặt'}</strong></span>
@@ -913,26 +913,26 @@ const FormHandler = {
         </div>
       </div>
 
-      <!-- KHỐI 1 & 2: MỞ BUNG -->
+      <!-- 1: TỔNG QUAN & LỐI CHƠI -->
       <div class="detail-card">
-        <div class="detail-card-title">📖 TỔNG QUAN & LỐI CHƠI</div>
+        <div class="detail-card-title">📖 1. TỔNG QUAN & LỐI CHƠI</div>
         <div class="markdown-rendered">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
           <div>
-            <strong style="color: var(--accent-green); font-size: 1rem; display: block; margin-bottom: 6px;">ƯU ĐIỂM (PROS)</strong>
+            <strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">2.1 ƯU ĐIỂM (PROS)</strong>
             <div class="markdown-rendered">${this.parseBBCode(d.pros || '• Chưa cập nhật')}</div>
           </div>
           <div>
-            <strong style="color: #ff6b6b; font-size: 1rem; display: block; margin-bottom: 6px;">NHƯỢC ĐIỂM (CONS)</strong>
+            <strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">2.2 NHƯỢC ĐIỂM (CONS)</strong>
             <div class="markdown-rendered">${this.parseBBCode(d.cons || '• Chưa cập nhật')}</div>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 3: MỞ BUNG -->
+      <!-- 3: STATS -->
       <div class="detail-card">
-        <div class="detail-card-title">📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
+        <div class="detail-card-title">📊 3. PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
           <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold);">${d.str || '0'}</strong></div>
           <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold);">${d.dex || '0'}</strong></div>
@@ -941,15 +941,15 @@ const FormHandler = {
         </div>
       </div>
 
-      <!-- KHỐI 4: MỞ BUNG -->
+      <!-- 4: SKILLS & ROTATION -->
       <div class="detail-card">
-        <div class="detail-card-title">⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
+        <div class="detail-card-title">⚡ 4. KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
         <div class="markdown-rendered">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
       </div>
 
-      <!-- KHỐI 5: MỞ BUNG -->
+      <!-- 5: LỘ TRÌNH TRANG BỊ -->
       <div class="detail-card">
-        <div class="detail-card-title">🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
+        <div class="detail-card-title">🛡️ 5. LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
         
         <details class="gear-accordion-item" open>
           <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
@@ -977,10 +977,10 @@ const FormHandler = {
         ` : ''}
       </div>
 
-      <!-- KHỐI 6: MỞ BUNG -->
+      <!-- 6: CHIẾN THUẬT BOSS & VIDEO -->
       ${d.strategy || videoEmbed ? `
         <div class="detail-card">
-          <div class="detail-card-title">🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+          <div class="detail-card-title">🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
           ${d.strategy ? `<div class="markdown-rendered" style="margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
           ${videoEmbed}
         </div>
@@ -1011,8 +1011,7 @@ const FormHandler = {
 
     str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
       const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
-      const liHtml = items.map(it => `<li>${it.trim()}</li>`).join('');
-      return `<ul class="bb-list">${liHtml}</ul>`;
+      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
     });
 
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
