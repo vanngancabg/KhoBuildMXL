@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chi Tiết Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
   <nav class="navbar">
@@ -24,123 +27,132 @@
       <button class="btn btn-primary" style="padding: 8px 24px; font-size: 1rem;" onclick="Auth.openModal('login')">🔑 Đăng nhập ngay</button>
     </div>
 
-    <div id="detail-loading" style="text-align: center; padding: 40px; color: var(--accent-gold);">Đang tải dữ liệu bài viết...</div>
+    <!-- Trạng thái Loading / Lỗi -->
+    <div id="detail-loading" style="text-align: center; padding: 50px; color: var(--accent-gold);">⏳ Đang tải dữ liệu bài viết...</div>
 
+    <!-- Khung hiển thị nội dung chính -->
     <div id="detail-wrapper" style="display: none;">
       <!-- Header Bài Viết -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-        <div>
-          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap;">
-            <span id="detail-class" style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid var(--accent-gold);"></span>
-            <span id="detail-season-patch" style="background: #1c1f24; color: var(--text-bright); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--border-color);"></span>
-            <span id="detail-purpose" style="background: rgba(72, 187, 120, 0.15); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-green);"></span>
-            <span id="detail-difficulty" style="background: rgba(237, 137, 54, 0.15); color: var(--accent-orange); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-orange);"></span>
+      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 14px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+              <span id="detail-class" style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid var(--accent-gold);"></span>
+              <span id="detail-season-patch" style="background: #1c1f24; color: var(--text-bright); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--border-color);"></span>
+              <span id="detail-purpose" style="background: rgba(72, 187, 120, 0.15); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-green);"></span>
+              <span id="detail-difficulty" style="background: rgba(237, 137, 54, 0.15); color: var(--accent-orange); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-orange);"></span>
+            </div>
+            <h1 id="detail-title" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.9rem; margin-bottom: 8px;"></h1>
+            <div style="color: var(--text-muted); font-size: 0.85rem; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <span>Tác giả: <strong id="detail-author" style="color: var(--accent-gold);"></strong></span>
+              <span>Cập nhật: <span id="detail-time" style="color: var(--text-bright);"></span></span>
+              <span>👁️ Lượt xem: <strong id="detail-views" style="color: var(--accent-gold);">0</strong></span>
+            </div>
           </div>
-          <h1 id="detail-title" style="color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 6px;"></h1>
-          <div style="color: var(--text-muted); font-size: 0.85rem; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <span>Tác giả: <strong id="detail-author" style="color: var(--text-bright);"></strong></span>
-            <span>Cập nhật: <span id="detail-time"></span></span>
-            <span>👁️ Lượt xem: <strong id="detail-views" style="color: var(--accent-gold);">0</strong></span>
-          </div>
-        </div>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="btn-vote" class="btn" onclick="DetailHandler.toggleVote()">❤️ Thả Tim (<span id="vote-count">0</span>)</button>
-          <button class="btn" onclick="DetailHandler.exportBuildCode()">📦 Mã Build</button>
-          <button class="btn" onclick="DetailHandler.exportToDiscord()">📋 Discord</button>
-          <div id="author-actions" style="display: none; gap: 8px;">
-            <a id="btn-edit" href="#" class="btn btn-primary">✏️ Sửa</a>
-            <button class="btn btn-danger" onclick="DetailHandler.deleteBuild()">🗑️ Xóa</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="btn-vote" class="btn" onclick="DetailHandler.handleVote()">❤️ <span id="vote-text">Thích bài viết</span> (<span id="vote-count">0</span>)</button>
+            <div id="author-actions" style="display: none; gap: 8px;">
+              <a id="btn-edit" href="#" class="btn btn-sm">✏️ Sửa</a>
+              <button class="btn btn-sm btn-danger" onclick="DetailHandler.deleteBuild()">🗑️ Xóa</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 2: TỔNG QUAN & PROS / CONS -->
+      <!-- KHỐI 1 & 2: MỞ SẴN CỐ ĐỊNH (TỔNG QUAN, PROS & CONS) -->
       <div class="detail-card">
-        <div class="detail-card-title">⚖️ TỔNG QUAN & ƯU / NHƯỢC ĐIỂM</div>
-        <div id="detail-intro" class="markdown-rendered" style="margin-bottom: 14px;"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="detail-card-title">📖 TỔNG QUAN & LỐI CHƠI</div>
+        <div id="detail-intro" class="markdown-rendered" style="margin-bottom: 16px;"></div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div>
-            <strong style="color: var(--accent-green); display: block; margin-bottom: 6px;">✅ Ưu điểm (Pros):</strong>
+            <strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">ƯU ĐIỂM (PROS)</strong>
             <div id="detail-pros" class="markdown-rendered"></div>
           </div>
           <div>
-            <strong style="color: #ff6b6b; display: block; margin-bottom: 6px;">❌ Nhược điểm (Cons):</strong>
+            <strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">NHƯỢC ĐIỂM (CONS)</strong>
             <div id="detail-cons" class="markdown-rendered"></div>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 3: STATS -->
-      <div class="detail-card">
-        <div class="detail-card-title">📊 PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-          <div class="stat-pill"><strong>STRENGTH:</strong><span id="detail-str"></span></div>
-          <div class="stat-pill"><strong>DEXTERITY:</strong><span id="detail-dex"></span></div>
-          <div class="stat-pill"><strong>VITALITY:</strong><span id="detail-vit"></span></div>
-          <div class="stat-pill"><strong>ENERGY:</strong><span id="detail-ene"></span></div>
+      <!-- KHỐI 3: KÉO MỞ (STATS) -->
+      <details class="section-accordion">
+        <summary>📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
+        <div class="section-accordion-body">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong id="detail-str" style="color:var(--accent-gold);"></strong></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong id="detail-dex" style="color:var(--accent-gold);"></strong></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong id="detail-vit" style="color:var(--accent-gold);"></strong></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong id="detail-ene" style="color:var(--accent-gold);"></strong></div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <!-- KHỐI 4: SKILLS -->
-      <div class="detail-card">
-        <div class="detail-card-title">⚡ KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
-        <div id="detail-skills" class="markdown-rendered"></div>
-      </div>
+      <!-- KHỐI 4: KÉO MỞ (SKILLS & ROTATION) -->
+      <details class="section-accordion">
+        <summary>⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</summary>
+        <div class="section-accordion-body">
+          <div id="detail-skills" class="markdown-rendered"></div>
+        </div>
+      </details>
 
-      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ ACCORDION THU GỌN - MỞ RỘNG (1-115, 115-135, 135+) -->
-      <div class="detail-card">
-        <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL</div>
-        
-        <details class="gear-accordion-item" id="box-gear-0-50" open>
-          <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
-          <div class="gear-accordion-body">
-            <div id="detail-gear-0-50" class="markdown-rendered"></div>
-          </div>
-        </details>
+      <!-- KHỐI 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) -->
+      <details class="section-accordion">
+        <summary>🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</summary>
+        <div class="section-accordion-body">
+          <details class="gear-accordion-item" open>
+            <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
+            <div class="gear-accordion-body">
+              <div id="detail-gear-0-50" class="markdown-rendered"></div>
+            </div>
+          </details>
 
-        <details class="gear-accordion-item" id="box-gear-50-135">
-          <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
-          <div class="gear-accordion-body">
-            <div id="detail-gear-50-135" class="markdown-rendered"></div>
-          </div>
-        </details>
+          <details class="gear-accordion-item" id="box-gear-50-135">
+            <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
+            <div class="gear-accordion-body">
+              <div id="detail-gear-50-135" class="markdown-rendered"></div>
+            </div>
+          </details>
 
-        <details class="gear-accordion-item" id="box-gear-135plus">
-          <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
-          <div class="gear-accordion-body">
-            <div id="detail-gear-135plus" class="markdown-rendered"></div>
-          </div>
-        </details>
-      </div>
+          <details class="gear-accordion-item" id="box-gear-135plus">
+            <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
+            <div class="gear-accordion-body">
+              <div id="detail-gear-135plus" class="markdown-rendered"></div>
+            </div>
+          </details>
+        </div>
+      </details>
 
-      <!-- KHỐI 6: CHIẾN THUẬT BOSS & VIDEO -->
-      <div class="detail-card" id="strategy-card">
-        <div class="detail-card-title">🎬 CHIẾN THUẬT BOSS & GAMEPLAY</div>
-        <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
-        <div id="video-container" style="display: none; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 4px;"></div>
-      </div>
+      <!-- KHỐI 6: KÉO MỞ (CHIẾN THUẬT BOSS & VIDEO) -->
+      <details class="section-accordion" id="box-strategy-card">
+        <summary>🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</summary>
+        <div class="section-accordion-body">
+          <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
+          <div id="video-container" class="bb-video-embed" style="display: none;"></div>
+        </div>
+      </details>
 
-      <!-- Bình Luận -->
-      <div class="detail-card">
+      <!-- BÌNH LUẬN -->
+      <div class="detail-card" style="margin-top: 24px;">
         <div class="detail-card-title">
           <span>💬 BÌNH LUẬN & THẢO LUẬN (<span id="detail-comment-count">0</span>)</span>
         </div>
-        <div id="comment-box" style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px;">
           <textarea id="comment-input" class="form-control" placeholder="Viết câu hỏi hoặc chia sẻ ý kiến..." style="min-height: 80px;"></textarea>
           <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-            <button class="btn btn-primary" onclick="DetailHandler.postComment()">Gửi Bình Luận</button>
+            <button class="btn btn-primary" onclick="DetailHandler.handleAddComment()">Gửi Bình Luận</button>
           </div>
         </div>
         <div id="comments-list"></div>
-        <div id="comment-pagination" class="pagination-bar" style="display: none; margin-top: 14px;"></div>
       </div>
     </div>
   </div>
 
   <script src="api.js"></script>
   <script src="auth.js"></script>
-  <script src="detail.js"></script>
   <script src="tooltip.js"></script>
+  <script src="detail.js"></script>
 </body>
 </html>
