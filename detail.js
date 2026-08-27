@@ -61,6 +61,7 @@ const DetailHandler = {
       try { user = JSON.parse(saved); } catch (e) {}
     }
 
+    // 1. Phân tích Stats JSON
     let statsObj = { season: '', patch: '', purpose: 'Speed Farming', difficulty: 'Dễ', intro: '', pros: '', cons: '', str: '0', dex: '0', vit: '0', ene: '0', strategy: '' };
     try {
       if (b.stats_desc && typeof b.stats_desc === 'string' && b.stats_desc.startsWith('{')) {
@@ -72,6 +73,7 @@ const DetailHandler = {
       statsObj.intro = b.stats_desc || '';
     }
 
+    // 2. Phân tích Gear JSON
     let gearObj = { lv0_50: '', lv50_135: '', lv135plus: '' };
     try {
       if (b.gear_desc && typeof b.gear_desc === 'string' && b.gear_desc.startsWith('{')) {
@@ -83,6 +85,7 @@ const DetailHandler = {
       gearObj.lv0_50 = b.gear_desc || '';
     }
 
+    // 3. Hiển thị Header
     let seasonDisplay = statsObj.season || b.patch_version || 'Mới nhất';
     if (seasonDisplay && !seasonDisplay.toLowerCase().startsWith('mùa') && !seasonDisplay.toLowerCase().startsWith('season')) {
       seasonDisplay = 'Mùa ' + seasonDisplay;
@@ -97,6 +100,7 @@ const DetailHandler = {
     document.getElementById('detail-time').innerText = b.updated_at ? String(b.updated_at).split(' ')[0] : '';
     document.getElementById('detail-views').innerText = b.views_count || 0;
 
+    // 4. Nút Thả Tim
     const userVoted = user && b.votes && String(b.votes).split(',').map(x => x.trim().toLowerCase()).includes(user.username.toLowerCase());
     const btnVote = document.getElementById('btn-vote');
     const voteText = document.getElementById('vote-text');
@@ -107,6 +111,7 @@ const DetailHandler = {
       if (voteText) voteText.innerText = 'Đã Thích';
     }
 
+    // 5. Nút Quản lý của Tác giả / Admin
     const isAuthor = user && (String(user.username).toLowerCase() === String(b.author_username || b.author_id).toLowerCase() || user.role === 'Admin');
     const authorActions = document.getElementById('author-actions');
     const btnEdit = document.getElementById('btn-edit');
@@ -115,6 +120,7 @@ const DetailHandler = {
       if (btnEdit) btnEdit.href = `create-build.html?edit=${encodeURIComponent(b.build_id)}`;
     }
 
+    // 6. Gán nội dung các khối (Khối 1 & 2 mở sẵn, Khối 3-6 dạng Accordion)
     document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
     document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật');
     document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật');
@@ -140,6 +146,7 @@ const DetailHandler = {
       document.getElementById('box-gear-135plus').style.display = 'none';
     }
 
+    // 7. Khối 6: Video & Chiến thuật
     let hasStrategy = Boolean(statsObj.strategy && statsObj.strategy.trim());
     let hasVideo = Boolean(b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be')));
 
@@ -323,12 +330,7 @@ const DetailHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // PARSER ITEM GẮN ẢNH - BẢO TOÀN MÀU SẮC ĐÃ CHỌN
-    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
-      const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
-      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
-    });
-
+    // 1. XỬ LÝ ĐỊNH DẠNG MÀU SẮC, CHỮ ĐẬM, NGHIÊNG TRƯỚC
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
@@ -341,6 +343,17 @@ const DetailHandler = {
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    // 2. XỬ LÝ [item] - TRÍCH XUẤT KEY THUẦN TÚY CHỐNG RÁCH TAG & GIỮ NGUYÊN MÀU SẮC
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+      const cleanKey = innerContent
+        .replace(/<[^>]*>/g, '')
+        .replace(/\[\/?[^\]]+\]/g, '')
+        .replace(/["']/g, '')
+        .trim()
+        .toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
 
     return str.replace(/\n/g, '<br>');
   },
