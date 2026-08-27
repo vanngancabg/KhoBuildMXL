@@ -67,7 +67,7 @@ const Auth = {
     if (!this.currentUser) return;
     try {
       const res = await API.getNotifications(this.currentUser.username);
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && Array.isArray(res.data)) {
         const list = res.data;
         const unreadCount = list.filter(n => !n.is_read).length;
         const badge = document.getElementById('notif-count');
@@ -157,19 +157,19 @@ const Auth = {
 
     try {
       const res = await API.getPendingItemDetail(pendingId);
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && res.data) {
         const d = res.data;
         modal.innerHTML = `
           <div class="modal-content" style="max-width: 850px; width: 95%;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:16px;">
-              <h3 style="color:var(--accent-gold); margin:0; font-family:var(--font-heading);">⚖️ ĐỐI CHIẾU ẢNH: "${this.escapeHTML(d.item_name)}"</h3>
+              <h3 style="color:var(--accent-gold); margin:0; font-family:var(--font-body); font-weight:700;">⚖️ ĐỐI CHIẾU ẢNH: "${this.escapeHTML(d.item_name)}"</h3>
               <button class="btn btn-sm" onclick="document.getElementById('modal-item-compare').classList.remove('active')">✖ Đóng</button>
             </div>
 
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
               <!-- CỘT ẢNH HIỆN TẠI (CŨ) -->
               <div style="background:#0d0e10; border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:14px; text-align:center;">
-                <h4 style="color:#ff6b6b; margin-bottom:8px;">📷 ẢNH HIỆN TẠI (CŨ)</h4>
+                <h4 style="color:#ff6b6b; margin-bottom:8px; font-family:var(--font-body);">📷 ẢNH HIỆN TẠI (CŨ)</h4>
                 <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
                   Đăng bởi: <b style="color:var(--text-bright);">${this.escapeHTML(d.original_contributor || 'Cộng đồng')}</b>
                 </div>
@@ -180,7 +180,7 @@ const Auth = {
 
               <!-- CỘT ẢNH ĐỀ XUẤT (MỚI) -->
               <div style="background:#0d0e10; border:1px solid rgba(46,204,113,0.4); border-radius:4px; padding:14px; text-align:center;">
-                <h4 style="color:var(--accent-green); margin-bottom:8px;">✨ ẢNH ĐỀ XUẤT (MỚI)</h4>
+                <h4 style="color:var(--accent-green); margin-bottom:8px; font-family:var(--font-body);">✨ ẢNH ĐỀ XUẤT (MỚI)</h4>
                 <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
                   Đề xuất bởi: <b style="color:var(--text-bright);">${this.escapeHTML(d.new_contributor)}</b> | Patch: <b style="color:var(--accent-gold);">${d.new_patch || '2.13'}</b>
                 </div>
@@ -221,7 +221,6 @@ const Auth = {
       alert(res.message);
       document.getElementById('modal-item-compare').classList.remove('active');
       
-      // Xóa Cache và tải lại database mới ngay lập tức
       localStorage.removeItem('d2_cached_itemdb');
       if (typeof ItemTooltipManager !== 'undefined') {
         await ItemTooltipManager.loadDatabase();
@@ -265,6 +264,7 @@ const Auth = {
     } catch(e) {}
   },
 
+  // MODAL ĐĂNG NHẬP / ĐĂNG KÝ VỚI FONT TIẾNG VIỆT CHUẨN VÀ NÚT CHUYỂN ĐỔI TIỆN LỢI
   openModal(type) {
     const existing = document.getElementById('auth-modal');
     if (existing) existing.remove();
@@ -274,28 +274,42 @@ const Auth = {
     modal.id = 'auth-modal';
     modal.className = 'modal active';
     modal.innerHTML = `
-      <div class="modal-content">
-        <h2 style="color: var(--accent-gold); font-family: var(--font-heading); margin-bottom: 16px; text-align: center;">
-          ${isLogin ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ THÀNH VIÊN'}
+      <div class="modal-content" style="max-width: 420px;">
+        <h2 style="color: var(--accent-gold); font-family: var(--font-body); font-weight: 700; margin-bottom: 16px; text-align: center; font-size: 1.35rem;">
+          ${isLogin ? 'ĐĂNG NHẬP TÀI KHOẢN' : 'ĐĂNG KÝ THÀNH VIÊN MỚI'}
         </h2>
         <form id="auth-form" onsubmit="Auth.handleAuthSubmit(event, '${type}')">
           <div class="form-group">
-            <label>Tài khoản (*)</label>
-            <input type="text" id="auth-username" class="form-control" required placeholder="Tên đăng nhập không dấu">
+            <label>Tên đăng nhập (*)</label>
+            <input type="text" id="auth-username" class="form-control" required placeholder="Tên đăng nhập không dấu (VD: assassin99)">
           </div>
           ${!isLogin ? `
             <div class="form-group">
               <label>Tên hiển thị cộng đồng (*)</label>
-              <input type="text" id="auth-display" class="form-control" required placeholder="VD: Ken">
+              <input type="text" id="auth-display" class="form-control" required placeholder="Tên gọi hiển thị (VD: Ken)">
             </div>
           ` : ''}
           <div class="form-group">
             <label>Mật khẩu (*)</label>
-            <input type="password" id="auth-password" class="form-control" required placeholder="Nhập mật khẩu">
+            <input type="password" id="auth-password" class="form-control" required placeholder="Nhập mật khẩu của bạn">
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+
+          <!-- NÚT CHUYỂN ĐỔI ĐĂNG KÝ / ĐĂNG NHẬP -->
+          <div style="margin: 12px 0; text-align: center; font-size: 0.85rem;">
+            ${isLogin ? `
+              <span style="color: var(--text-muted);">Chưa có tài khoản? </span>
+              <a href="javascript:void(0)" onclick="Auth.openModal('register')" style="color: var(--accent-gold); font-weight: 600; text-decoration: underline;">Đăng ký ngay</a>
+            ` : `
+              <span style="color: var(--text-muted);">Đã có tài khoản? </span>
+              <a href="javascript:void(0)" onclick="Auth.openModal('login')" style="color: var(--accent-gold); font-weight: 600; text-decoration: underline;">Đăng nhập ngay</a>
+            `}
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px;">
             <button type="button" class="btn" onclick="document.getElementById('auth-modal').remove()">Đóng</button>
-            <button type="submit" id="btn-auth-submit" class="btn btn-primary">${isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}</button>
+            <button type="submit" id="btn-auth-submit" class="btn btn-primary" style="padding: 7px 20px; font-weight: bold;">
+              ${isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}
+            </button>
           </div>
         </form>
       </div>
@@ -319,7 +333,7 @@ const Auth = {
     try {
       if (type === 'login') {
         const res = await API.login({ username, password });
-        if (res.status === 'success') {
+        if (res && res.status === 'success') {
           this.currentUser = res.user;
           localStorage.setItem('d2_current_user', JSON.stringify(res.user));
           document.getElementById('auth-modal').remove();
@@ -333,7 +347,7 @@ const Auth = {
       } else {
         const displayName = document.getElementById('auth-display').value.trim();
         const res = await API.register({ username, display_name: displayName, password });
-        if (res.status === 'success') {
+        if (res && res.status === 'success') {
           alert('Đăng ký thành công! Bạn có thể sử dụng tài khoản ngay bây giờ.');
           this.currentUser = res.user;
           localStorage.setItem('d2_current_user', JSON.stringify(res.user));
