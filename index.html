@@ -3,75 +3,340 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diablo 2 Median XL - Kho Tàng Build</title>
+  <title>Thư Viện Build Median XL - Cộng Đồng Diablo 2 Việt Nam</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- THANH ĐIỀU HƯỚNG NAVBAR -->
   <nav class="navbar">
     <a href="index.html" class="brand">⚔️ MEDIAN XL BUILDS</a>
     <div class="nav-actions">
-      <a href="create-build.html" class="btn btn-primary">+ Viết Build Mới</a>
+      <a href="create-build.html" class="btn btn-primary">➕ Viết Build Mới</a>
       <div id="auth-section"></div>
     </div>
   </nav>
 
   <div class="container">
-    <div class="home-layout">
-      <!-- Cột chính: Danh sách Build -->
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-          <div>
-            <h1 style="color: var(--accent-gold); font-size: 1.5rem;">Thư Viện Build</h1>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">
-              Chia sẻ và thảo luận chiến thuật cùng cộng đồng 
-              <span style="display: inline-block; margin-left: 8px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--accent-gold);">
-                🌐 Tổng lượt truy cập: <strong id="site-total-visits" style="color: var(--text-bright);">...</strong>
-              </span>
-            </p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-sm" id="sort-votes-btn" onclick="App.toggleSortVotes()">🔥 Top Yêu Thích</button>
-            <input type="text" id="search-input" class="form-control" style="width: 200px; padding: 6px 10px;" placeholder="Tìm build..." oninput="App.handleSearch()">
-          </div>
-        </div>
-
-        <div class="filter-bar" id="class-filters">
-          <button class="filter-btn active" onclick="App.filterByClass('All', this)">Tất cả</button>
-          <button class="filter-btn" onclick="App.filterByClass('Amazon', this)">Amazon</button>
-          <button class="filter-btn" onclick="App.filterByClass('Assassin', this)">Assassin</button>
-          <button class="filter-btn" onclick="App.filterByClass('Barbarian', this)">Barbarian</button>
-          <button class="filter-btn" onclick="App.filterByClass('Druid', this)">Druid</button>
-          <button class="filter-btn" onclick="App.filterByClass('Necromancer', this)">Necro</button>
-          <button class="filter-btn" onclick="App.filterByClass('Paladin', this)">Paladin</button>
-          <button class="filter-btn" onclick="App.filterByClass('Sorceress', this)">Sorc</button>
-        </div>
-
-        <div id="loading-state" style="text-align: center; padding: 40px; color: var(--accent-gold);">Đang tải dữ liệu...</div>
-        <div class="grid" id="builds-grid" style="display: none;"></div>
-        <div id="empty-state" style="display: none; text-align: center; padding: 40px; color: var(--text-muted);">Không tìm thấy bài viết phù hợp.</div>
-        
-        <!-- Thanh Phân Trang Trang Chủ (20 build/trang) -->
-        <div id="pagination-container" class="pagination-bar" style="display: none;"></div>
+    <!-- TIÊU ĐỀ & TỔNG TRUY CẬP -->
+    <div class="hero-header">
+      <div class="hero-title">
+        <h1>Thư Viện Build</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+          <span>Chia sẻ và thảo luận chiến thuật cùng cộng đồng</span>
+          <span class="stat-tag">🌐 Tổng lượt truy cập: <b id="total-visits-count" style="color: var(--text-bright);">1</b></span>
+        </p>
       </div>
 
-      <!-- Cột phụ: Shoutbox (Chat trực tiếp) -->
-      <div>
-        <div class="shoutbox-card">
-          <h3 style="color: var(--accent-gold); font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">💬 Chat Cộng Đồng</h3>
-          <div class="shoutbox-messages" id="shoutbox-list">
-            <div style="color: var(--text-muted); text-align: center; margin-top: 20px;">Đang tải tin nhắn...</div>
-          </div>
-          <div id="shoutbox-input-box">
-            <input type="text" id="shoutbox-text" class="form-control" placeholder="Nhắn tin nhanh (Enter)..." onkeypress="if(event.key==='Enter') App.sendChat()">
-          </div>
-        </div>
+      <!-- TÌM KIẾM & TOP LIKE -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <button id="btn-top-liked" class="btn btn-sm" style="height: 35px;">🔥 Top Yêu Thích</button>
+        <input type="text" id="search-input" class="search-input" style="height: 35px;" placeholder="🔍 Tìm build hoặc tác giả...">
       </div>
+    </div>
+
+    <!-- THANH BỘ LỌC CLASS -->
+    <div class="filter-bar">
+      <button class="filter-btn active" data-class="All">Tất cả</button>
+      <button class="filter-btn" data-class="Amazon">Amazon</button>
+      <button class="filter-btn" data-class="Assassin">Assassin</button>
+      <button class="filter-btn" data-class="Barbarian">Barbarian</button>
+      <button class="filter-btn" data-class="Druid">Druid</button>
+      <button class="filter-btn" data-class="Necromancer">Necro</button>
+      <button class="filter-btn" data-class="Paladin">Paladin</button>
+      <button class="filter-btn" data-class="Sorceress">Sorc</button>
+    </div>
+
+    <!-- DANH SÁCH BÀI VIẾT (GRID) -->
+    <div id="builds-container" class="builds-grid">
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--accent-gold);">⏳ Đang tải dữ liệu bài viết...</div>
+    </div>
+
+    <!-- PHÂN TRANG -->
+    <div id="pagination-container"></div>
+
+    <!-- KHUNG CHAT CỘNG ĐỒNG (SHOUTBOX) -->
+    <div class="shoutbox-container">
+      <div class="shoutbox-title">💬 Chat Cộng Đồng</div>
+      <div id="shoutbox-messages" class="shoutbox-messages">
+        <div style="color: var(--text-muted); font-size: 0.8rem; padding: 8px 0;">Đang tải tin nhắn...</div>
+      </div>
+      <form id="shoutbox-form" class="shoutbox-input-group">
+        <input type="text" id="shoutbox-input" class="form-control" placeholder="Nhắn tin nhanh (Nhấn Enter để gửi)..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">Gửi</button>
+      </form>
     </div>
   </div>
 
   <script src="api.js"></script>
   <script src="auth.js"></script>
-  <script src="app.js"></script>
-  <script src="tooltip.js"></script>
+  <script>
+    const MainApp = {
+      allBuilds: [],
+      filteredBuilds: [],
+      currentClass: 'All',
+      searchQuery: '',
+      onlyTopLiked: false,
+      currentPage: 1,
+      pageSize: 15,
+
+      async init() {
+        await this.loadBuilds();
+        this.setupFiltersAndSearch();
+        this.setupShoutbox();
+        this.loadVisitStats();
+      },
+
+      async loadBuilds() {
+        const container = document.getElementById('builds-container');
+        if (!container) return;
+
+        try {
+          const res = await API.getBuilds();
+          if (res.status === 'success' && Array.isArray(res.data)) {
+            this.allBuilds = res.data;
+            this.applyFilter();
+          } else {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Chưa có bài viết nào trong hệ thống.</div>';
+          }
+        } catch (err) {
+          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #ff8b8b;">Lỗi kết nối máy chủ! Vui lòng tải lại trang.</div>';
+        }
+      },
+
+      setupFiltersAndSearch() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.currentClass = btn.getAttribute('data-class') || 'All';
+            this.currentPage = 1;
+            this.applyFilter();
+          });
+        });
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            this.searchQuery = e.target.value.trim().toLowerCase();
+            this.currentPage = 1;
+            this.applyFilter();
+          });
+        }
+
+        const topLikedBtn = document.getElementById('btn-top-liked');
+        if (topLikedBtn) {
+          topLikedBtn.addEventListener('click', () => {
+            this.onlyTopLiked = !this.onlyTopLiked;
+            topLikedBtn.classList.toggle('btn-primary', this.onlyTopLiked);
+            this.currentPage = 1;
+            this.applyFilter();
+          });
+        }
+      },
+
+      applyFilter() {
+        let list = [...this.allBuilds];
+
+        if (this.currentClass !== 'All') {
+          list = list.filter(b => String(b.class_name).toLowerCase() === this.currentClass.toLowerCase());
+        }
+
+        if (this.searchQuery) {
+          list = list.filter(b => {
+            const titleMatch = String(b.title || '').toLowerCase().includes(this.searchQuery);
+            const authorMatch = String(b.author_name || b.author_username || '').toLowerCase().includes(this.searchQuery);
+            return titleMatch || authorMatch;
+          });
+        }
+
+        if (this.onlyTopLiked) {
+          list = list.filter(b => (Number(b.votes_count) || 0) > 0);
+          list.sort((a, b) => (Number(b.votes_count) || 0) - (Number(a.votes_count) || 0));
+        }
+
+        this.filteredBuilds = list;
+        this.renderBuildsGrid();
+        this.renderPagination();
+      },
+
+      renderBuildsGrid() {
+        const container = document.getElementById('builds-container');
+        if (!container) return;
+
+        if (this.filteredBuilds.length === 0) {
+          container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px 10px; color: var(--text-muted);">Không tìm thấy bài viết nào phù hợp.</div>';
+          return;
+        }
+
+        const startIndex = (this.currentPage - 1) * this.pageSize;
+        const pageItems = this.filteredBuilds.slice(startIndex, startIndex + this.pageSize);
+
+        container.innerHTML = '';
+        pageItems.forEach(b => {
+          let statsObj = { season: '', intro: '', purpose: 'Speed Farming' };
+          try {
+            if (b.stats_desc && typeof b.stats_desc === 'string' && b.stats_desc.startsWith('{')) {
+              statsObj = { ...statsObj, ...JSON.parse(b.stats_desc) };
+            } else {
+              statsObj.intro = b.stats_desc || '';
+            }
+          } catch (e) {
+            statsObj.intro = b.stats_desc || '';
+          }
+
+          const cleanIntro = String(statsObj.intro || '')
+            .replace(/\[.*?\]/g, '')
+            .replace(/<.*?>/g, '')
+            .trim();
+
+          const className = b.class_name || 'Amazon';
+          const classSlug = className.toLowerCase();
+          const seasonText = statsObj.season || b.patch_version || 'Mới nhất';
+
+          const card = document.createElement('a');
+          card.className = 'build-card';
+          card.href = `build-detail.html?id=${encodeURIComponent(b.build_id)}`;
+          card.innerHTML = `
+            <div>
+              <div class="build-card-top">
+                <span class="class-badge class-${classSlug}">${this.escapeHTML(className)}</span>
+                <span class="patch-tag">${this.escapeHTML(seasonText)}</span>
+              </div>
+              <div class="build-card-title">${this.escapeHTML(b.title)}</div>
+              <div class="build-card-intro">${this.escapeHTML(cleanIntro || 'Xem chi tiết hướng dẫn tăng điểm kỹ năng và lộ trình trang bị...')}</div>
+            </div>
+            <div class="build-card-bottom">
+              <span>Tác giả: <strong style="color: var(--accent-gold);">${this.escapeHTML(b.author_name || b.author_username || 'Member')}</strong></span>
+              <div class="build-card-stats">
+                <span>👁️ ${b.views_count || 0}</span>
+                <span>💬 ${b.comments_count || 0}</span>
+                <span style="color: #ff6b6b;">❤️ ${b.votes_count || 0}</span>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      },
+
+      renderPagination() {
+        const container = document.getElementById('pagination-container');
+        if (!container) return;
+
+        const totalPages = Math.ceil(this.filteredBuilds.length / this.pageSize);
+        if (totalPages <= 1) {
+          container.innerHTML = '';
+          return;
+        }
+
+        let html = '<div class="pagination-wrapper">';
+        if (this.currentPage > 1) {
+          html += `<button class="page-btn" onclick="MainApp.goToPage(${this.currentPage - 1})">⬅️ Trước</button>`;
+        }
+
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= this.currentPage - 2 && p <= this.currentPage + 2)) {
+            html += `<button class="page-btn ${p === this.currentPage ? 'active' : ''}" onclick="MainApp.goToPage(${p})">${p}</button>`;
+          } else if (p === this.currentPage - 3 || p === this.currentPage + 3) {
+            html += '<span style="color: var(--text-muted); padding: 0 4px;">...</span>';
+          }
+        }
+
+        if (this.currentPage < totalPages) {
+          html += `<button class="page-btn" onclick="MainApp.goToPage(${this.currentPage + 1})">Sau ➡️</button>`;
+        }
+        html += '</div>';
+
+        container.innerHTML = html;
+      },
+
+      goToPage(page) {
+        this.currentPage = page;
+        this.renderBuildsGrid();
+        this.renderPagination();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      async setupShoutbox() {
+        const listEl = document.getElementById('shoutbox-messages');
+        const formEl = document.getElementById('shoutbox-form');
+        const inputEl = document.getElementById('shoutbox-input');
+
+        if (!listEl) return;
+
+        const loadShoutboxMsgs = async () => {
+          try {
+            const res = await API.getShoutbox();
+            if (res.status === 'success' && Array.isArray(res.data)) {
+              if (res.data.length === 0) {
+                listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 8px 0;">Chưa có tin nhắn nào.</div>';
+                return;
+              }
+              listEl.innerHTML = '';
+              res.data.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'shoutbox-msg-row';
+                div.innerHTML = `
+                  <span class="shoutbox-user">${this.escapeHTML(m.user_name || m.username)}:</span>
+                  <span style="color: var(--text-bright);">${this.escapeHTML(m.message)}</span>
+                  <span class="shoutbox-time">${m.created_at ? m.created_at.split(' ')[0] : ''}</span>
+                `;
+                listEl.appendChild(div);
+              });
+              listEl.scrollTop = listEl.scrollHeight;
+            }
+          } catch (e) {}
+        };
+
+        await loadShoutboxMsgs();
+
+        if (formEl && inputEl) {
+          formEl.onsubmit = async (e) => {
+            e.preventDefault();
+            const user = Auth.getCurrentUser();
+            if (!user) return Auth.openModal('login');
+
+            const msgText = inputEl.value.trim();
+            if (!msgText) return;
+
+            inputEl.disabled = true;
+            try {
+              await API.sendShoutbox({
+                username: user.username,
+                user_name: user.display_name,
+                avatar: user.avatar,
+                message: msgText
+              });
+              inputEl.value = '';
+              await loadShoutboxMsgs();
+            } catch (err) {}
+            finally {
+              inputEl.disabled = false;
+              inputEl.focus();
+            }
+          };
+        }
+      },
+
+      async loadVisitStats() {
+        try {
+          const res = await API.trackSiteVisit();
+          const statEl = document.getElementById('total-visits-count');
+          if (statEl && res.status === 'success' && res.total_visits) {
+            statEl.innerText = res.total_visits;
+          }
+        } catch (e) {}
+      },
+
+      escapeHTML(str) {
+        return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => MainApp.init());
+  </script>
 </body>
 </html>
