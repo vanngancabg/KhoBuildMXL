@@ -879,7 +879,6 @@ const FormHandler = {
     };
   },
 
-  // PREVIEW KHI ĐANG VIẾT BÀI: BỎ CHỮ KHỐI, MỞ BUNG 100% CÁC PHẦN
   openPreviewModal() {
     const d = this.collectFormData();
     const modal = document.getElementById('modal-preview-full');
@@ -1022,6 +1021,7 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
+    // PARSER ITEM GẮN ẢNH - BẢO TOÀN MÀU SẮC ĐÃ CHỌN
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
