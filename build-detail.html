@@ -22,7 +22,7 @@
   <div class="container" style="max-width: 950px;">
     <!-- Khung cảnh báo khi chưa đăng nhập -->
     <div id="detail-login-gate" style="display: none; background: #111215; border: 1px solid rgba(212, 175, 55, 0.4); padding: 40px 20px; border-radius: 6px; text-align: center; margin-top: 40px;">
-      <h2 style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.8rem; margin-bottom: 10px;">🔒 NỘI DUNG YÊU CẦU ĐĂNG NHẬP</h2>
+      <h2 style="color: var(--accent-gold); font-size: 1.8rem; margin-bottom: 10px;">🔒 NỘI DUNG YÊU CẦU ĐĂNG NHẬP</h2>
       <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Vui lòng đăng nhập để mở khóa và xem chi tiết hướng dẫn Build đầy đủ.</p>
       <button class="btn btn-primary" style="padding: 8px 24px; font-size: 1rem;" onclick="Auth.openModal('login')">🔑 Đăng nhập ngay</button>
     </div>
@@ -42,7 +42,7 @@
               <span id="detail-purpose" style="background: rgba(72, 187, 120, 0.15); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-green);"></span>
               <span id="detail-difficulty" style="background: rgba(237, 137, 54, 0.15); color: var(--accent-orange); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-orange);"></span>
             </div>
-            <h1 id="detail-title" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.9rem; margin-bottom: 8px;"></h1>
+            <h1 id="detail-title" style="color: var(--accent-gold); font-size: 1.85rem; margin-bottom: 8px; font-weight: 700;"></h1>
             <div style="color: var(--text-muted); font-size: 0.85rem; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
               <span>Tác giả: <strong id="detail-author" style="color: var(--accent-gold);"></strong></span>
               <span>Cập nhật: <span id="detail-time" style="color: var(--text-bright);"></span></span>
@@ -60,26 +60,26 @@
         </div>
       </div>
 
-      <!-- KHỐI 1 & 2: MỞ SẴN CỐ ĐỊNH (TỔNG QUAN, PROS & CONS) -->
+      <!-- 1 & 2: MỞ SẴN CỐ ĐỊNH (TỔNG QUAN, PROS & CONS) -->
       <div class="detail-card">
-        <div class="detail-card-title">📖 TỔNG QUAN & LỐI CHƠI</div>
+        <div class="detail-card-title">📖 1. TỔNG QUAN & LỐI CHƠI</div>
         <div id="detail-intro" class="markdown-rendered" style="margin-bottom: 16px;"></div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
           <div>
-            <strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">ƯU ĐIỂM (PROS)</strong>
+            <strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">2.1 ƯU ĐIỂM (PROS)</strong>
             <div id="detail-pros" class="markdown-rendered"></div>
           </div>
           <div>
-            <strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">NHƯỢC ĐIỂM (CONS)</strong>
+            <strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">2.2 NHƯỢC ĐIỂM (CONS)</strong>
             <div id="detail-cons" class="markdown-rendered"></div>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 3: KÉO MỞ (STATS) -->
+      <!-- 3: KÉO MỞ (STATS) -->
       <details class="section-accordion">
-        <summary>📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
+        <summary>📊 3. PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
         <div class="section-accordion-body">
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
             <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong id="detail-str" style="color:var(--accent-gold);"></strong></div>
@@ -90,17 +90,17 @@
         </div>
       </details>
 
-      <!-- KHỐI 4: KÉO MỞ (SKILLS & ROTATION) -->
+      <!-- 4: KÉO MỞ (SKILLS & ROTATION) -->
       <details class="section-accordion">
-        <summary>⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</summary>
+        <summary>⚡ 4. KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</summary>
         <div class="section-accordion-body">
           <div id="detail-skills" class="markdown-rendered"></div>
         </div>
       </details>
 
-      <!-- KHỐI 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) -->
+      <!-- 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) -->
       <details class="section-accordion">
-        <summary>🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</summary>
+        <summary>🛡️ 5. LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</summary>
         <div class="section-accordion-body">
           <details class="gear-accordion-item" open>
             <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
@@ -125,9 +125,9 @@
         </div>
       </details>
 
-      <!-- KHỐI 6: KÉO MỞ (CHIẾN THUẬT BOSS & VIDEO) -->
+      <!-- 6: KÉO MỞ (CHIẾN THUẬT BOSS & VIDEO) -->
       <details class="section-accordion" id="box-strategy-card">
-        <summary>🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</summary>
+        <summary>🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</summary>
         <div class="section-accordion-body">
           <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
           <div id="video-container" class="bb-video-embed" style="display: none;"></div>
