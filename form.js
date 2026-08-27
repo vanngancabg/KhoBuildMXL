@@ -879,6 +879,7 @@ const FormHandler = {
     };
   },
 
+  // PREVIEW KHI ĐANG VIẾT BÀI: MỞ BUNG SẴN 100% TẤT CẢ CÁC KHỐI ĐỂ RÀ SOÁT
   openPreviewModal() {
     const d = this.collectFormData();
     const modal = document.getElementById('modal-preview-full');
@@ -912,8 +913,9 @@ const FormHandler = {
         </div>
       </div>
 
+      <!-- KHỐI 1 & 2: MỞ BUNG -->
       <div class="detail-card">
-        <div class="detail-card-title">📖 TỔNG QUAN LỐI CHƠI</div>
+        <div class="detail-card-title">📖 TỔNG QUAN & LỐI CHƠI</div>
         <div class="markdown-rendered">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
@@ -928,8 +930,9 @@ const FormHandler = {
         </div>
       </div>
 
+      <!-- KHỐI 3: MỞ BUNG -->
       <div class="detail-card">
-        <div class="detail-card-title">📊 PHÂN BỔ STATS</div>
+        <div class="detail-card-title">📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
           <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold);">${d.str || '0'}</strong></div>
           <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold);">${d.dex || '0'}</strong></div>
@@ -938,13 +941,15 @@ const FormHandler = {
         </div>
       </div>
 
+      <!-- KHỐI 4: MỞ BUNG -->
       <div class="detail-card">
-        <div class="detail-card-title">⚡ KỸ NĂNG & ROTATION</div>
+        <div class="detail-card-title">⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
         <div class="markdown-rendered">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
       </div>
 
+      <!-- KHỐI 5: MỞ BUNG -->
       <div class="detail-card">
-        <div class="detail-card-title">🛡️ LỘ TRÌNH TRANG BỊ (GEAR PROGRESSION)</div>
+        <div class="detail-card-title">🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
         
         <details class="gear-accordion-item" open>
           <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
@@ -954,7 +959,7 @@ const FormHandler = {
         </details>
 
         ${d.gear_lv50_135 ? `
-          <details class="gear-accordion-item">
+          <details class="gear-accordion-item" open>
             <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
             <div class="gear-accordion-body">
               <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
@@ -963,7 +968,7 @@ const FormHandler = {
         ` : ''}
 
         ${d.gear_lv135plus ? `
-          <details class="gear-accordion-item">
+          <details class="gear-accordion-item" open>
             <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
             <div class="gear-accordion-body">
               <div class="markdown-rendered">${this.parseBBCode(d.gear_lv135plus)}</div>
@@ -972,9 +977,10 @@ const FormHandler = {
         ` : ''}
       </div>
 
+      <!-- KHỐI 6: MỞ BUNG -->
       ${d.strategy || videoEmbed ? `
         <div class="detail-card">
-          <div class="detail-card-title">🎬 CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+          <div class="detail-card-title">🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
           ${d.strategy ? `<div class="markdown-rendered" style="margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
           ${videoEmbed}
         </div>
