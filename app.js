@@ -7,8 +7,17 @@ const App = {
   pageSize: 20,
 
   async init() {
-    await Promise.all([this.trackVisit(), this.loadBuilds(), this.loadShoutbox()]);
-    setInterval(() => this.loadShoutbox(), 15000);
+    // Ưu tiên tải dữ liệu bài viết trước để hiển thị ngay lập tức
+    await this.loadBuilds();
+    
+    // Tải lượt xem và shoutbox ngầm phía sau, không làm chậm trang
+    this.trackVisit();
+    this.loadShoutbox();
+    setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        this.loadShoutbox();
+      }
+    }, 30000);
   },
 
   async trackVisit() {
@@ -29,14 +38,14 @@ const App = {
     const buildsGrid = document.getElementById('builds-grid');
     try {
       const res = await API.getBuilds();
-      loadingState.style.display = 'none';
+      if (loadingState) loadingState.style.display = 'none';
       if (res.status === 'success' && res.data) {
         this.allBuilds = res.data;
         this.applyFilters();
-        buildsGrid.style.display = 'grid';
+        if (buildsGrid) buildsGrid.style.display = 'grid';
       }
     } catch (err) {
-      loadingState.innerText = 'Lỗi kết nối!';
+      if (loadingState) loadingState.innerText = 'Lỗi kết nối máy chủ! Vui lòng tải lại trang.';
     }
   },
 
@@ -55,14 +64,15 @@ const App = {
     const buildsGrid = document.getElementById('builds-grid');
     const emptyState = document.getElementById('empty-state');
     const pagination = document.getElementById('pagination-container');
+    if (!buildsGrid) return;
     buildsGrid.innerHTML = '';
 
     if (this.filteredBuilds.length === 0) {
-      emptyState.style.display = 'block';
-      pagination.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'block';
+      if (pagination) pagination.style.display = 'none';
       return;
     }
-    emptyState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'none';
 
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const pagedBuilds = this.filteredBuilds.slice(startIndex, startIndex + this.pageSize);
@@ -146,6 +156,7 @@ const App = {
 
   renderPagination() {
     const container = document.getElementById('pagination-container');
+    if (!container) return;
     const totalPages = Math.ceil(this.filteredBuilds.length / this.pageSize);
     if (totalPages <= 1) {
       container.style.display = 'none';
@@ -186,7 +197,8 @@ const App = {
 
   toggleSortVotes() {
     this.sortByVotes = !this.sortByVotes;
-    document.getElementById('sort-votes-btn').classList.toggle('btn-primary', this.sortByVotes);
+    const btn = document.getElementById('sort-votes-btn');
+    if (btn) btn.classList.toggle('btn-primary', this.sortByVotes);
     this.currentPage = 1;
     this.applyFilters();
   },
@@ -197,7 +209,8 @@ const App = {
   },
 
   applyFilters() {
-    const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+    const input = document.getElementById('search-input');
+    const keyword = input ? input.value.trim().toLowerCase() : '';
     this.filteredBuilds = this.allBuilds.filter(b => {
       const matchClass = (this.currentClass === 'All') || (b.class_name && b.class_name.toLowerCase() === this.currentClass.toLowerCase());
       const matchKeyword = !keyword || (b.title && b.title.toLowerCase().includes(keyword)) || (b.author_name && b.author_name.toLowerCase().includes(keyword));
@@ -214,14 +227,14 @@ const App = {
     try {
       const res = await API.getShoutbox();
       const list = document.getElementById('shoutbox-list');
-      if (res.status === 'success' && res.data) {
+      if (res.status === 'success' && res.data && list) {
         list.innerHTML = '';
         res.data.forEach(msg => {
           const div = document.createElement('div');
           div.className = 'shoutbox-item';
           div.innerHTML = `
             <div style="display: flex; justify-content: space-between; color: var(--accent-gold); font-size: 0.75rem; margin-bottom: 2px;">
-              <strong>${this.escapeHTML(msg.user_name)}</strong>
+              <strong>${this.escapeHTML(msg.user_name || msg.username)}</strong>
               <span style="color: var(--text-muted);">${(msg.created_at || '').split(' ')[0]}</span>
             </div>
             <div>${this.escapeHTML(msg.message)}</div>
@@ -237,6 +250,7 @@ const App = {
     const user = Auth.getCurrentUser();
     if (!user) return Auth.openModal('login');
     const input = document.getElementById('shoutbox-text');
+    if (!input) return;
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
