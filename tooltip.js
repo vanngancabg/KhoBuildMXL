@@ -18,19 +18,17 @@ const ItemTooltipManager = {
   },
 
   async loadDatabase() {
-    // 1. Kiểm tra bộ nhớ đệm trình duyệt trước để mở trang ngay lập tức
     const cached = localStorage.getItem('d2_cached_itemdb');
     const cacheTime = localStorage.getItem('d2_cached_itemdb_time');
     const now = Date.now();
 
-    if (cached && cacheTime && (now - Number(cacheTime) < 300000)) { // 5 phút cache
+    if (cached && cacheTime && (now - Number(cacheTime) < 300000)) {
       try {
         this.itemsDb = JSON.parse(cached);
         return;
       } catch(e) {}
     }
 
-    // 2. Nếu hết hạn hoặc chưa có thì mới tải từ Google Sheets
     try {
       const res = await API.getItemDatabase();
       if (res.status === 'success' && res.data) {
@@ -170,7 +168,8 @@ const ItemTooltipManager = {
 
   renderPickerItems() {
     const list = document.getElementById('picker-items-list');
-    const query = (document.getElementById('picker-search-input')?.value || '').trim().toLowerCase();
+    const rawQuery = (document.getElementById('picker-search-input')?.value || '').trim();
+    const query = rawQuery.toLowerCase();
     list.innerHTML = '';
 
     const items = Object.values(this.itemsDb).filter(item => {
@@ -183,12 +182,29 @@ const ItemTooltipManager = {
       if (box) box.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Chưa có dữ liệu ảnh.</div>';
       if (actions) actions.style.display = 'none';
 
-      list.innerHTML = `
-        <div style="text-align: center; padding: 40px 10px;">
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Chưa có món đồ "${query}" trong kho dữ liệu.</p>
-          <button class="btn btn-primary" onclick="ItemTooltipManager.closePickerModal(false); FormHandler.openDirectUploadModal('${query}')">➕ Tải Ảnh Đóng Góp Món Này</button>
-        </div>
-      `;
+      const emptyWrap = document.createElement('div');
+      emptyWrap.style.textAlign = 'center';
+      emptyWrap.style.padding = '40px 10px';
+
+      const pMsg = document.createElement('p');
+      pMsg.style.color = 'var(--text-muted)';
+      pMsg.style.fontSize = '0.9rem';
+      pMsg.style.marginBottom = '12px';
+      pMsg.innerText = `Chưa có món đồ "${rawQuery}" trong kho dữ liệu.`;
+
+      const btnUpload = document.createElement('button');
+      btnUpload.className = 'btn btn-primary';
+      btnUpload.innerText = '➕ Tải Ảnh Đóng Góp Món Này';
+      btnUpload.onclick = () => {
+        this.closePickerModal(false);
+        if (typeof FormHandler !== 'undefined') {
+          FormHandler.openDirectUploadModal(rawQuery);
+        }
+      };
+
+      emptyWrap.appendChild(pMsg);
+      emptyWrap.appendChild(btnUpload);
+      list.appendChild(emptyWrap);
       return;
     }
 
@@ -240,7 +256,9 @@ const ItemTooltipManager = {
 
     btnUpdate.onclick = () => {
       this.closePickerModal(false);
-      FormHandler.openDirectUploadModal(item.name, true);
+      if (typeof FormHandler !== 'undefined') {
+        FormHandler.openDirectUploadModal(item.name, true);
+      }
     };
   },
 
