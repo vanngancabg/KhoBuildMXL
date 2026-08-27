@@ -9,10 +9,8 @@ const Auth = {
     }
     this.renderNavbar();
     if (this.currentUser) {
-      // Tải ngay thông báo lần đầu
       setTimeout(() => this.loadNotifications(), 500);
 
-      // Chỉ kiểm tra chu kỳ 60s và khi tab đang active
       if (this.notifInterval) clearInterval(this.notifInterval);
       this.notifInterval = setInterval(() => {
         if (document.visibilityState === 'visible') {
@@ -222,11 +220,13 @@ const Auth = {
       const res = await API.approvePendingItem(pendingId, this.currentUser.username, this.currentUser.role);
       alert(res.message);
       document.getElementById('modal-item-compare').classList.remove('active');
-      await this.loadNotifications();
+      
+      // Xóa Cache và tải lại database mới ngay lập tức
+      localStorage.removeItem('d2_cached_itemdb');
       if (typeof ItemTooltipManager !== 'undefined') {
-        localStorage.removeItem('d2_cached_itemdb');
         await ItemTooltipManager.loadDatabase();
       }
+      await this.loadNotifications();
     } catch(err) {
       alert('Lỗi khi duyệt ảnh!');
     }
