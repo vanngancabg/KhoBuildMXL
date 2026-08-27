@@ -373,7 +373,7 @@ body {
   font-family: var(--font-body);
 }
 
-/* DETAIL CARDS & ACCORDIONS (FONT TIẾNG VIỆT CHUẨN) */
+/* DETAIL CARDS & ACCORDIONS */
 .detail-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -497,17 +497,18 @@ body {
   text-align: center;
 }
 
-/* TOOLTIP & NOTIFICATIONS */
+/* HOVER ITEM TOOLTIP - CHO PHÉP NHẬN MỌI MÀU SẮC ĐÃ CHỌN */
 .item-hover-trigger {
-  color: var(--accent-gold);
+  color: inherit;
   font-weight: 600;
   cursor: pointer;
-  border-bottom: 1px dashed var(--accent-gold);
+  border-bottom: 1px dashed currentColor;
   display: inline;
+  transition: opacity 0.2s;
 }
 
 .item-hover-trigger:hover {
-  color: var(--accent-gold-hover);
+  opacity: 0.85;
   border-bottom-style: solid;
 }
 
