@@ -161,7 +161,7 @@ const FormHandler = {
 
     try {
       const res = await API.saveCloudDraft(user.username, draft);
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         const statusEl = document.getElementById('upload-status');
         if (statusEl) {
           statusEl.style.display = 'inline';
@@ -187,7 +187,7 @@ const FormHandler = {
 
     try {
       const res = await API.saveCloudDraft(user.username, draft);
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         alert('✅ Đã lưu bản nháp thành công vào tài khoản của bạn! Bạn có thể mở bất kỳ máy tính nào để viết tiếp.');
       } else {
         alert('Đã lưu nháp vào máy hiện tại.');
@@ -235,7 +235,7 @@ const FormHandler = {
     let cloudData = null;
     try {
       const res = await API.getCloudDraft(user.username);
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && res.data) {
         cloudData = res.data;
       }
     } catch(e) {}
@@ -430,7 +430,7 @@ const FormHandler = {
 
   insertItemAtMarker(selectedItemName) {
     const marker = document.getElementById(this.markerId);
-    const cleanKey = selectedItemName.trim().toLowerCase();
+    const cleanKey = selectedItemName.replace(/["']/g, '').trim().toLowerCase();
     
     const itemSpan = document.createElement('span');
     itemSpan.className = 'item-hover-trigger';
@@ -509,7 +509,7 @@ const FormHandler = {
           role: user.role || 'Member'
         });
 
-        if (res.status === 'success') {
+        if (res && res.status === 'success') {
           ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
             name: itemName,
             category: 'Sacred Unique',
@@ -528,7 +528,7 @@ const FormHandler = {
             this.insertItemAtMarker(name);
           }, itemName, itemName);
 
-        } else if (res.status === 'pending') {
+        } else if (res && res.status === 'pending') {
           this.closeItemModal();
           alert('Đề xuất của bạn đã được gửi và đang chờ duyệt. Trong lúc này bạn vẫn có thể dùng ảnh hiện tại của món đồ.');
           if (statusEl) statusEl.style.display = 'none';
@@ -537,7 +537,7 @@ const FormHandler = {
             this.insertItemAtMarker(name);
           }, itemName, itemName);
         } else {
-          alert('Lỗi: ' + res.message);
+          alert('Lỗi: ' + (res?.message || 'Không thể lưu ảnh'));
           if (statusEl) statusEl.style.display = 'none';
         }
       } catch (err) {
@@ -568,7 +568,7 @@ const FormHandler = {
       const base64Data = reader.result.split(',')[1];
       try {
         const res = await API.uploadImage(base64Data, file.name, file.type);
-        if (res.status === 'success' && res.url) {
+        if (res && res.status === 'success' && res.url) {
           this.restoreSelection();
           const imgHTML = `<img src="${res.url}" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;"><p><br></p>`;
           document.execCommand('insertHTML', false, imgHTML);
@@ -577,7 +577,7 @@ const FormHandler = {
             setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
           }
         } else {
-          alert('Lỗi tải ảnh: ' + (res.message || 'Không xác định'));
+          alert('Lỗi tải ảnh: ' + (res?.message || 'Không xác định'));
           if (statusEl) statusEl.style.display = 'none';
         }
       } catch (err) {
@@ -638,16 +638,28 @@ const FormHandler = {
       .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
-      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>')
-      .replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, name) => `<span class="item-hover-trigger" data-item-key="${name.trim().toLowerCase()}">${name}</span>`)
-      .replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (m, body) => {
-        const items = body.split(/\[\*\]/).filter(x => x.trim().length > 0);
-        return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
-      })
-      .replace(/\n/g, '<br>');
-    return str;
+      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    // Chuyển đổi [item] an toàn, loại bỏ ký tự lạ khỏi data-item-key
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, innerContent) => {
+      const cleanKey = innerContent
+        .replace(/<[^>]*>/g, '')
+        .replace(/\[\/?[^\]]+\]/g, '')
+        .replace(/["']/g, '')
+        .trim()
+        .toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
+
+    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (m, body) => {
+      const items = body.split(/\[\*\]/).filter(x => x.trim().length > 0);
+      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
+    });
+
+    return str.replace(/\n/g, '<br>');
   },
 
+  // CHUYỂN ĐỔI TỪ WYSIWYG SANG BBCODE - BẢO TOÀN NGUYÊN VẸN MÀU SẮC ĐÃ TÔ CHO ITEM
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -661,16 +673,19 @@ const FormHandler = {
         return '';
       }
 
-      if (node.classList.contains('item-hover-trigger')) {
-        const text = node.textContent.trim();
-        return `[item]${text}[/item]`;
-      }
-
       const tag = node.tagName.toLowerCase();
       let inner = '';
       node.childNodes.forEach(child => {
         inner += serializeNode(child);
       });
+
+      if (node.classList.contains('item-hover-trigger')) {
+        let resItem = `[item]${inner.trim()}[/item]`;
+        if (node.style && node.style.color) {
+          resItem = `[color=${this.rgbToHex(node.style.color)}]${resItem}[/color]`;
+        }
+        return resItem;
+      }
 
       if (node.classList.contains('bb-indent') || tag === 'blockquote') {
         return `[indent]${inner}[/indent]`;
@@ -776,7 +791,7 @@ const FormHandler = {
   async loadData(id, user) {
     try {
       const res = await API.getBuildDetail(id);
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && res.data) {
         const b = res.data;
         if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase() && user.role !== 'Admin') {
           alert('Bạn không có quyền sửa bài viết này!');
@@ -1021,12 +1036,6 @@ const FormHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // PARSER ITEM GẮN ẢNH - BẢO TOÀN MÀU SẮC ĐÃ CHỌN
-    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
-      const cleanKey = innerContent.replace(/\[\/?(color|b|i|u|s|size).*?\]/gi, '').replace(/<[^>]*>/g, '').trim().toLowerCase();
-      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
-    });
-
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
@@ -1039,6 +1048,17 @@ const FormHandler = {
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
+
+    // XỬ LÝ [item] AN TOÀN TUYỆT ĐỐI
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
+      const cleanKey = innerContent
+        .replace(/<[^>]*>/g, '')
+        .replace(/\[\/?[^\]]+\]/g, '')
+        .replace(/["']/g, '')
+        .trim()
+        .toLowerCase();
+      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
+    });
 
     return str.replace(/\n/g, '<br>');
   },
@@ -1093,12 +1113,12 @@ const FormHandler = {
 
     try {
       const res = await API.saveBuild(payload);
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         localStorage.removeItem('d2_build_draft_wysiwyg');
         await API.deleteCloudDraft(user.username);
         window.location.href = `build-detail.html?id=${res.build_id}`;
       } else {
-        alert(res.message || 'Lưu thất bại!');
+        alert(res?.message || 'Lưu thất bại!');
         btn.disabled = false;
         btn.innerText = '🚀 Submit / Đăng Bài Viết';
       }
