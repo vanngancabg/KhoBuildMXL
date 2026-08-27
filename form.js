@@ -107,14 +107,12 @@ const FormHandler = {
 
       if (!imageFile) return;
 
-      // 1. Đang mở Bảng Đóng góp/Đề xuất ảnh món đồ
       if (itemModal && itemModal.classList.contains('active')) {
         e.preventDefault();
         await this.uploadItemToDatabase(imageFile);
         return;
       }
 
-      // 2. Đang gõ bài trong ô WYSIWYG
       const activeEl = document.activeElement;
       if (activeEl && activeEl.classList.contains('wysiwyg-editor')) {
         e.preventDefault();
@@ -404,7 +402,6 @@ const FormHandler = {
     }
   },
 
-  // CẮM THẺ ĐÁNH DẤU VỊ TRÍ CON TRỎ CHUỘT
   insertCursorMarker() {
     this.removeCursorMarker();
     const sel = window.getSelection();
@@ -522,7 +519,6 @@ const FormHandler = {
           statusEl.innerText = `✅ Đã cập nhật ảnh món "${itemName}" thành công!`;
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
 
-          // Tự động mở lại Picker và truyền tiếp callback chèn vào marker
           ItemTooltipManager.openPickerModal((name) => {
             this.insertItemAtMarker(name);
           }, itemName, itemName);
@@ -615,7 +611,6 @@ const FormHandler = {
     return color;
   },
 
-  // BBCODE -> HTML (Xử lý đệ quy [indent] triệt để)
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
