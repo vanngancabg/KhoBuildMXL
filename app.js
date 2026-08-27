@@ -7,12 +7,15 @@ const App = {
   pageSize: 20,
 
   async init() {
-    // Ưu tiên tải dữ liệu bài viết trước để hiển thị ngay lập tức
+    // 1. Tải và render bài viết ngay lập tức
     await this.loadBuilds();
     
-    // Tải lượt xem và shoutbox ngầm phía sau, không làm chậm trang
-    this.trackVisit();
-    this.loadShoutbox();
+    // 2. Chạy ngầm các phần phụ sau khi bài viết đã hiển thị xong
+    setTimeout(() => {
+      this.trackVisit();
+      this.loadShoutbox();
+    }, 300);
+
     setInterval(() => {
       if (document.visibilityState === 'visible') {
         this.loadShoutbox();
@@ -23,14 +26,11 @@ const App = {
   async trackVisit() {
     try {
       const res = await API.trackSiteVisit();
-      if (res.status === 'success') {
+      if (res && res.status === 'success') {
         const el = document.getElementById('site-total-visits');
         if (el) el.innerText = (res.total_visits || 1).toLocaleString('vi-VN');
       }
-    } catch (e) {
-      const el = document.getElementById('site-total-visits');
-      if (el) el.innerText = '1,000+';
-    }
+    } catch (e) {}
   },
 
   async loadBuilds() {
@@ -39,13 +39,22 @@ const App = {
     try {
       const res = await API.getBuilds();
       if (loadingState) loadingState.style.display = 'none';
-      if (res.status === 'success' && res.data) {
+      
+      if (res && res.status === 'success' && Array.isArray(res.data)) {
         this.allBuilds = res.data;
         this.applyFilters();
         if (buildsGrid) buildsGrid.style.display = 'grid';
+      } else {
+        if (loadingState) {
+          loadingState.style.display = 'block';
+          loadingState.innerText = 'Chưa có bài viết nào trong hệ thống.';
+        }
       }
     } catch (err) {
-      if (loadingState) loadingState.innerText = 'Lỗi kết nối máy chủ! Vui lòng tải lại trang.';
+      if (loadingState) {
+        loadingState.style.display = 'block';
+        loadingState.innerText = 'Lỗi kết nối máy chủ! Vui lòng bấm F5 tải lại.';
+      }
     }
   },
 
@@ -57,7 +66,7 @@ const App = {
       Auth.openModal('login');
       return;
     }
-    window.location.href = `build-detail.html?id=${buildId}`;
+    window.location.href = `build-detail.html?id=${encodeURIComponent(buildId)}`;
   },
 
   renderBuilds() {
@@ -80,7 +89,7 @@ const App = {
     pagedBuilds.forEach(build => {
       const card = document.createElement('a');
       card.className = 'card';
-      card.href = `build-detail.html?id=${build.build_id}`;
+      card.href = `build-detail.html?id=${encodeURIComponent(build.build_id)}`;
       card.onclick = (e) => this.handleCardClick(e, build.build_id);
       
       const isNew = this.checkIsNew(build.updated_at);
@@ -121,7 +130,7 @@ const App = {
         </div>
         <div class="card-meta">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.78rem;">
-            <span>Tác giả: <strong style="color: var(--text-bright);">${this.escapeHTML(build.author_name || 'Ẩn danh')}</strong></span>
+            <span>Tác giả: <strong style="color: var(--text-bright);">${this.escapeHTML(build.author_name || build.author_username || 'Ẩn danh')}</strong></span>
             ${formattedDate ? `<span style="color: var(--text-muted);">Ngày cập nhật: <strong style="color: var(--text-bright);">${formattedDate}</strong></span>` : ''}
           </div>
           <div style="display: flex; gap: 8px; font-size: 0.75rem;">
@@ -213,12 +222,14 @@ const App = {
     const keyword = input ? input.value.trim().toLowerCase() : '';
     this.filteredBuilds = this.allBuilds.filter(b => {
       const matchClass = (this.currentClass === 'All') || (b.class_name && b.class_name.toLowerCase() === this.currentClass.toLowerCase());
-      const matchKeyword = !keyword || (b.title && b.title.toLowerCase().includes(keyword)) || (b.author_name && b.author_name.toLowerCase().includes(keyword));
+      const authorName = String(b.author_name || b.author_username || '').toLowerCase();
+      const titleName = String(b.title || '').toLowerCase();
+      const matchKeyword = !keyword || titleName.includes(keyword) || authorName.includes(keyword);
       return matchClass && matchKeyword;
     });
 
     if (this.sortByVotes) {
-      this.filteredBuilds.sort((a, b) => (b.votes_count || 0) - (a.votes_count || 0));
+      this.filteredBuilds.sort((a, b) => (Number(b.votes_count) || 0) - (Number(a.votes_count) || 0));
     }
     this.renderBuilds();
   },
@@ -227,7 +238,7 @@ const App = {
     try {
       const res = await API.getShoutbox();
       const list = document.getElementById('shoutbox-list');
-      if (res.status === 'success' && res.data && list) {
+      if (res && res.status === 'success' && Array.isArray(res.data) && list) {
         list.innerHTML = '';
         res.data.forEach(msg => {
           const div = document.createElement('div');
