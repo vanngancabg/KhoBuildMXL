@@ -430,7 +430,7 @@ const FormHandler = {
 
   insertItemAtMarker(selectedItemName) {
     const marker = document.getElementById(this.markerId);
-    const cleanKey = selectedItemName.replace(/["']/g, '').trim().toLowerCase();
+    const cleanKey = selectedItemName.trim().toLowerCase();
     
     const itemSpan = document.createElement('span');
     itemSpan.className = 'item-hover-trigger';
@@ -640,12 +640,12 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // Chuyển đổi [item] an toàn, loại bỏ ký tự lạ khỏi data-item-key
+    // Chuyển đổi [item] an toàn, giữ nguyên dấu nháy đơn '
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
         .replace(/\[\/?[^\]]+\]/g, '')
-        .replace(/["']/g, '')
+        .replace(/"/g, '')
         .trim()
         .toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
@@ -659,7 +659,6 @@ const FormHandler = {
     return str.replace(/\n/g, '<br>');
   },
 
-  // CHUYỂN ĐỔI TỪ WYSIWYG SANG BBCODE - BẢO TOÀN NGUYÊN VẸN MÀU SẮC ĐÃ TÔ CHO ITEM
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -1049,12 +1048,12 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // XỬ LÝ [item] AN TOÀN TUYỆT ĐỐI
+    // Chuyển đổi [item] an toàn, giữ nguyên dấu nháy đơn '
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
         .replace(/\[\/?[^\]]+\]/g, '')
-        .replace(/["']/g, '')
+        .replace(/"/g, '')
         .trim()
         .toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
