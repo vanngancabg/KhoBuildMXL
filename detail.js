@@ -330,7 +330,6 @@ const DetailHandler = {
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
 
-    // 1. XỬ LÝ ĐỊNH DẠNG MÀU SẮC, CHỮ ĐẬM, NGHIÊNG TRƯỚC
     str = str
       .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
       .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
@@ -344,12 +343,12 @@ const DetailHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // 2. XỬ LÝ [item] - TRÍCH XUẤT KEY THUẦN TÚY CHỐNG RÁCH TAG & GIỮ NGUYÊN MÀU SẮC
+    // Chuyển đổi [item] an toàn, giữ nguyên dấu nháy đơn '
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
         .replace(/\[\/?[^\]]+\]/g, '')
-        .replace(/["']/g, '')
+        .replace(/"/g, '')
         .trim()
         .toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
