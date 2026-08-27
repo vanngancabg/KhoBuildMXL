@@ -1,83 +1,78 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwPUxNUaYGUTSWGT4vvFBeuuRcGTR2e2ZK8OR7XJuFE49FbkDHz3ZpKm1tsx2bYZL83mA/exec';
 
 const API = {
-  // Cơ chế Fetch chịu lỗi cao, tự động Retry 2 lần nếu Google Apps Script phản hồi chậm
-  async request(url, options = {}, retries = 2) {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) throw new Error('HTTP Error ' + response.status);
-      return await response.json();
-    } catch (err) {
-      if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        return await this.request(url, options, retries - 1);
-      }
-      return { status: 'error', message: 'Không thể kết nối tới Google Server. Vui lòng tải lại trang!' };
-    }
-  },
-
   async getBuilds() {
-    return await this.request(`${API_URL}?action=getBuilds`);
+    const res = await fetch(`${API_URL}?action=getBuilds`);
+    return await res.json();
   },
 
   async getBuildDetail(buildId) {
-    return await this.request(`${API_URL}?action=getBuildDetail&build_id=${encodeURIComponent(buildId)}`);
+    const res = await fetch(`${API_URL}?action=getBuildDetail&build_id=${encodeURIComponent(buildId)}`);
+    return await res.json();
   },
 
   async getComments(buildId) {
-    return await this.request(`${API_URL}?action=getComments&build_id=${encodeURIComponent(buildId)}`);
+    const res = await fetch(`${API_URL}?action=getComments&build_id=${encodeURIComponent(buildId)}`);
+    return await res.json();
   },
 
   async getShoutbox() {
-    return await this.request(`${API_URL}?action=getShoutbox`);
+    const res = await fetch(`${API_URL}?action=getShoutbox`);
+    return await res.json();
   },
 
   async getItemDatabase() {
-    return await this.request(`${API_URL}?action=getItemDatabase`);
+    const res = await fetch(`${API_URL}?action=getItemDatabase`);
+    return await res.json();
   },
 
   async getNotifications(username) {
-    return await this.request(`${API_URL}?action=getNotifications&username=${encodeURIComponent(username)}`);
+    const res = await fetch(`${API_URL}?action=getNotifications&username=${encodeURIComponent(username)}`);
+    return await res.json();
   },
 
   async markNotificationRead(username) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'clearNotifications', username })
     });
+    return await res.json();
   },
 
   async trackSiteVisit() {
-    if (sessionStorage.getItem('d2_visited')) return { status: 'success' };
-    sessionStorage.setItem('d2_visited', 'true');
-    return await this.request(`${API_URL}?action=trackSiteVisit`);
+    const res = await fetch(`${API_URL}?action=trackSiteVisit`);
+    return await res.json();
   },
 
   async getCloudDraft(username) {
-    return await this.request(`${API_URL}?action=getCloudDraft&username=${encodeURIComponent(username)}`);
+    const res = await fetch(`${API_URL}?action=getCloudDraft&username=${encodeURIComponent(username)}`);
+    return await res.json();
   },
 
   async saveCloudDraft(username, draft) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'saveCloudDraft', username, draft })
     });
+    return await res.json();
   },
 
   async deleteCloudDraft(username) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'deleteCloudDraft', username })
     });
+    return await res.json();
   },
 
   async getPendingItemDetail(pending_id) {
-    return await this.request(`${API_URL}?action=getPendingItemDetail&pending_id=${encodeURIComponent(pending_id)}`);
+    const res = await fetch(`${API_URL}?action=getPendingItemDetail&pending_id=${encodeURIComponent(pending_id)}`);
+    return await res.json();
   },
 
   async uploadItemDatabase(payload) {
     localStorage.removeItem('d2_cached_itemdb');
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'uploadItemDatabase',
@@ -90,25 +85,28 @@ const API = {
         role: payload.role
       })
     });
+    return await res.json();
   },
 
   async approvePendingItem(pending_id, username, role) {
     localStorage.removeItem('d2_cached_itemdb');
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'approvePendingItem', pending_id, username, role })
     });
+    return await res.json();
   },
 
   async rejectPendingItem(pending_id, username, role) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'rejectPendingItem', pending_id, username, role })
     });
+    return await res.json();
   },
 
   async uploadImage(base64Data, fileName, mimeType) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'uploadImage',
@@ -117,61 +115,70 @@ const API = {
         mimeType: mimeType
       })
     });
+    return await res.json();
   },
 
   async register(user) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'register', user })
     });
+    return await res.json();
   },
 
   async login(credentials) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'login', credentials })
     });
+    return await res.json();
   },
 
   async saveBuild(build) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'saveBuild', build })
     });
+    return await res.json();
   },
 
   async deleteBuild(build_id, username, role) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'deleteBuild', build_id, username, role })
     });
+    return await res.json();
   },
 
   async voteBuild(build_id, username) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'voteBuild', build_id, username })
     });
+    return await res.json();
   },
 
   async addComment(comment) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'addComment', comment })
     });
+    return await res.json();
   },
 
   async deleteComment(comment_id, username, role) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'deleteComment', comment_id, username, role })
     });
+    return await res.json();
   },
 
   async sendShoutbox(message) {
-    return await this.request(API_URL, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'sendShoutbox', message })
     });
+    return await res.json();
   }
 };
