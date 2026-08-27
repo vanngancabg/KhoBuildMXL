@@ -31,9 +31,18 @@ const ItemTooltipManager = {
 
     try {
       const res = await API.getItemDatabase();
-      if (res.status === 'success' && res.data) {
+      if (res && res.status === 'success' && res.data) {
         this.itemsDb = res.data;
-        localStorage.setItem('d2_cached_itemdb', JSON.stringify(res.data));
+        
+        // Tạo thêm index phụ cho các món đồ có dấu nháy đơn để tìm kiếm linh hoạt
+        Object.keys(res.data).forEach(k => {
+          const stripped = k.replace(/['’"]/g, '');
+          if (!this.itemsDb[stripped]) {
+            this.itemsDb[stripped] = res.data[k];
+          }
+        });
+
+        localStorage.setItem('d2_cached_itemdb', JSON.stringify(this.itemsDb));
         localStorage.setItem('d2_cached_itemdb_time', String(now));
       }
     } catch (err) {}
@@ -51,7 +60,11 @@ const ItemTooltipManager = {
           key = target.textContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
         }
 
-        const item = this.itemsDb[key];
+        // Tìm kiếm linh hoạt cả tên có dấu ' lẫn tên bỏ dấu '
+        const cleanKey = (key || '').trim().toLowerCase();
+        const strippedKey = cleanKey.replace(/['’"]/g, '');
+        const item = this.itemsDb[cleanKey] || this.itemsDb[strippedKey];
+
         if (item && item.url) {
           tooltipImg.src = item.url;
           tooltip.style.display = 'block';
@@ -107,12 +120,12 @@ const ItemTooltipManager = {
       modal.innerHTML = `
         <div class="modal-content" style="max-width: 850px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
           <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
-            <h3 style="color: var(--accent-gold); margin: 0; font-family: var(--font-heading);">🗡️ THƯ VIỆN TRANG BỊ MEDIAN XL</h3>
+            <h3 style="color: var(--accent-gold); margin: 0; font-family: var(--font-body); font-weight: 700;">🗡️ THƯ VIỆN TRANG BỊ MEDIAN XL</h3>
             <button class="btn btn-sm" onclick="ItemTooltipManager.closePickerModal(true)">✖ Đóng</button>
           </div>
 
           <div style="margin-bottom: 14px;">
-            <input type="text" id="picker-search-input" class="form-control" placeholder="🔍 Gõ tên món đồ để tìm nhanh (VD: Iceflayer, Shadowfang...)" oninput="ItemTooltipManager.renderPickerItems()">
+            <input type="text" id="picker-search-input" class="form-control" placeholder="🔍 Gõ tên món đồ để tìm nhanh (VD: Iceflayer, Warmage's Fireblade...)" oninput="ItemTooltipManager.renderPickerItems()">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 340px; gap: 16px; flex: 1; overflow: hidden; min-height: 380px;">
@@ -148,9 +161,12 @@ const ItemTooltipManager = {
     
     this.renderPickerItems();
 
-    if (autoSelectItem && this.itemsDb[autoSelectItem.toLowerCase()]) {
-      this.selectedItemForInsert = autoSelectItem;
-      this.showPickerPreview(this.itemsDb[autoSelectItem.toLowerCase()]);
+    if (autoSelectItem) {
+      const targetItem = this.itemsDb[autoSelectItem.toLowerCase()] || this.itemsDb[autoSelectItem.toLowerCase().replace(/['’"]/g, '')];
+      if (targetItem) {
+        this.selectedItemForInsert = targetItem.name;
+        this.showPickerPreview(targetItem);
+      }
     }
 
     setTimeout(() => {
@@ -172,8 +188,12 @@ const ItemTooltipManager = {
     const query = rawQuery.toLowerCase();
     list.innerHTML = '';
 
+    // Lọc danh sách không trùng lặp
+    const seenNames = new Set();
     const items = Object.values(this.itemsDb).filter(item => {
-      return !query || item.name.toLowerCase().includes(query);
+      if (!item || !item.name || seenNames.has(item.name.toLowerCase())) return false;
+      seenNames.add(item.name.toLowerCase());
+      return !query || item.name.toLowerCase().includes(query) || item.name.toLowerCase().replace(/['’"]/g, '').includes(query);
     });
 
     if (items.length === 0) {
