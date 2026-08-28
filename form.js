@@ -285,6 +285,7 @@ const FormHandler = {
     this.saveSelection();
   },
 
+  // THAY ĐỔI CỠ CHỮ CHUẨN XÁC, HIỂN THỊ TỨC THÌ TRONG KHUNG GÕ
   applyFontSize(fontSize) {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -293,9 +294,10 @@ const FormHandler = {
     const range = sel.getRangeAt(0);
     if (range.collapsed) return;
 
+    const fragment = range.extractContents();
     const span = document.createElement('span');
     span.style.fontSize = fontSize;
-    span.appendChild(range.extractContents());
+    span.appendChild(fragment);
     range.insertNode(span);
 
     sel.removeAllRanges();
@@ -430,7 +432,7 @@ const FormHandler = {
 
   insertItemAtMarker(selectedItemName) {
     const marker = document.getElementById(this.markerId);
-    const cleanKey = selectedItemName.trim().toLowerCase();
+    const cleanKey = selectedItemName.replace(/"/g, '').trim().toLowerCase();
     
     const itemSpan = document.createElement('span');
     itemSpan.className = 'item-hover-trigger';
@@ -616,6 +618,7 @@ const FormHandler = {
     return color;
   },
 
+  // CHUYỂN BBCODE SANG HTML VỚI CƠ CHẾ ĐỆ QUY CHỐNG LỖI LỒNG THẺ SIZE/COLOR
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -623,19 +626,20 @@ const FormHandler = {
     let prev;
     do {
       prev = str;
-      str = str.replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>');
+      str = str
+        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
+        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
+        .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+        .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+        .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+        .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+        .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+        .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>');
     } while (str !== prev);
 
     str = str
-      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
-      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
-      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
-      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
@@ -658,6 +662,7 @@ const FormHandler = {
     return str.replace(/\n/g, '<br>');
   },
 
+  // CHUYỂN TỪ HTML SANG BBCODE VÀ CHỐNG TRÙNG LẶP SIZE/COLOR
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -680,7 +685,8 @@ const FormHandler = {
       if (node.classList.contains('item-hover-trigger')) {
         let resItem = `[item]${inner.trim()}[/item]`;
         if (node.style && node.style.color) {
-          resItem = `[color=${this.rgbToHex(node.style.color)}]${resItem}[/color]`;
+          const hex = this.rgbToHex(node.style.color);
+          if (hex) resItem = `[color=${hex}]${resItem}[/color]`;
         }
         return resItem;
       }
@@ -723,10 +729,15 @@ const FormHandler = {
         }
         if (node.style.fontSize) {
           const numSize = parseInt(node.style.fontSize, 10);
-          if (numSize) res = `[size=${numSize}]${res}[/size]`;
+          if (numSize && !res.startsWith(`[size=${numSize}]`)) {
+            res = `[size=${numSize}]${res}[/size]`;
+          }
         }
         if (node.style.color) {
-          res = `[color=${this.rgbToHex(node.style.color)}]${res}[/color]`;
+          const hex = this.rgbToHex(node.style.color);
+          if (hex && !res.startsWith(`[color=${hex}]`)) {
+            res = `[color=${hex}]${res}[/color]`;
+          }
         }
       }
 
@@ -1018,7 +1029,13 @@ const FormHandler = {
         .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
         .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
         .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>');
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
+        .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+        .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+        .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+        .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+        .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+        .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>');
     } while (str !== prev);
 
     str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
@@ -1035,14 +1052,6 @@ const FormHandler = {
     });
 
     str = str
-      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
-      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
-      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
-      .replace(/\[rw\]([\s\S]*?)\[\/rw\]/gi, '<span class="item-runeword">$1</span>')
-      .replace(/\[set\]([\s\S]*?)\[\/set\]/gi, '<span class="item-set">$1</span>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
