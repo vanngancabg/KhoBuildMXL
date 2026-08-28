@@ -239,7 +239,7 @@ body {
   border-color: var(--accent-gold);
 }
 
-/* CỬA SỔ CHAT NỔI (FLOATING CHAT WIDGET GÓC PHẢI) */
+/* CỬA SỔ CHAT NỔI (KÈM CHẤM ĐỎ THÔNG BÁO TIN NHẮN MỚI) */
 .chat-floating-btn {
   position: fixed;
   bottom: 24px;
@@ -263,6 +263,32 @@ body {
 .chat-floating-btn:hover {
   transform: scale(1.1);
   background: var(--accent-gold-hover);
+}
+
+.chat-badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff3b30;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #121418;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  animation: pulseBadge 1.5s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 .chat-floating-box {
