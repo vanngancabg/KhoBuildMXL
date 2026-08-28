@@ -640,7 +640,6 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // Chuyển đổi [item] an toàn, giữ nguyên dấu nháy đơn '
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
@@ -1048,7 +1047,6 @@ const FormHandler = {
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    // Chuyển đổi [item] an toàn, giữ nguyên dấu nháy đơn '
     str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
