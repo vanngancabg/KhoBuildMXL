@@ -4,12 +4,12 @@ const App = {
   currentClass: 'All',
   sortByVotes: false,
   currentPage: 1,
-  pageSize: 12, // Đã đặt chuẩn 12 bài viết/trang (4 hàng x 3 cột)
+  pageSize: 12,
+  totalMessagesCount: 0,
 
   async init() {
     await this.loadBuilds();
     
-    // Tải lượt xem và shoutbox ngầm sau 300ms
     setTimeout(() => {
       this.trackVisit();
       this.loadShoutbox();
@@ -232,12 +232,19 @@ const App = {
     this.renderBuilds();
   },
 
-  // BẬT / TẮT KHUNG CHAT POPUP GÓC PHẢI
+  // BẬT / TẮT KHUNG CHAT & CẬP NHẬT TRẠNG THÁI ĐÃ ĐỌC
   toggleChatWidget() {
     const widget = document.getElementById('chat-floating-widget');
     if (widget) {
-      widget.classList.toggle('active');
-      if (widget.classList.contains('active')) {
+      const willBeActive = !widget.classList.contains('active');
+      widget.classList.toggle('active', willBeActive);
+      
+      if (willBeActive) {
+        // Đã mở xem chat -> Ghi nhận đã đọc hết số tin nhắn hiện có và tắt badge đỏ
+        localStorage.setItem('d2_last_read_chat_count', String(this.totalMessagesCount));
+        const badge = document.getElementById('chat-unread-badge');
+        if (badge) badge.style.display = 'none';
+
         const list = document.getElementById('shoutbox-list');
         if (list) list.scrollTop = list.scrollHeight;
         const inp = document.getElementById('shoutbox-text');
@@ -250,7 +257,11 @@ const App = {
     try {
       const res = await API.getShoutbox();
       const list = document.getElementById('shoutbox-list');
+      const widget = document.getElementById('chat-floating-widget');
+      const badge = document.getElementById('chat-unread-badge');
+
       if (res && res.status === 'success' && Array.isArray(res.data) && list) {
+        this.totalMessagesCount = res.data.length;
         list.innerHTML = '';
         res.data.forEach(msg => {
           const div = document.createElement('div');
@@ -264,7 +275,24 @@ const App = {
           `;
           list.appendChild(div);
         });
-        list.scrollTop = list.scrollHeight;
+
+        const isChatOpen = widget && widget.classList.contains('active');
+        if (isChatOpen) {
+          list.scrollTop = list.scrollHeight;
+          localStorage.setItem('d2_last_read_chat_count', String(this.totalMessagesCount));
+          if (badge) badge.style.display = 'none';
+        } else {
+          // Tính toán số tin nhắn mới chưa đọc khi khung chat đang đóng
+          const lastRead = Number(localStorage.getItem('d2_last_read_chat_count') || 0);
+          const unread = this.totalMessagesCount - lastRead;
+
+          if (unread > 0 && badge) {
+            badge.innerText = unread > 9 ? '9+' : unread;
+            badge.style.display = 'flex';
+          } else if (badge) {
+            badge.style.display = 'none';
+          }
+        }
       }
     } catch (e) {}
   },
