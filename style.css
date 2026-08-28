@@ -247,6 +247,18 @@ body {
   padding: 16px;
 }
 
+.shoutbox-title {
+  color: var(--accent-gold);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  letter-spacing: 0.3px;
+}
+
 .shoutbox-messages {
   max-height: 220px;
   overflow-y: auto;
@@ -497,7 +509,7 @@ body {
   text-align: center;
 }
 
-/* HOVER ITEM TOOLTIP - CHO PHÉP NHẬN MỌI MÀU SẮC ĐÃ CHỌN */
+/* HOVER ITEM TOOLTIP */
 .item-hover-trigger {
   color: inherit;
   font-weight: 600;
