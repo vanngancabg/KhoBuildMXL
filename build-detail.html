@@ -77,20 +77,20 @@
         </div>
       </div>
 
-      <!-- 3: KÉO MỞ (STATS) -->
+      <!-- 3: KÉO MỞ (STATS) - CHỮ TRẮNG SÁNG GỐC, KHÔNG BỊ BÔI VÀNG -->
       <details class="section-accordion">
         <summary>📊 3. PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
         <div class="section-accordion-body">
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong id="detail-str" style="color:var(--accent-gold);"></strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong id="detail-dex" style="color:var(--accent-gold);"></strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong id="detail-vit" style="color:var(--accent-gold);"></strong></div>
-            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong id="detail-ene" style="color:var(--accent-gold);"></strong></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">STRENGTH</div><div id="detail-str" style="color:var(--text-bright); font-size:0.9rem; font-weight:500;"></div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">DEXTERITY</div><div id="detail-dex" style="color:var(--text-bright); font-size:0.9rem; font-weight:500;"></div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">VITALITY</div><div id="detail-vit" style="color:var(--text-bright); font-size:0.9rem; font-weight:500;"></div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">ENERGY</div><div id="detail-ene" style="color:var(--text-bright); font-size:0.9rem; font-weight:500;"></div></div>
           </div>
         </div>
       </details>
 
-      <!-- 4: KÉO MỞ (SKILLS & ROTATION) -->
+      <!-- 4: KÉO MỞ (SKILLS & ROTATION) - MẶC ĐỊNH ĐÓNG BAN ĐẦU -->
       <details class="section-accordion">
         <summary>⚡ 4. KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</summary>
         <div class="section-accordion-body">
@@ -98,7 +98,7 @@
         </div>
       </details>
 
-      <!-- 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) -->
+      <!-- 5: KÉO MỞ (LỘ TRÌNH TRANG BỊ) - MẶC ĐỊNH ĐÓNG BAN ĐẦU -->
       <details class="section-accordion">
         <summary>🛡️ 5. LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</summary>
         <div class="section-accordion-body">
@@ -125,14 +125,12 @@
         </div>
       </details>
 
-      <!-- 6: KÉO MỞ (CHIẾN THUẬT BOSS & VIDEO) -->
-      <details class="section-accordion" id="box-strategy-card">
-        <summary>🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</summary>
-        <div class="section-accordion-body">
-          <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
-          <div id="video-container" class="bb-video-embed" style="display: none;"></div>
-        </div>
-      </details>
+      <!-- 6: LUÔN MỞ SẴN CỐ ĐỊNH (CHIẾN THUẬT BOSS & VIDEO GAMEPLAY) -->
+      <div class="detail-card" id="box-strategy-card" style="display: none;">
+        <div class="detail-card-title">🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+        <div id="detail-strategy" class="markdown-rendered" style="margin-bottom: 14px;"></div>
+        <div id="video-container" class="bb-video-embed" style="display: none;"></div>
+      </div>
 
       <!-- BÌNH LUẬN -->
       <div class="detail-card" style="margin-top: 24px;">
