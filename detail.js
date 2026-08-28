@@ -120,11 +120,12 @@ const DetailHandler = {
       if (btnEdit) btnEdit.href = `create-build.html?edit=${encodeURIComponent(b.build_id)}`;
     }
 
-    // 6. Gán nội dung các khối (Khối 1 & 2 mở sẵn, Khối 3-6 dạng Accordion)
+    // 6. Gán nội dung các khối (1 & 2 Mở sẵn; 3, 4, 5 Đóng mở; 6 Mở sẵn)
     document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
     document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật');
     document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật');
 
+    // Chữ màu trắng sáng gốc, không bôi vàng
     document.getElementById('detail-str').innerText = statsObj.str || '0';
     document.getElementById('detail-dex').innerText = statsObj.dex || '0';
     document.getElementById('detail-vit').innerText = statsObj.vit || '0';
@@ -146,7 +147,7 @@ const DetailHandler = {
       document.getElementById('box-gear-135plus').style.display = 'none';
     }
 
-    // 7. Khối 6: Video & Chiến thuật
+    // 7. Khối 6: Luôn mở sẵn cố định nếu có chiến thuật hoặc video
     let hasStrategy = Boolean(statsObj.strategy && statsObj.strategy.trim());
     let hasVideo = Boolean(b.video_url && (b.video_url.includes('youtube.com') || b.video_url.includes('youtu.be')));
 
@@ -302,7 +303,6 @@ const DetailHandler = {
     }
   },
 
-  // CHUYỂN BBCODE SANG HTML VỚI CƠ CHẾ ĐỆ QUY CHỐNG LỖI LỒNG THẺ SIZE/COLOR
   parseBBCode(text) {
     if (!text) return '';
     let str = String(text)
