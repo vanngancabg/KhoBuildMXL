@@ -4,12 +4,12 @@ const App = {
   currentClass: 'All',
   sortByVotes: false,
   currentPage: 1,
-  pageSize: 20,
+  pageSize: 12, // Đã đặt chuẩn 12 bài viết/trang (4 hàng x 3 cột)
 
   async init() {
     await this.loadBuilds();
     
-    // Tải các phần phụ sau 300ms để nhường toàn bộ băng thông hiển thị danh sách bài trước
+    // Tải lượt xem và shoutbox ngầm sau 300ms
     setTimeout(() => {
       this.trackVisit();
       this.loadShoutbox();
@@ -39,8 +39,6 @@ const App = {
 
     try {
       const res = await API.getBuilds();
-      
-      // Tắt chữ "Đang tải dữ liệu..." ngay lập tức
       if (loadingState) loadingState.style.display = 'none';
 
       if (res && res.status === 'success' && Array.isArray(res.data)) {
@@ -234,6 +232,20 @@ const App = {
     this.renderBuilds();
   },
 
+  // BẬT / TẮT KHUNG CHAT POPUP GÓC PHẢI
+  toggleChatWidget() {
+    const widget = document.getElementById('chat-floating-widget');
+    if (widget) {
+      widget.classList.toggle('active');
+      if (widget.classList.contains('active')) {
+        const list = document.getElementById('shoutbox-list');
+        if (list) list.scrollTop = list.scrollHeight;
+        const inp = document.getElementById('shoutbox-text');
+        if (inp) inp.focus();
+      }
+    }
+  },
+
   async loadShoutbox() {
     try {
       const res = await API.getShoutbox();
@@ -246,9 +258,9 @@ const App = {
           div.innerHTML = `
             <div style="display: flex; justify-content: space-between; color: var(--accent-gold); font-size: 0.75rem; margin-bottom: 2px;">
               <strong>${this.escapeHTML(msg.user_name || msg.username)}</strong>
-              <span style="color: var(--text-muted);">${(msg.created_at || '').split(' ')[0]}</span>
+              <span style="color: var(--text-muted); font-size: 0.68rem;">${(msg.created_at || '').split(' ')[0]}</span>
             </div>
-            <div>${this.escapeHTML(msg.message)}</div>
+            <div style="font-size: 0.82rem; color: var(--text-bright);">${this.escapeHTML(msg.message)}</div>
           `;
           list.appendChild(div);
         });
