@@ -48,20 +48,32 @@
       <button class="filter-btn" onclick="App.filterByClass('Sorceress', this)">Sorc</button>
     </div>
 
-    <!-- Danh sách bài viết -->
+    <!-- Danh sách bài viết (Hiển thị 12 bài/trang) -->
     <div id="loading-state" style="text-align: center; padding: 50px; color: var(--accent-gold);">Đang tải dữ liệu...</div>
     <div class="grid" id="builds-grid" style="display: none;"></div>
     <div id="empty-state" style="display: none; text-align: center; color: var(--text-muted); padding: 40px;">Không tìm thấy bài viết nào phù hợp.</div>
     <div id="pagination-container" class="pagination-bar" style="display: none; margin-top: 24px;"></div>
+  </div>
 
-    <!-- Khung Chat Cộng Đồng (Shoutbox) -->
-    <div class="shoutbox-container" style="margin-top: 40px;">
-      <h3 style="color: var(--accent-gold); font-family: var(--font-body); font-weight: 700; margin-bottom: 12px; font-size: 1.05rem; letter-spacing: 0.3px;">💬 CHAT CỘNG ĐỒNG</h3>
-      <div id="shoutbox-list" class="shoutbox-messages"></div>
-      <div style="display: flex; gap: 8px; margin-top: 10px;">
-        <input type="text" id="shoutbox-text" class="form-control" placeholder="Nhắn tin nhanh (Nhấn Enter để gửi)..." onkeydown="if(event.key==='Enter') App.sendChat()">
-        <button class="btn btn-primary" onclick="App.sendChat()">Gửi</button>
+  <!-- CỬA SỔ CHAT CỘNG ĐỒNG DẠNG POPUP NỔI BÊN PHẢI CÙNG -->
+  <div class="chat-floating-btn" onclick="App.toggleChatWidget()" title="Mở Chat Cộng Đồng">
+    💬
+  </div>
+
+  <div id="chat-floating-widget" class="chat-floating-box">
+    <div class="chat-floating-header">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span>💬</span>
+        <strong>CHAT CỘNG ĐỒNG</strong>
       </div>
+      <button class="chat-close-btn" onclick="App.toggleChatWidget()">✖</button>
+    </div>
+    
+    <div id="shoutbox-list" class="chat-floating-body"></div>
+    
+    <div class="chat-floating-footer">
+      <input type="text" id="shoutbox-text" class="form-control" style="font-size: 0.85rem;" placeholder="Nhắn tin nhanh..." onkeydown="if(event.key==='Enter') App.sendChat()">
+      <button class="btn btn-primary btn-sm" onclick="App.sendChat()">Gửi</button>
     </div>
   </div>
 
