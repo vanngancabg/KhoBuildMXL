@@ -55,11 +55,13 @@
     <div id="pagination-container" class="pagination-bar" style="display: none; margin-top: 24px;"></div>
   </div>
 
-  <!-- CỬA SỔ CHAT CỘNG ĐỒNG DẠNG POPUP NỔI BÊN PHẢI CÙNG -->
+  <!-- NÚT TRÒN CHAT NỔI KÈM BADGE SỐ ĐẾM TIN NHẮN MỚI -->
   <div class="chat-floating-btn" onclick="App.toggleChatWidget()" title="Mở Chat Cộng Đồng">
     💬
+    <span id="chat-unread-badge" class="chat-badge-count" style="display: none;">0</span>
   </div>
 
+  <!-- CỬA SỔ CHAT POPUP -->
   <div id="chat-floating-widget" class="chat-floating-box">
     <div class="chat-floating-header">
       <div style="display: flex; align-items: center; gap: 6px;">
