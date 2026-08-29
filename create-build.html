@@ -3,142 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tạo / Sửa Hướng Dẫn Build - Median XL</title>
+  <title>Viết / Sửa Hướng Dẫn Build - Median XL</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
   <nav class="navbar">
     <a href="index.html" class="brand">⚔️ MEDIAN XL BUILDS</a>
     <div class="nav-actions">
-      <a href="index.html" class="btn">Trang Chủ</a>
+      <a href="index.html" class="btn">← Trang Chủ</a>
       <div id="auth-section"></div>
     </div>
   </nav>
 
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-      <div>
-        <h2 id="form-heading" style="color: var(--accent-gold); margin: 0;">POST A NEW TOPIC / TẠO HƯỚNG DẪN BUILD</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Soạn thảo trực quan theo phong cách Microsoft Word</p>
+  <div class="container" style="max-width: 950px;">
+    <div id="login-warning" style="display: none; background: #2a1b1b; border: 1px solid var(--accent-red); padding: 16px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
+      <h3 style="color: #ff8b8b; margin-bottom: 6px;">⚠️ Bạn chưa đăng nhập!</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Vui lòng đăng nhập hoặc đăng ký tài khoản để viết và lưu bài viết hướng dẫn.</p>
+      <button class="btn btn-primary" onclick="Auth.openModal('login')">🔑 Đăng nhập ngay</button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+      <h1 id="form-heading" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.5rem; margin: 0;">NEW TOPIC / TẠO HƯỚNG DẪN BUILD</h1>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span id="upload-status" style="color: var(--accent-gold); font-size: 0.8rem; display: none;"></span>
+        <button type="button" class="btn btn-sm" onclick="FormHandler.importBuildCode()">📥 Nhập Mã Build</button>
+        <button type="button" class="btn btn-sm" onclick="FormHandler.saveDraft()">💾 Lưu Nháp</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="FormHandler.deleteDraft()">🗑️ Xóa Nháp</button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="FormHandler.openPreviewModal()">👁️ Xem Trước</button>
       </div>
-      <button type="button" class="btn btn-sm" onclick="FormHandler.importBuildCode()">📥 Nhập Mã Build Nhanh</button>
     </div>
 
-    <div id="login-warning" style="display: none; background: rgba(158, 42, 43, 0.2); border: 1px solid var(--accent-red); padding: 16px; border-radius: 6px; margin-bottom: 20px; text-align: center;">
-      <p style="color: #ff8b8b;">Bạn cần đăng nhập để tiếp tục!</p>
-      <button class="btn btn-primary" style="margin-top: 8px;" onclick="Auth.openModal('login')">Đăng nhập</button>
-    </div>
-
-    <input type="file" id="image-upload-input" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
-    <input type="file" id="item-db-file-input" accept="image/*" style="display: none;" onchange="FormHandler.handleItemDbFileUpload(event)">
-
-    <!-- THANH CÔNG CỤ SOẠN THẢO TRỰC QUAN STICKY -->
+    <!-- THANH CÔNG CỤ SOẠN THẢO BBCODE WYSIWYG STICKY -->
     <div class="sticky-toolbar-wrapper">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: bold;">🛠️ Thanh Công Cụ Soạn Thảo (Word-Style)</span>
-        <span id="upload-status" style="font-size: 0.8rem; color: var(--accent-gold); display: none;">⏳ Đang tải...</span>
-      </div>
       <div class="bb-toolbar">
-        <button type="button" class="bb-btn" title="In đậm (Ctrl+B)" onclick="FormHandler.execCmd('bold')"><b>B</b></button>
-        <button type="button" class="bb-btn" title="In nghiêng (Ctrl+I)" onclick="FormHandler.execCmd('italic')"><i>I</i></button>
-        <button type="button" class="bb-btn" title="Gạch chân (Ctrl+U)" onclick="FormHandler.execCmd('underline')"><u>U</u></button>
-        <button type="button" class="bb-btn" title="Gạch ngang" onclick="FormHandler.execCmd('strikeThrough')"><s>S</s></button>
-        <button type="button" class="bb-btn" title="Danh sách gạch đầu dòng" onclick="FormHandler.execCmd('insertUnorderedList')">📜 List</button>
-        <button type="button" class="bb-btn" title="Thụt lề dòng văn bản" onclick="FormHandler.execIndent()">➡️ Thụt lề</button>
-        <button type="button" class="bb-btn" title="Lùi lề dòng văn bản" onclick="FormHandler.execOutdent()">⬅️ Lùi lề</button>
-        <button type="button" class="bb-btn" title="Khối trích dẫn" onclick="FormHandler.insertQuoteBlock()">💬 Quote</button>
+        <button type="button" class="bb-btn" title="In đậm" onmousedown="event.preventDefault(); FormHandler.execCmd('bold');"><b>B</b></button>
+        <button type="button" class="bb-btn" title="In nghiêng" onmousedown="event.preventDefault(); FormHandler.execCmd('italic');"><i>I</i></button>
+        <button type="button" class="bb-btn" title="Gạch chân" onmousedown="event.preventDefault(); FormHandler.execCmd('underline');"><u>U</u></button>
+        <button type="button" class="bb-btn" title="Gạch ngang" onmousedown="event.preventDefault(); FormHandler.execCmd('strikeThrough');"><s>S</s></button>
         
-        <!-- NÚT GẮN ẢNH HOVER ITEM MỞ CỬA SỔ CHỌN ĐỒ -->
-        <button type="button" class="bb-btn" style="background: #fff8e1; border-color: #ffa000; color: #b78103;" title="Chọn hoặc tìm kiếm món đồ trong kho" onclick="FormHandler.handleTriggerItemTag()">🗡️ [Hover Item]</button>
+        <span style="color: rgba(255,255,255,0.2);">|</span>
 
-        <button type="button" class="bb-btn" style="background: #e1f5fe; border-color: #0288d1; color: #01579b;" title="Tải ảnh lên Drive" onclick="document.getElementById('image-upload-input').click()">🖼️ Up Ảnh</button>
-        <button type="button" class="bb-btn" title="Chèn Link" onclick="FormHandler.insertLink()">🔗 Link</button>
-        <button type="button" class="bb-btn" title="Nhúng Video Youtube" onclick="FormHandler.insertYoutubeVideo()">▶️ Video</button>
-        <button type="button" class="bb-btn" title="Khối Spoiler ẩn hiện" onclick="FormHandler.insertSpoilerBlock()">📁 Spoiler</button>
+        <button type="button" class="bb-btn" title="Danh sách" onmousedown="event.preventDefault(); FormHandler.execCmd('insertUnorderedList');">📜 List</button>
+        <button type="button" class="bb-btn" title="Thụt lề" onmousedown="event.preventDefault(); FormHandler.execIndent();">➡️ Thụt lề</button>
+        <button type="button" class="bb-btn" title="Lùi lề" onmousedown="event.preventDefault(); FormHandler.execOutdent();">⬅️ Lùi lề</button>
+        <button type="button" class="bb-btn" title="Trích dẫn" onmousedown="event.preventDefault(); FormHandler.insertQuoteBlock();">💬 Quote</button>
+        
+        <span style="color: rgba(255,255,255,0.2);">|</span>
 
-        <!-- BẢNG CHỌN CỠ CHỮ -->
-        <select class="bb-select" onchange="if(this.value){ FormHandler.applyFontSize(this.value); this.value=''; }">
-          <option value="">🔤 Cỡ Chữ</option>
-          <option value="12px">12px (Nhỏ)</option>
-          <option value="15px">15px (Chuẩn)</option>
-          <option value="18px">18px (Vừa)</option>
-          <option value="22px">22px (Lớn)</option>
-          <option value="26px">26px (Tiêu đề)</option>
+        <!-- NÚT GẮN ẢNH ITEM POPUP -->
+        <button type="button" class="bb-btn" style="color: var(--accent-gold); font-weight: bold; border-color: var(--accent-gold);" title="Chèn Hover Ảnh Item Median" onmousedown="event.preventDefault(); FormHandler.handleTriggerItemTag();">🗡️ [Item]</button>
+        
+        <label class="bb-btn" title="Chèn ảnh từ máy tính (Tải lên Google Drive)" style="margin: 0; cursor: pointer;">
+          🖼️ Up Ảnh
+          <input type="file" accept="image/*" style="display: none;" onchange="FormHandler.handleImageUpload(event)">
+        </label>
+        
+        <button type="button" class="bb-btn" title="Chèn Link URL" onmousedown="event.preventDefault(); FormHandler.insertLink();">🔗 Link</button>
+        <button type="button" class="bb-btn" title="Nhúng Video YouTube" onmousedown="event.preventDefault(); FormHandler.insertYoutubeVideo();">▶️ Video</button>
+        <button type="button" class="bb-btn" title="Khối Spoiler (Ẩn/Hiện)" onmousedown="event.preventDefault(); FormHandler.insertSpoilerBlock();">📁 Spoiler</button>
+
+        <span style="color: rgba(255,255,255,0.2);">|</span>
+
+        <!-- CỠ CHỮ -->
+        <select class="bb-select" title="Cỡ chữ" onchange="FormHandler.applyFontSize(this.value); this.selectedIndex=0;">
+          <option value="" disabled selected>🔤 Cỡ chữ</option>
+          <option value="12px">12px - Nhỏ</option>
+          <option value="15px">15px - Chuẩn</option>
+          <option value="18px">18px - Vừa</option>
+          <option value="22px">22px - Lớn</option>
+          <option value="26px">26px - Tiêu đề</option>
         </select>
 
-        <!-- BẢNG CHỌN MÀU ĐẶC TRƯNG MEDIAN XL -->
-        <select class="bb-select" onchange="if(this.value){ FormHandler.applyTextColor(this.value); this.value=''; }">
-          <option value="">🎨 Chọn Màu Chữ</option>
-          <option value="#c038c0" style="color: #c038c0; background: #141619;">🟣 Tím (SSU / Mystic / Boss)</option>
-          <option value="#00aa00" style="color: #00aa00; background: #141619;">🟢 Xanh Lục Đậm (Set / TU)</option>
-          <option value="#ffff60" style="color: #ffff60; background: #141619;">🟡 Vàng Nhạt (Angelic / SSSU)</option>
-          <option value="#9b722b" style="color: #9b722b; background: #141619;">🟤 Nâu Unique (Diablo Unique)</option>
-          <option value="#ff8000" style="color: #ff8000; background: #141619;">🟠 Cam (Craft / Runewords)</option>
-          <option value="#ff3333" style="color: #ff3333; background: #141619;">🔴 Đỏ Rực (Leveling / Chú ý)</option>
-          <option value="#4888ff" style="color: #4888ff; background: #141619;">🔵 Xanh Dương (Magic / Spell)</option>
-          <option value="#a0a0a0" style="color: #a0a0a0; background: #141619;">⚪ Xám Bạc (Base / Phôi)</option>
-          <option value="#c79c5e" style="color: #c79c5e; background: #141619;">⭐ Vàng Gold Diễn Đàn</option>
+        <!-- BẢNG MÀU SẮC (ĐÃ BỔ SUNG MÀU TRẮNG NGUYÊN BẢN #FFFFFF) -->
+        <select class="bb-select" title="Màu chữ" onchange="FormHandler.applyTextColor(this.value); this.selectedIndex=0;">
+          <option value="" disabled selected>🎨 Chọn màu</option>
+          <option value="#ffffff" style="color:#ffffff; background:#222; font-weight:bold;">⚪ Trắng (Nguyên bản)</option>
+          <option value="#d4af37" style="color:#d4af37; background:#222;">🟡 Vàng Hoàng Gia (Unique)</option>
+          <option value="#ff8000" style="color:#ff8000; background:#222;">🟠 Cam (Crafted / Sacred)</option>
+          <option value="#2ecc71" style="color:#2ecc71; background:#222;">🟢 Xanh Lá (Set Item)</option>
+          <option value="#3498db" style="color:#3498db; background:#222;">🔵 Xanh Dương (Magic)</option>
+          <option value="#9b59b6" style="color:#9b59b6; background:#222;">🟣 Tím (Honorific / Mystic)</option>
+          <option value="#e74c3c" style="color:#e74c3c; background:#222;">🔴 Đỏ (Cảnh báo / Lưu ý)</option>
+          <option value="#95a5a6" style="color:#95a5a6; background:#222;">🔘 Xám (Runeword / Normal)</option>
         </select>
 
-        <select class="bb-select" onchange="if(this.value){ FormHandler.insertTextAtCursor(this.value); this.value=''; }">
-          <option value="">Smilies</option>
-          <option value="😀">😀</option>
-          <option value="😎">😎</option>
-          <option value="🔥">🔥</option>
-          <option value="⚔️">⚔️</option>
-          <option value="🛡️">🛡️</option>
-          <option value="💀">💀</option>
-          <option value="👑">👑</option>
-          <option value="⚡">⚡</option>
-          <option value="❤️">❤️</option>
+        <!-- ICON CẢM XÚC -->
+        <select class="bb-select" title="Chèn Icon" onchange="FormHandler.insertTextAtCursor(this.value); this.selectedIndex=0;">
+          <option value="" disabled selected>😀 Smilies</option>
+          <option value="⚔️">⚔️ Kiếm</option>
+          <option value="🛡️">🛡️ Khiên</option>
+          <option value="🔥">🔥 Lửa</option>
+          <option value="⚡">⚡ Sét</option>
+          <option value="❄️">❄️ Băng</option>
+          <option value="💀">💀 Độc</option>
+          <option value="👑">👑 Vương miện</option>
+          <option value="⭐">⭐ Ngôi sao</option>
+          <option value="✨">✨ Lấp lánh</option>
+          <option value="💎">💎 Kim cương</option>
+          <option value="🩸">🩸 Máu</option>
         </select>
       </div>
     </div>
 
-    <!-- MODAL ĐÓNG GÓP / ĐỀ XUẤT ẢNH ITEM -->
-    <div id="modal-item-upload" class="modal">
-      <div class="modal-content" style="max-width: 450px;">
-        <h3 id="modal-item-upload-title" style="color: var(--accent-gold); margin-bottom: 8px;">🗡️ Đóng Góp Ảnh Trang Bị</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-          Món đồ <strong id="modal-item-name-preview" style="color: var(--text-bright);"></strong>:
-        </p>
-
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label>Bản Patch chụp ảnh</label>
-          <input type="text" id="item-upload-patch" class="form-control" style="padding: 8px 12px;" value="2.13">
-        </div>
-
-        <div id="item-drop-zone" style="border: 2px dashed var(--accent-gold); padding: 22px; text-align: center; border-radius: 6px; cursor: pointer; background: #0f1012; margin-bottom: 14px;" onclick="document.getElementById('item-db-file-input').click()">
-          <p style="color: var(--text-bright); font-size: 0.9rem; margin-bottom: 4px;">📁 Bấm để chọn file ảnh chụp trong game</p>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">(Hoặc nhấn <b>Ctrl + V</b> trực tiếp tại đây)</span>
-        </div>
-
-        <div style="display: flex; gap: 8px; justify-content: flex-end;">
-          <button type="button" class="btn" onclick="FormHandler.closeItemModal()">Hủy Bỏ</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL PREVIEW BÀI VIẾT HOÀN CHỈNH -->
-    <div id="modal-preview-full" class="modal">
-      <div class="modal-preview-container">
-        <button type="button" class="preview-close-btn" onclick="FormHandler.closePreviewModal()">✖ Đóng Xem Trước</button>
-        <div id="preview-modal-body"></div>
-      </div>
-    </div>
-
+    <!-- FORM NHẬP LIỆU CHÍNH -->
     <form id="build-form" onsubmit="FormHandler.handleSubmit(event)">
-      <!-- KHỐI 1: THÔNG TIN CƠ BẢN -->
+      <!-- THÔNG TIN CHUNG -->
       <div class="form-block">
-        <div class="form-block-title">📌 KHỐI 1: THÔNG TIN CƠ BẢN & MÙA GIẢI</div>
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="form-block-title">⚙️ THÔNG TIN CHUNG BÀI VIẾT</div>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 12px;">
           <div class="form-group" style="margin: 0;">
-            <label>Tên bài Build (*)</label>
-            <input type="text" id="build-title" class="form-control" required placeholder="VD: Melee Sorceress - Queen of Destruction">
+            <label>Tiêu đề hướng dẫn (*)</label>
+            <input type="text" id="build-title" class="form-control" required placeholder="VD: APF-20 'Maelstrom' MkV Sin (ied)">
           </div>
           <div class="form-group" style="margin: 0;">
-            <label>Class Nhân vật (*)</label>
-            <select id="build-class" class="form-control">
+            <label>Class nhân vật (*)</label>
+            <select id="build-class" class="form-control" required>
               <option value="Amazon">Amazon</option>
               <option value="Assassin">Assassin</option>
               <option value="Barbarian">Barbarian</option>
@@ -148,117 +130,175 @@
               <option value="Sorceress">Sorceress</option>
             </select>
           </div>
-          <div class="form-group" style="margin: 0;">
-            <label>Mùa giải (Season) (*)</label>
-            <input type="text" id="build-season" class="form-control" required placeholder="VD: Season 36 hoặc Mùa 2.13">
-          </div>
-          <div class="form-group" style="margin: 0;">
-            <label>Phiên bản Patch (*)</label>
-            <input type="text" id="build-patch" class="form-control" required placeholder="VD: 2.9.1">
-          </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
           <div class="form-group" style="margin: 0;">
-            <label>Mục đích chính (Tag)</label>
+            <label>Mùa giải (Season)</label>
+            <input type="text" id="build-season" class="form-control" placeholder="VD: 41 hoặc Mùa 41">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Phiên bản (Patch)</label>
+            <input type="text" id="build-patch" class="form-control" placeholder="VD: 2.9.1">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Mục đích chính</label>
             <select id="build-purpose" class="form-control">
-              <option value="Speed Farming">Speed Farming (Dọn Map cực nhanh)</option>
-              <option value="Uber Boss Killer">Uber Boss Killer (Chuyên săn Boss khó)</option>
-              <option value="Starter / Budget">Starter / Budget (Khởi đầu mùa rẻ, dễ chơi)</option>
-              <option value="Hardcore Viable">Hardcore Viable (Sinh tồn, an toàn tuyệt đối)</option>
-              <option value="Endgame Lab">Endgame Dimensional Labyrinth</option>
+              <option value="Speed Farming">Speed Farming</option>
+              <option value="Boss Killer / Duncraig">Boss Killer / Duncraig</option>
+              <option value="Lab & Labyrinth">Lab & Labyrinth</option>
+              <option value="All Content">All Content</option>
+              <option value="Leveling / Starter">Leveling / Starter</option>
             </select>
           </div>
           <div class="form-group" style="margin: 0;">
-            <label>Độ khó Build</label>
+            <label>Độ khó vận hành</label>
             <select id="build-difficulty" class="form-control">
-              <option value="Dễ">Dễ (Người mới chơi dễ tiếp cận)</option>
-              <option value="Trung bình">Trung bình (Cần hiểu cơ chế & đồ tầm trung)</option>
-              <option value="Khó / Đắt đỏ">Khó / Đắt đỏ (Yêu cầu kỹ năng cao & đồ endgame)</option>
+              <option value="Dễ">Dễ (Thích hợp cho người mới)</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Khó">Khó (Yêu cầu kỹ năng cao)</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- KHỐI 2: TỔNG QUAN & PROS/CONS (WYSIWYG) -->
+      <!-- KHỐI 1: TỔNG QUAN -->
       <div class="form-block">
-        <div class="form-block-title">⚖️ KHỐI 2: TỔNG QUAN & ƯU / NHƯỢC ĐIỂM</div>
+        <div class="form-block-title">📖 KHỐI 1: TỔNG QUAN & LỐI CHƠI (OVERVIEW & GAMEPLAY)</div>
         <div class="form-group">
-          <label>Giới thiệu tóm tắt lối chơi</label>
-          <div id="build-intro" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="Mô tả phong cách chơi, cơ chế sát thương chính..."></div>
+          <label>Mô tả chi tiết lối chơi, cơ chế sát thương chính, nguồn gốc build...</label>
+          <div id="build-intro" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="Nhập phần giới thiệu tổng quan tại đây..."></div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      </div>
+
+      <!-- KHỐI 2: PROS & CONS -->
+      <div class="form-block">
+        <div class="form-block-title">⚖️ KHỐI 2: ƯU ĐIỂM (PROS) & NHƯỢC ĐIỂM (CONS)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
           <div class="form-group" style="margin: 0;">
-            <label style="color: var(--accent-green);">Ưu điểm (Pros) (*)</label>
-            <div id="build-pros" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="• Sát thương diện rộng khủng&#10;• Dọn quái cực nhanh"></div>
+            <label style="color: var(--accent-green);">Ưu điểm (Pros)</label>
+            <div id="build-pros" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="• Sát thương AoE cực rộng&#10;• Di chuyển nhanh..."></div>
           </div>
           <div class="form-group" style="margin: 0;">
-            <label style="color: #ff6b6b;">Nhược điểm (Cons) (*)</label>
-            <div id="build-cons" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="• Cần đồ hút máu hoặc kháng cao"></div>
+            <label style="color: #ff6b6b;">Nhược điểm (Cons)</label>
+            <div id="build-cons" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="• Cần trang bị đặc thù&#10;• Máu mỏng khi đối đầu Boss..."></div>
           </div>
         </div>
       </div>
 
       <!-- KHỐI 3: STATS -->
       <div class="form-block">
-        <div class="form-block-title">📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group"><label>Strength (Sức mạnh)</label><input type="text" id="stat-str" class="form-control" placeholder="Đủ mặc trang bị yêu cầu"></div>
-          <div class="form-group"><label>Dexterity (Khéo léo)</label><input type="text" id="stat-dex" class="form-control" placeholder="Max 75% Block / Tăng sát thương"></div>
-          <div class="form-group"><label>Vitality (Máu / Thể lực)</label><input type="text" id="stat-vit" class="form-control" placeholder="Toàn bộ số điểm còn lại"></div>
-          <div class="form-group"><label>Energy (Năng lượng)</label><input type="text" id="stat-ene" class="form-control" placeholder="0 hoặc cộng đủ dùng"></div>
+        <div class="form-block-title">📊 KHỐI 3: PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS ALLOCATION)</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <div class="form-group" style="margin: 0;">
+            <label>STRENGTH</label>
+            <input type="text" id="stat-str" class="form-control" placeholder="VD: Đủ cho Gear">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>DEXTERITY</label>
+            <input type="text" id="stat-dex" class="form-control" placeholder="VD: Đủ cho Gear">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>VITALITY</label>
+            <input type="text" id="stat-vit" class="form-control" placeholder="VD: Tất cả còn lại">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>ENERGY</label>
+            <input type="text" id="stat-ene" class="form-control" placeholder="VD: 0 hoặc 1580">
+          </div>
         </div>
       </div>
 
-      <!-- KHỐI 4: SKILLS (WYSIWYG) -->
+      <!-- KHỐI 4: SKILLS & ROTATION -->
       <div class="form-block">
         <div class="form-block-title">⚡ KHỐI 4: KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
-        <div class="form-group">
-          <label>Kỹ năng chính, Hỗ trợ, Uber Skills & Thứ tự ưu tiên max điểm (*)</label>
-          <div id="build-skills-text" class="form-control wysiwyg-editor" style="min-height: 180px;" contenteditable="true" data-placeholder="Kỹ năng chính: Tên skill (Max 20 điểm)...&#10;Kỹ năng hỗ trợ / Buffs: Tên skill...&#10;Uber Skill (Cấp 90): Tên skill..."></div>
+        <div class="form-group" style="margin: 0;">
+          <label>Mô tả kỹ năng, số điểm nâng (Max/1 point) và combo phím bấm xoay vòng</label>
+          <div id="build-skills-text" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="Nhập phân bổ kỹ năng tại đây..."></div>
         </div>
       </div>
 
-      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ 3 MỨC LEVEL (WYSIWYG) -->
+      <!-- KHỐI 5: LỘ TRÌNH TRANG BỊ -->
       <div class="form-block">
         <div class="form-block-title">🛡️ KHỐI 5: LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
-        
-        <div class="form-group">
-          <label style="color: var(--accent-gold); font-weight: bold;">Mức 1: Level 1 - 115 (*)</label>
-          <div id="gear-lv0-50" class="form-control wysiwyg-editor" style="min-height: 220px;" contenteditable="true"></div>
-        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Mẹo: Bôi đen tên món đồ và bấm nút <b>🗡️ [Item]</b> trên thanh công cụ để gắn popup ảnh chỉ số!</p>
 
-        <div class="form-group">
-          <label style="color: var(--accent-gold); font-weight: bold;">Mức 2: Level 115 - 135</label>
-          <div id="gear-lv50-135" class="form-control wysiwyg-editor" style="min-height: 220px;" contenteditable="true"></div>
-        </div>
+        <details class="gear-accordion-item" open>
+          <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115 (Early Game / Leveling)</summary>
+          <div class="gear-accordion-body">
+            <div id="gear-lv0-50" class="form-control wysiwyg-editor" contenteditable="true" style="min-height: 180px;"></div>
+          </div>
+        </details>
 
-        <div class="form-group">
-          <label style="color: var(--accent-gold); font-weight: bold;">Mức 3: Level 135+</label>
-          <div id="gear-lv135plus" class="form-control wysiwyg-editor" style="min-height: 220px;" contenteditable="true"></div>
-        </div>
+        <details class="gear-accordion-item" open style="margin-top: 10px;">
+          <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135 (Mid Game / Farming)</summary>
+          <div class="gear-accordion-body">
+            <div id="gear-lv50-135" class="form-control wysiwyg-editor" contenteditable="true" style="min-height: 180px;"></div>
+          </div>
+        </details>
+
+        <details class="gear-accordion-item" open style="margin-top: 10px;">
+          <summary class="gear-accordion-header">👑 Mức 3: Level 135+ (End Game / Min-Max)</summary>
+          <div class="gear-accordion-body">
+            <div id="gear-lv135plus" class="form-control wysiwyg-editor" contenteditable="true" style="min-height: 180px;"></div>
+          </div>
+        </details>
       </div>
 
-      <!-- KHỐI 6: CHIẾN THUẬT BOSS & VIDEO (WYSIWYG) -->
+      <!-- KHỐI 6: CHIẾN THUẬT BOSS & VIDEO -->
       <div class="form-block">
         <div class="form-block-title">🎬 KHỐI 6: CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
         <div class="form-group">
-          <label>Mẹo đi các Boss Uber & Map khó (Duncraig, Fauztinville, Kabraxis, Samael...)</label>
-          <div id="build-strategy" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="Chia sẻ mẹo né chiêu, thứ tự hạ đệ tử, bãi farm phù hợp..."></div>
+          <label>Kinh nghiệm đánh Uber Boss / Lab / Labyrinth</label>
+          <div id="build-strategy" class="form-control wysiwyg-editor" contenteditable="true" data-placeholder="Nhập mẹo né chiêu, thứ tự hạ boss..."></div>
         </div>
-        <div class="form-group">
-          <label>Link Video YouTube Gameplay / Guide (nếu có)</label>
-          <input type="url" id="build-video" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+        <div class="form-group" style="margin: 0;">
+          <label>Link Video YouTube trình diễn gameplay (Tùy chọn)</label>
+          <input type="text" id="build-video" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
         </div>
       </div>
 
-      <!-- THANH HÀNH ĐỘNG DƯỚI CÙNG (ĐÃ THÊM NÚT XÓA BẢN NHÁP) -->
-      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap;">
-        <button type="button" class="btn" onclick="FormHandler.openPreviewModal()">👁️ Preview / Xem Trước Bài Viết</button>
-        <button type="button" class="btn" onclick="FormHandler.saveDraft()">💾 Lưu Bản Nháp</button>
-        <button type="button" class="btn btn-danger" onclick="FormHandler.deleteDraft()">🗑️ Xóa Bản Nháp</button>
-        <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 32px; font-size: 1rem;">🚀 Submit / Đăng Bài Viết</button>
+      <!-- NÚT ĐĂNG BÀI -->
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <a href="index.html" class="btn">Hủy bỏ</a>
+        <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 32px; font-size: 1rem; font-weight: bold;">
+          🚀 Submit / Đăng Bài Viết
+        </button>
       </div>
     </form>
+  </div>
+
+  <!-- MODAL XEM TRƯỚC TOÀN DIỆN (FULL PREVIEW) -->
+  <div id="modal-preview-full" class="modal">
+    <div class="modal-preview-container">
+      <button class="preview-close-btn" onclick="FormHandler.closePreviewModal()">✖ Đóng Xem Trước</button>
+      <div id="preview-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- MODAL TẢI ẢNH ĐÓNG GÓP ITEM TRỰC TIẾP -->
+  <div id="modal-item-upload" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <h3 id="modal-item-upload-title" style="color: var(--accent-gold); margin-bottom: 8px; font-family: var(--font-body); font-weight: 700;">🗡️ Đóng Góp Ảnh Món Đồ</h3>
+      <p id="modal-item-name-preview" style="color: var(--text-bright); font-weight: bold; margin-bottom: 12px;"></p>
+      
+      <div class="form-group">
+        <label>Phiên bản (Patch áp dụng)</label>
+        <input type="text" id="item-upload-patch" class="form-control" value="2.13">
+      </div>
+
+      <div style="border: 2px dashed rgba(212, 175, 55, 0.4); border-radius: 6px; padding: 24px 10px; text-align: center; background: #0d0e10; margin-bottom: 16px;">
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;">📋 Nhấn <b>Ctrl + V</b> tại đây để dán ảnh chụp màn hình</p>
+        <label class="btn btn-primary" style="cursor: pointer; margin: 0;">
+          📁 Hoặc Chọn File Ảnh Từ Máy
+          <input type="file" accept="image/*" style="display: none;" onchange="FormHandler.handleItemDbFileUpload(event)">
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn" onclick="FormHandler.closeItemModal()">Đóng</button>
+      </div>
+    </div>
   </div>
 
   <script src="api.js"></script>
