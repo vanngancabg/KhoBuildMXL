@@ -25,7 +25,23 @@ const DetailHandler = {
     }
 
     await this.loadBuild();
-    setTimeout(() => this.loadComments(), 300);
+    
+    // Tự động tăng lượt xem ngầm và nạp bình luận sau khi mở bài viết
+    setTimeout(() => {
+      this.trackView();
+      this.loadComments();
+    }, 400);
+  },
+
+  async trackView() {
+    if (!this.buildId) return;
+    try {
+      const res = await API.trackBuildView(this.buildId);
+      if (res && res.status === 'success') {
+        const vEl = document.getElementById('detail-views');
+        if (vEl) vEl.innerText = res.views_count;
+      }
+    } catch(e) {}
   },
 
   async loadBuild() {
@@ -120,7 +136,7 @@ const DetailHandler = {
       if (btnEdit) btnEdit.href = `create-build.html?edit=${encodeURIComponent(b.build_id)}`;
     }
 
-    // 6. Gán nội dung các khối (1 & 2 Mở sẵn; 3, 4, 5 Đóng mở; 6 Mở sẵn)
+    // 6. Gán nội dung các khối
     document.getElementById('detail-intro').innerHTML = this.parseBBCode(statsObj.intro || 'Chưa có giới thiệu.');
     document.getElementById('detail-pros').innerHTML = this.parseBBCode(statsObj.pros || '• Chưa cập nhật');
     document.getElementById('detail-cons').innerHTML = this.parseBBCode(statsObj.cons || '• Chưa cập nhật');
