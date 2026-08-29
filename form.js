@@ -6,6 +6,7 @@ const FormHandler = {
   isUpdatingItem: false,
   autoSaveTimer: null,
   markerId: 'item-insert-cursor-marker',
+  sessionUploadedImages: [], // Biến theo dõi các ảnh rác sinh ra trong phiên gõ
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -285,7 +286,6 @@ const FormHandler = {
     this.saveSelection();
   },
 
-  // THAY ĐỔI CỠ CHỮ CHUẨN XÁC, HIỂN THỊ TỨC THÌ TRONG KHUNG GÕ
   applyFontSize(fontSize) {
     this.restoreSelection();
     const sel = window.getSelection();
@@ -550,6 +550,7 @@ const FormHandler = {
     reader.readAsDataURL(file);
   },
 
+  // XỬ LÝ LƯU TẠM ẢNH ĐỂ TRÁNH RÁC TRÊN DRIVE
   async handleImageUpload(e) {
     const file = e.target.files[0];
     if (file) {
@@ -571,6 +572,7 @@ const FormHandler = {
       try {
         const res = await API.uploadImage(base64Data, file.name, file.type);
         if (res && res.status === 'success' && res.url) {
+          this.sessionUploadedImages.push(res.url); // Đưa vào mảng theo dõi rác
           this.restoreSelection();
           const imgHTML = `<img src="${res.url}" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;"><p><br></p>`;
           document.execCommand('insertHTML', false, imgHTML);
@@ -588,6 +590,14 @@ const FormHandler = {
       }
     };
     reader.readAsDataURL(file);
+  },
+
+  cancelEdit() {
+    // Dọn rác các ảnh đã tải lên nhưng người dùng bấm Hủy bỏ
+    if (this.sessionUploadedImages.length > 0) {
+      this.sessionUploadedImages.forEach(url => API.deleteDriveImage(url));
+    }
+    window.location.href = 'index.html';
   },
 
   saveSelection() {
@@ -618,7 +628,6 @@ const FormHandler = {
     return color;
   },
 
-  // CHUYỂN BBCODE SANG HTML VỚI CƠ CHẾ ĐỆ QUY CHỐNG LỖI LỒNG THẺ SIZE/COLOR
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text);
@@ -626,20 +635,19 @@ const FormHandler = {
     let prev;
     do {
       prev = str;
-      str = str
-        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
-        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
-        .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-        .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-        .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
-        .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
-        .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
-        .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>');
+      str = str.replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>');
     } while (str !== prev);
 
     str = str
+      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
+      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
@@ -662,7 +670,6 @@ const FormHandler = {
     return str.replace(/\n/g, '<br>');
   },
 
-  // CHUYỂN TỪ HTML SANG BBCODE VÀ CHỐNG TRÙNG LẶP SIZE/COLOR
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -797,278 +804,6 @@ const FormHandler = {
     return result.replace(/\n{3,}/g, '\n\n').trim();
   },
 
-  async loadData(id, user) {
-    try {
-      const res = await API.getBuildDetail(id);
-      if (res && res.status === 'success' && res.data) {
-        const b = res.data;
-        if (String(b.author_id).toLowerCase() !== String(user.username).toLowerCase() && user.role !== 'Admin') {
-          alert('Bạn không có quyền sửa bài viết này!');
-          window.location.href = 'index.html';
-          return;
-        }
-
-        document.getElementById('build-title').value = b.title || '';
-        document.getElementById('build-class').value = b.class_name || 'Amazon';
-        document.getElementById('build-video').value = b.video_url || '';
-
-        let seasonVal = '';
-        let patchVal = '1.0';
-
-        if (b.patch_version) {
-          const parts = String(b.patch_version).split('-').map(s => s.trim()).filter(s => s);
-          if (parts.length > 0) {
-            seasonVal = parts[0];
-            patchVal = parts[parts.length - 1];
-          }
-        }
-
-        try {
-          const statsObj = JSON.parse(b.stats_desc);
-          document.getElementById('build-season').value = statsObj.season || seasonVal || '';
-          document.getElementById('build-patch').value = statsObj.patch || (patchVal !== seasonVal ? patchVal : '1.0');
-          document.getElementById('build-purpose').value = statsObj.purpose || 'Speed Farming';
-          document.getElementById('build-difficulty').value = statsObj.difficulty || 'Dễ';
-          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(statsObj.intro || '');
-          document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(statsObj.pros || '');
-          document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(statsObj.cons || '');
-          document.getElementById('stat-str').value = statsObj.str || '';
-          document.getElementById('stat-dex').value = statsObj.dex || '';
-          document.getElementById('stat-vit').value = statsObj.vit || '';
-          document.getElementById('stat-ene').value = statsObj.ene || '';
-          document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(statsObj.strategy || '');
-        } catch(e) {
-          document.getElementById('build-season').value = seasonVal || '';
-          document.getElementById('build-patch').value = patchVal || '1.0';
-          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(b.stats_desc || '');
-        }
-
-        document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(b.skills_desc || '');
-
-        try {
-          const gearObj = JSON.parse(b.gear_desc);
-          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(gearObj.lv0_50 || gearObj.lv105 || this.defaultGearTemplate);
-          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(gearObj.lv50_135 || gearObj.lv120 || this.defaultGearTemplate);
-          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(gearObj.lv135plus || gearObj.lv130 || gearObj.lv150 || this.defaultGearTemplate);
-        } catch(e) {
-          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(b.gear_desc || this.defaultGearTemplate);
-          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
-          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
-        }
-      }
-    } catch (e) {
-      alert('Không thể tải bài viết để sửa!');
-    }
-  },
-
-  importBuildCode() {
-    const rawCode = prompt('Dán chuỗi Mã Build vào đây:');
-    if (!rawCode) return;
-    try {
-      const jsonStr = decodeURIComponent(escape(atob(rawCode.trim())));
-      const d = JSON.parse(jsonStr);
-      if (d.title) document.getElementById('build-title').value = d.title;
-      if (d.class_name) document.getElementById('build-class').value = d.class_name;
-      if (d.season) document.getElementById('build-season').value = d.season;
-      if (d.patch) document.getElementById('build-patch').value = d.patch;
-      if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
-      if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
-      alert('Đã nhập mã build thành công!');
-    } catch (err) {
-      alert('Mã Build không hợp lệ!');
-    }
-  },
-
-  collectFormData() {
-    return {
-      title: document.getElementById('build-title').value.trim(),
-      class_name: document.getElementById('build-class').value,
-      season: document.getElementById('build-season').value.trim(),
-      patch: document.getElementById('build-patch').value.trim(),
-      purpose: document.getElementById('build-purpose').value,
-      difficulty: document.getElementById('build-difficulty').value,
-      intro: this.htmlToBBCode(document.getElementById('build-intro').innerHTML),
-      pros: this.htmlToBBCode(document.getElementById('build-pros').innerHTML),
-      cons: this.htmlToBBCode(document.getElementById('build-cons').innerHTML),
-      str: document.getElementById('stat-str').value.trim(),
-      dex: document.getElementById('stat-dex').value.trim(),
-      vit: document.getElementById('stat-vit').value.trim(),
-      ene: document.getElementById('stat-ene').value.trim(),
-      skills: this.htmlToBBCode(document.getElementById('build-skills-text').innerHTML),
-      gear_lv0_50: this.htmlToBBCode(document.getElementById('gear-lv0-50').innerHTML),
-      gear_lv50_135: this.htmlToBBCode(document.getElementById('gear-lv50-135').innerHTML),
-      gear_lv135plus: this.htmlToBBCode(document.getElementById('gear-lv135plus').innerHTML),
-      strategy: this.htmlToBBCode(document.getElementById('build-strategy').innerHTML),
-      video: document.getElementById('build-video').value.trim()
-    };
-  },
-
-  openPreviewModal() {
-    const d = this.collectFormData();
-    const modal = document.getElementById('modal-preview-full');
-    const body = document.getElementById('preview-modal-body');
-
-    let videoEmbed = '';
-    if (d.video && (d.video.includes('youtube.com') || d.video.includes('youtu.be'))) {
-      const match = d.video.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-      if (match && match[2].length === 11) {
-        videoEmbed = `
-          <div class="bb-video-embed">
-            <iframe src="https://www.youtube.com/embed/${match[2]}" allowfullscreen></iframe>
-          </div>
-        `;
-      }
-    }
-
-    let seasonDisplay = d.season;
-    if (seasonDisplay && !seasonDisplay.toLowerCase().startsWith('mùa') && !seasonDisplay.toLowerCase().startsWith('season')) {
-      seasonDisplay = 'Mùa ' + seasonDisplay;
-    }
-
-    body.innerHTML = `
-      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 12px; margin-bottom: 20px;">
-        <h2 style="color: var(--accent-gold); font-size: 1.85rem; margin: 0 0 6px 0; font-weight: 700;">${d.title || 'Tiêu Đề Bài Viết'}</h2>
-        <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
-          <span>Class: <strong style="color: var(--text-bright);">${d.class_name}</strong></span>
-          <span>Mùa giải: <strong style="color: var(--text-bright);">${seasonDisplay || 'Chưa đặt'}</strong></span>
-          <span>Mục đích: <strong style="color: var(--text-bright);">${d.purpose}</strong></span>
-          <span>Độ khó: <strong style="color: var(--text-bright);">${d.difficulty}</strong></span>
-        </div>
-      </div>
-
-      <!-- 1: TỔNG QUAN & LỐI CHƠI -->
-      <div class="detail-card">
-        <div class="detail-card-title">📖 1. TỔNG QUAN & LỐI CHƠI</div>
-        <div class="markdown-rendered">${this.parseBBCode(d.intro || 'Chưa có giới thiệu.')}</div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-          <div>
-            <strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">2.1 ƯU ĐIỂM (PROS)</strong>
-            <div class="markdown-rendered">${this.parseBBCode(d.pros || '• Chưa cập nhật')}</div>
-          </div>
-          <div>
-            <strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">2.2 NHƯỢC ĐIỂM (CONS)</strong>
-            <div class="markdown-rendered">${this.parseBBCode(d.cons || '• Chưa cập nhật')}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3: STATS -->
-      <div class="detail-card">
-        <div class="detail-card-title">📊 3. PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</div>
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">STRENGTH</div><strong style="color:var(--accent-gold);">${d.str || '0'}</strong></div>
-          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">DEXTERITY</div><strong style="color:var(--accent-gold);">${d.dex || '0'}</strong></div>
-          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">VITALITY</div><strong style="color:var(--accent-gold);">${d.vit || '0'}</strong></div>
-          <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted);">ENERGY</div><strong style="color:var(--accent-gold);">${d.ene || '0'}</strong></div>
-        </div>
-      </div>
-
-      <!-- 4: SKILLS & ROTATION -->
-      <div class="detail-card">
-        <div class="detail-card-title">⚡ 4. KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM (SKILLS & ROTATION)</div>
-        <div class="markdown-rendered">${this.parseBBCode(d.skills || 'Chưa cập nhật kỹ năng.')}</div>
-      </div>
-
-      <!-- 5: LỘ TRÌNH TRANG BỊ -->
-      <div class="detail-card">
-        <div class="detail-card-title">🛡️ 5. LỘ TRÌNH TRANG BỊ THEO TỪNG MỨC LEVEL (GEAR PROGRESSION)</div>
-        
-        <details class="gear-accordion-item" open>
-          <summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary>
-          <div class="gear-accordion-body">
-            <div class="markdown-rendered">${this.parseBBCode(d.gear_lv0_50 || 'Chưa cập nhật')}</div>
-          </div>
-        </details>
-
-        ${d.gear_lv50_135 ? `
-          <details class="gear-accordion-item" open>
-            <summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary>
-            <div class="gear-accordion-body">
-              <div class="markdown-rendered">${this.parseBBCode(d.gear_lv50_135)}</div>
-            </div>
-          </details>
-        ` : ''}
-
-        ${d.gear_lv135plus ? `
-          <details class="gear-accordion-item" open>
-            <summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary>
-            <div class="gear-accordion-body">
-              <div class="markdown-rendered">${this.parseBBCode(d.gear_lv135plus)}</div>
-            </div>
-          </details>
-        ` : ''}
-      </div>
-
-      <!-- 6: CHIẾN THUẬT BOSS & VIDEO -->
-      ${d.strategy || videoEmbed ? `
-        <div class="detail-card">
-          <div class="detail-card-title">🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
-          ${d.strategy ? `<div class="markdown-rendered" style="margin-bottom: 12px;">${this.parseBBCode(d.strategy)}</div>` : ''}
-          ${videoEmbed}
-        </div>
-      ` : ''}
-    `;
-
-    modal.classList.add('active');
-  },
-
-  closePreviewModal() {
-    document.getElementById('modal-preview-full').classList.remove('active');
-  },
-
-  parseBBCode(text) {
-    if (!text) return '';
-    let str = String(text)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    let prev;
-    do {
-      prev = str;
-      str = str
-        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
-        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
-        .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-        .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-        .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
-        .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
-        .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
-        .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>');
-    } while (str !== prev);
-
-    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
-      const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
-      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
-    });
-
-    str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
-      const raw = urlOrId.trim();
-      let videoId = raw;
-      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-      if (yMatch) videoId = yMatch[1];
-      return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
-    });
-
-    str = str
-      .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
-      .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
-      .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
-
-    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
-      const cleanKey = innerContent
-        .replace(/<[^>]*>/g, '')
-        .replace(/\[\/?[^\]]+\]/g, '')
-        .replace(/"/g, '')
-        .trim()
-        .toLowerCase();
-      return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
-    });
-
-    return str.replace(/\n/g, '<br>');
-  },
-
   async handleSubmit(e) {
     e.preventDefault();
     const user = Auth.getCurrentUser();
@@ -1079,6 +814,13 @@ const FormHandler = {
     btn.innerText = 'Đang lưu bài viết...';
 
     const d = this.collectFormData();
+
+    // Dọn rác các ảnh đã tải lên nhưng người dùng cố tình xóa khỏi khung văn bản trước khi Đăng
+    const allEditorText = [d.intro, d.pros, d.cons, d.skills, d.gear_lv0_50, d.gear_lv50_135, d.gear_lv135plus, d.strategy].join(' ');
+    const unusedImages = this.sessionUploadedImages.filter(url => !allEditorText.includes(url));
+    if (unusedImages.length > 0) {
+      unusedImages.forEach(url => API.deleteDriveImage(url));
+    }
 
     const statsPayload = {
       season: d.season,
