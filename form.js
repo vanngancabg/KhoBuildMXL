@@ -6,7 +6,7 @@ const FormHandler = {
   isUpdatingItem: false,
   autoSaveTimer: null,
   markerId: 'item-insert-cursor-marker',
-  sessionUploadedImages: [], // Biến theo dõi các ảnh rác sinh ra trong phiên gõ
+  sessionUploadedImages: [],
 
   defaultGearTemplate: 
 `1. VŨ KHÍ CHÍNH: 
@@ -550,7 +550,6 @@ const FormHandler = {
     reader.readAsDataURL(file);
   },
 
-  // XỬ LÝ LƯU TẠM ẢNH ĐỂ TRÁNH RÁC TRÊN DRIVE
   async handleImageUpload(e) {
     const file = e.target.files[0];
     if (file) {
@@ -572,7 +571,7 @@ const FormHandler = {
       try {
         const res = await API.uploadImage(base64Data, file.name, file.type);
         if (res && res.status === 'success' && res.url) {
-          this.sessionUploadedImages.push(res.url); // Đưa vào mảng theo dõi rác
+          this.sessionUploadedImages.push(res.url);
           this.restoreSelection();
           const imgHTML = `<img src="${res.url}" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;"><p><br></p>`;
           document.execCommand('insertHTML', false, imgHTML);
@@ -593,7 +592,6 @@ const FormHandler = {
   },
 
   cancelEdit() {
-    // Dọn rác các ảnh đã tải lên nhưng người dùng bấm Hủy bỏ
     if (this.sessionUploadedImages.length > 0) {
       this.sessionUploadedImages.forEach(url => API.deleteDriveImage(url));
     }
@@ -804,6 +802,84 @@ const FormHandler = {
     return result.replace(/\n{3,}/g, '\n\n').trim();
   },
 
+  // HÀM LOADDATA: ĐÃ SỬA LỖI TRẮNG KHUNG VÀ KIỂM TRA QUYỀN
+  async loadData(id, user) {
+    try {
+      const res = await API.getBuildDetail(id);
+      if (res && res.status === 'success' && res.data) {
+        const b = res.data;
+        
+        // 1. Sửa lỗi kiểm tra quyền tác giả (Fix biến b.author_username)
+        const authorName = String(b.author_username || b.author_id || '').toLowerCase();
+        if (authorName !== String(user.username).toLowerCase() && user.role !== 'Admin') {
+          alert('Bạn không có quyền sửa bài viết này!');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        document.getElementById('build-title').value = b.title || '';
+        document.getElementById('build-class').value = b.class_name || 'Amazon';
+        document.getElementById('build-video').value = b.video_url || '';
+
+        let seasonVal = '';
+        let patchVal = '1.0';
+
+        if (b.patch_version) {
+          const parts = String(b.patch_version).split('-').map(s => s.trim()).filter(s => s);
+          if (parts.length > 0) {
+            seasonVal = parts[0];
+            patchVal = parts[parts.length - 1];
+          }
+        }
+
+        // 2. Hoàn thiện luồng dự phòng dữ liệu (Tránh thủng dữ liệu bài cũ)
+        try {
+          const statsObj = JSON.parse(b.stats_desc);
+          document.getElementById('build-season').value = statsObj.season || seasonVal || '';
+          document.getElementById('build-patch').value = statsObj.patch || (patchVal !== seasonVal ? patchVal : '1.0');
+          document.getElementById('build-purpose').value = statsObj.purpose || 'Speed Farming';
+          document.getElementById('build-difficulty').value = statsObj.difficulty || 'Dễ';
+          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(statsObj.intro || '');
+          document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(statsObj.pros || '');
+          document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(statsObj.cons || '');
+          document.getElementById('stat-str').value = statsObj.str || '';
+          document.getElementById('stat-dex').value = statsObj.dex || '';
+          document.getElementById('stat-vit').value = statsObj.vit || '';
+          document.getElementById('stat-ene').value = statsObj.ene || '';
+          document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(statsObj.strategy || '');
+        } catch(e) {
+          document.getElementById('build-season').value = seasonVal || '';
+          document.getElementById('build-patch').value = patchVal || '1.0';
+          document.getElementById('build-purpose').value = 'Speed Farming';
+          document.getElementById('build-difficulty').value = 'Dễ';
+          document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(b.stats_desc || '');
+          document.getElementById('build-pros').innerHTML = '';
+          document.getElementById('build-cons').innerHTML = '';
+          document.getElementById('stat-str').value = '';
+          document.getElementById('stat-dex').value = '';
+          document.getElementById('stat-vit').value = '';
+          document.getElementById('stat-ene').value = '';
+          document.getElementById('build-strategy').innerHTML = '';
+        }
+
+        document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(b.skills_desc || '');
+
+        try {
+          const gearObj = JSON.parse(b.gear_desc);
+          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(gearObj.lv0_50 || gearObj.lv105 || this.defaultGearTemplate);
+          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(gearObj.lv50_135 || gearObj.lv120 || this.defaultGearTemplate);
+          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(gearObj.lv135plus || gearObj.lv130 || gearObj.lv150 || this.defaultGearTemplate);
+        } catch(e) {
+          document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(b.gear_desc || this.defaultGearTemplate);
+          document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
+          document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(this.defaultGearTemplate);
+        }
+      }
+    } catch (e) {
+      alert('Không thể tải bài viết để sửa! Chi tiết lỗi mạng: ' + e.message);
+    }
+  },
+
   async handleSubmit(e) {
     e.preventDefault();
     const user = Auth.getCurrentUser();
@@ -815,7 +891,6 @@ const FormHandler = {
 
     const d = this.collectFormData();
 
-    // Dọn rác các ảnh đã tải lên nhưng người dùng cố tình xóa khỏi khung văn bản trước khi Đăng
     const allEditorText = [d.intro, d.pros, d.cons, d.skills, d.gear_lv0_50, d.gear_lv50_135, d.gear_lv135plus, d.strategy].join(' ');
     const unusedImages = this.sessionUploadedImages.filter(url => !allEditorText.includes(url));
     if (unusedImages.length > 0) {
@@ -875,6 +950,30 @@ const FormHandler = {
       btn.disabled = false;
       btn.innerText = '🚀 Submit / Đăng Bài Viết';
     }
+  },
+
+  collectFormData() {
+    return {
+      title: document.getElementById('build-title').value.trim(),
+      class_name: document.getElementById('build-class').value,
+      season: document.getElementById('build-season').value.trim(),
+      patch: document.getElementById('build-patch').value.trim(),
+      purpose: document.getElementById('build-purpose').value,
+      difficulty: document.getElementById('build-difficulty').value,
+      intro: this.htmlToBBCode(document.getElementById('build-intro').innerHTML),
+      pros: this.htmlToBBCode(document.getElementById('build-pros').innerHTML),
+      cons: this.htmlToBBCode(document.getElementById('build-cons').innerHTML),
+      str: document.getElementById('stat-str').value.trim(),
+      dex: document.getElementById('stat-dex').value.trim(),
+      vit: document.getElementById('stat-vit').value.trim(),
+      ene: document.getElementById('stat-ene').value.trim(),
+      skills: this.htmlToBBCode(document.getElementById('build-skills-text').innerHTML),
+      gear_lv0_50: this.htmlToBBCode(document.getElementById('gear-lv0-50').innerHTML),
+      gear_lv50_135: this.htmlToBBCode(document.getElementById('gear-lv50-135').innerHTML),
+      gear_lv135plus: this.htmlToBBCode(document.getElementById('gear-lv135plus').innerHTML),
+      strategy: this.htmlToBBCode(document.getElementById('build-strategy').innerHTML),
+      video: document.getElementById('build-video').value.trim()
+    };
   }
 };
 
