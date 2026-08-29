@@ -626,31 +626,46 @@ const FormHandler = {
     return color;
   },
 
+  // HÀM ĐÃ ĐƯỢC CHỮA LỖI ĐỆ QUY CHUẨN XÁC 100% NHƯ BÊN DETAIL.JS
   bbcodeToHTML(text) {
     if (!text) return '';
-    let str = String(text);
+    let str = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     let prev;
     do {
       prev = str;
-      str = str.replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>');
+      str = str
+        .replace(/\[indent\]([\s\S]*?)\[\/indent\]/gi, '<span class="bb-indent">$1</span>')
+        .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
+        .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
+        .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
+        .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
+        .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
+        .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
+        .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
+        .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
+        .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>');
     } while (str !== prev);
 
+    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (match, listBody) => {
+      const items = listBody.split(/\[\*\]/).filter(item => item.trim().length > 0);
+      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
+    });
+
+    str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
+      const raw = urlOrId.trim();
+      let videoId = raw;
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (yMatch) videoId = yMatch[1];
+      return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
+    });
+
     str = str
-      .replace(/\[size=(\d+)(?:px)?\]([\s\S]*?)\[\/size\]/gi, '<span style="font-size:$1px;">$2</span>')
-      .replace(/\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi, '<span style="color:$1;">$2</span>')
-      .replace(/\[b\]([\s\S]*?)\[\/b\]/gi, '<strong>$1</strong>')
-      .replace(/\[i\]([\s\S]*?)\[\/i\]/gi, '<em>$1</em>')
-      .replace(/\[u\]([\s\S]*?)\[\/u\]/gi, '<u>$1</u>')
-      .replace(/\[s\]([\s\S]*?)\[\/s\]/gi, '<s>$1</s>')
-      .replace(/\[quote=(.*?)\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 $1 đã viết:</div><div class="bb-quote-body">$2</div></div>')
-      .replace(/\[quote\]([\s\S]*?)\[\/quote\]/gi, '<div class="bb-quote-container"><div class="bb-quote-header">💬 Trích dẫn:</div><div class="bb-quote-body">$1</div></div>')
-      .replace(/\[spoiler=(.*?)\]([\s\S]*?)\[\/spoiler\]/gi, '<details class="bb-spoiler-box"><summary class="bb-spoiler-title">$1</summary><div class="bb-spoiler-content">$2</div></details>')
       .replace(/\[img\](.*?)\[\/img\]/gi, '<img src="$1" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;">')
       .replace(/\[url=(.*?)\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$2</a>')
       .replace(/\[url\]([\s\S]*?)\[\/url\]/gi, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">$1</a>');
 
-    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (m, innerContent) => {
+    str = str.replace(/\[item\]([\s\S]*?)\[\/item\]/gi, (match, innerContent) => {
       const cleanKey = innerContent
         .replace(/<[^>]*>/g, '')
         .replace(/\[\/?[^\]]+\]/g, '')
@@ -658,11 +673,6 @@ const FormHandler = {
         .trim()
         .toLowerCase();
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
-    });
-
-    str = str.replace(/\[list\]([\s\S]*?)\[\/list\]/gi, (m, body) => {
-      const items = body.split(/\[\*\]/).filter(x => x.trim().length > 0);
-      return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
     });
 
     return str.replace(/\n/g, '<br>');
@@ -802,14 +812,12 @@ const FormHandler = {
     return result.replace(/\n{3,}/g, '\n\n').trim();
   },
 
-  // HÀM LOADDATA: ĐÃ SỬA LỖI TRẮNG KHUNG VÀ KIỂM TRA QUYỀN
   async loadData(id, user) {
     try {
       const res = await API.getBuildDetail(id);
       if (res && res.status === 'success' && res.data) {
         const b = res.data;
         
-        // 1. Sửa lỗi kiểm tra quyền tác giả (Fix biến b.author_username)
         const authorName = String(b.author_username || b.author_id || '').toLowerCase();
         if (authorName !== String(user.username).toLowerCase() && user.role !== 'Admin') {
           alert('Bạn không có quyền sửa bài viết này!');
@@ -832,7 +840,6 @@ const FormHandler = {
           }
         }
 
-        // 2. Hoàn thiện luồng dự phòng dữ liệu (Tránh thủng dữ liệu bài cũ)
         try {
           const statsObj = JSON.parse(b.stats_desc);
           document.getElementById('build-season').value = statsObj.season || seasonVal || '';
