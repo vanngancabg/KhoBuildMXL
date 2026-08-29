@@ -22,7 +22,8 @@ const ItemTooltipManager = {
     const cacheTime = localStorage.getItem('d2_cached_itemdb_time');
     const now = Date.now();
 
-    if (cached && cacheTime && (now - Number(cacheTime) < 300000)) {
+    // Giảm cache từ 5 phút xuống 1 phút (60000ms) để tải ảnh cập nhật nhanh hơn
+    if (cached && cacheTime && (now - Number(cacheTime) < 60000)) {
       try {
         this.itemsDb = JSON.parse(cached);
         return;
@@ -34,7 +35,6 @@ const ItemTooltipManager = {
       if (res && res.status === 'success' && res.data) {
         this.itemsDb = res.data;
         
-        // Tạo thêm index phụ cho các món đồ có dấu nháy đơn để tìm kiếm linh hoạt
         Object.keys(res.data).forEach(k => {
           const stripped = k.replace(/['’"]/g, '');
           if (!this.itemsDb[stripped]) {
@@ -60,7 +60,6 @@ const ItemTooltipManager = {
           key = target.textContent.replace(/<[^>]*>/g, '').trim().toLowerCase();
         }
 
-        // Tìm kiếm linh hoạt cả tên có dấu ' lẫn tên bỏ dấu '
         const cleanKey = (key || '').trim().toLowerCase();
         const strippedKey = cleanKey.replace(/['’"]/g, '');
         const item = this.itemsDb[cleanKey] || this.itemsDb[strippedKey];
@@ -188,7 +187,6 @@ const ItemTooltipManager = {
     const query = rawQuery.toLowerCase();
     list.innerHTML = '';
 
-    // Lọc danh sách không trùng lặp
     const seenNames = new Set();
     const items = Object.values(this.itemsDb).filter(item => {
       if (!item || !item.name || seenNames.has(item.name.toLowerCase())) return false;
