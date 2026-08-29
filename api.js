@@ -3,9 +3,9 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbz_0B8cTfG_K0pZqf81c9-i
 const API = {
   async get(params) {
     const query = new URLSearchParams(params).toString();
+    // Đã gỡ bỏ headers ở GET để tránh lỗi chặn CORS của Google Apps Script
     const res = await fetch(`${API_URL}?${query}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      method: 'GET'
     });
     return await res.json();
   },
@@ -14,6 +14,7 @@ const API = {
     const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify(data),
+      // POST thì bắt buộc phải dùng text/plain để vượt qua CORS
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
     return await res.json();
