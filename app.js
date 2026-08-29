@@ -232,7 +232,6 @@ const App = {
     this.renderBuilds();
   },
 
-  // BẬT / TẮT KHUNG CHAT & CẬP NHẬT TRẠNG THÁI ĐÃ ĐỌC
   toggleChatWidget() {
     const widget = document.getElementById('chat-floating-widget');
     if (widget) {
@@ -240,7 +239,6 @@ const App = {
       widget.classList.toggle('active', willBeActive);
       
       if (willBeActive) {
-        // Đã mở xem chat -> Ghi nhận đã đọc hết số tin nhắn hiện có và tắt badge đỏ
         localStorage.setItem('d2_last_read_chat_count', String(this.totalMessagesCount));
         const badge = document.getElementById('chat-unread-badge');
         if (badge) badge.style.display = 'none';
@@ -282,8 +280,14 @@ const App = {
           localStorage.setItem('d2_last_read_chat_count', String(this.totalMessagesCount));
           if (badge) badge.style.display = 'none';
         } else {
-          // Tính toán số tin nhắn mới chưa đọc khi khung chat đang đóng
-          const lastRead = Number(localStorage.getItem('d2_last_read_chat_count') || 0);
+          // Fix lỗi đếm số ảo khi chuyển thiết bị
+          let lastReadStr = localStorage.getItem('d2_last_read_chat_count');
+          if (lastReadStr === null) {
+            lastReadStr = String(this.totalMessagesCount);
+            localStorage.setItem('d2_last_read_chat_count', lastReadStr);
+          }
+
+          const lastRead = Number(lastReadStr);
           const unread = this.totalMessagesCount - lastRead;
 
           if (unread > 0 && badge) {
