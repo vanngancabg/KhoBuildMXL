@@ -1,175 +1,48 @@
-const API_URL = 'https://script.google.com/macros/s/AKfycbwPUxNUaYGUTSWGT4vvFBeuuRcGTR2e2ZK8OR7XJuFE49FbkDHz3ZpKm1tsx2bYZL83mA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz_0B8cTfG_K0pZqf81c9-i-i3E5FkS_J0-T1lQk8R7Z_zE6F8G/exec';
 
 const API = {
-  // Hàm fetch an toàn tuyệt đối, tự xử lý chuyển hướng và bọc try-catch chống crash
-  async request(url, options = {}) {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        redirect: 'follow'
-      });
-      if (!response.ok) return { status: 'error', message: 'Lỗi máy chủ HTTP ' + response.status };
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      return { status: 'error', message: err.toString() };
-    }
-  },
-
-  async getBuilds() {
-    return await this.request(`${API_URL}?action=getBuilds`);
-  },
-
-  async getBuildDetail(buildId) {
-    return await this.request(`${API_URL}?action=getBuildDetail&build_id=${encodeURIComponent(buildId)}`);
-  },
-
-  async getComments(buildId) {
-    return await this.request(`${API_URL}?action=getComments&build_id=${encodeURIComponent(buildId)}`);
-  },
-
-  async getShoutbox() {
-    return await this.request(`${API_URL}?action=getShoutbox`);
-  },
-
-  async getItemDatabase() {
-    return await this.request(`${API_URL}?action=getItemDatabase`);
-  },
-
-  async getNotifications(username) {
-    return await this.request(`${API_URL}?action=getNotifications&username=${encodeURIComponent(username)}`);
-  },
-
-  async markNotificationRead(username) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'clearNotifications', username })
+  async get(params) {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_URL}?${query}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
+    return await res.json();
   },
 
-  async trackSiteVisit() {
-    return await this.request(`${API_URL}?action=trackSiteVisit`);
-  },
-
-  async getCloudDraft(username) {
-    return await this.request(`${API_URL}?action=getCloudDraft&username=${encodeURIComponent(username)}`);
-  },
-
-  async saveCloudDraft(username, draft) {
-    return await this.request(API_URL, {
+  async post(data) {
+    const res = await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'saveCloudDraft', username, draft })
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
+    return await res.json();
   },
 
-  async deleteCloudDraft(username) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'deleteCloudDraft', username })
-    });
-  },
+  getBuilds() { return this.get({ action: 'getBuilds' }); },
+  getBuildDetail(build_id) { return this.get({ action: 'getBuildDetail', build_id }); },
+  trackBuildView(build_id) { return this.get({ action: 'trackBuildView', build_id }); },
+  getComments(build_id) { return this.get({ action: 'getComments', build_id }); },
+  getShoutbox() { return this.get({ action: 'getShoutbox' }); },
+  getItemDatabase() { return this.get({ action: 'getItemDatabase' }); },
+  getNotifications(username) { return this.get({ action: 'getNotifications', username }); },
+  trackSiteVisit() { return this.get({ action: 'trackSiteVisit' }); },
+  getCloudDraft(username) { return this.get({ action: 'getCloudDraft', username }); },
+  getPendingItemDetail(pending_id) { return this.get({ action: 'getPendingItemDetail', pending_id }); },
 
-  async getPendingItemDetail(pending_id) {
-    return await this.request(`${API_URL}?action=getPendingItemDetail&pending_id=${encodeURIComponent(pending_id)}`);
-  },
-
-  async uploadItemDatabase(payload) {
-    localStorage.removeItem('d2_cached_itemdb');
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'uploadItemDatabase',
-        itemName: payload.itemName,
-        category: payload.category,
-        patch: payload.patch,
-        base64Data: payload.base64Data,
-        mimeType: payload.mimeType,
-        username: payload.username,
-        role: payload.role
-      })
-    });
-  },
-
-  async approvePendingItem(pending_id, username, role) {
-    localStorage.removeItem('d2_cached_itemdb');
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'approvePendingItem', pending_id, username, role })
-    });
-  },
-
-  async rejectPendingItem(pending_id, username, role) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'rejectPendingItem', pending_id, username, role })
-    });
-  },
-
-  async uploadImage(base64Data, fileName, mimeType) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'uploadImage',
-        base64Data: base64Data,
-        fileName: fileName,
-        mimeType: mimeType
-      })
-    });
-  },
-
-  async register(user) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'register', user })
-    });
-  },
-
-  async login(credentials) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'login', credentials })
-    });
-  },
-
-  async saveBuild(build) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'saveBuild', build })
-    });
-  },
-
-  async deleteBuild(build_id, username, role) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'deleteBuild', build_id, username, role })
-    });
-  },
-
-  async voteBuild(build_id, username) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'voteBuild', build_id, username })
-    });
-  },
-
-  async addComment(comment) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'addComment', comment })
-    });
-  },
-
-  async deleteComment(comment_id, username, role) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'deleteComment', comment_id, username, role })
-    });
-  },
-
-  async sendShoutbox(message) {
-    return await this.request(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'sendShoutbox', message })
-    });
-  }
+  login(credentials) { return this.post({ action: 'login', credentials }); },
+  register(user) { return this.post({ action: 'register', user }); },
+  saveBuild(build) { return this.post({ action: 'saveBuild', build }); },
+  deleteBuild(build_id, username, role) { return this.post({ action: 'deleteBuild', build_id, username, role }); },
+  voteBuild(build_id, username) { return this.post({ action: 'voteBuild', build_id, username }); },
+  addComment(comment) { return this.post({ action: 'addComment', comment }); },
+  deleteComment(comment_id, username, role) { return this.post({ action: 'deleteComment', comment_id, username, role }); },
+  sendShoutbox(message) { return this.post({ action: 'sendShoutbox', message }); },
+  uploadImage(base64Data, fileName, mimeType) { return this.post({ action: 'uploadImage', base64Data, fileName, mimeType }); },
+  uploadItemDatabase(data) { return this.post({ action: 'uploadItemDatabase', ...data }); },
+  approvePendingItem(pending_id, username, role) { return this.post({ action: 'approvePendingItem', pending_id, username, role }); },
+  rejectPendingItem(pending_id, username, role) { return this.post({ action: 'rejectPendingItem', pending_id, username, role }); },
+  markNotificationRead(username) { return this.post({ action: 'markNotificationRead', username }); },
+  saveCloudDraft(username, draft) { return this.post({ action: 'saveCloudDraft', username, draft }); },
+  deleteCloudDraft(username) { return this.post({ action: 'deleteCloudDraft', username }); }
 };
