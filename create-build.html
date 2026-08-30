@@ -25,19 +25,26 @@
       <button class="btn btn-primary" onclick="Auth.openModal('login')">🔑 Đăng nhập ngay</button>
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-      <h1 id="form-heading" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.5rem; margin: 0;">NEW TOPIC / TẠO HƯỚNG DẪN BUILD</h1>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <span id="upload-status" style="color: var(--accent-gold); font-size: 0.8rem; display: none;"></span>
-        <button type="button" class="btn btn-sm" onclick="FormHandler.importBuildCode()">📥 Nhập Mã Build</button>
-        <button type="button" class="btn btn-sm" onclick="FormHandler.saveDraft()">💾 Lưu Nháp</button>
-        <button type="button" class="btn btn-sm btn-danger" onclick="FormHandler.deleteDraft()">🗑️ Xóa Nháp</button>
-        <button type="button" class="btn btn-sm btn-primary" onclick="FormHandler.openPreviewModal()">👁️ Xem Trước</button>
-      </div>
-    </div>
+    <h1 id="form-heading" style="color: var(--accent-gold); font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 16px;">NEW TOPIC / TẠO HƯỚNG DẪN BUILD</h1>
 
-    <!-- THANH CÔNG CỤ SOẠN THẢO BBCODE WYSIWYG STICKY -->
+    <!-- KHỐI CÔNG CỤ CỐ ĐỊNH (STICKY) GỒM CẢ NÚT LƯU NHÁP & XEM TRƯỚC -->
     <div class="sticky-toolbar-wrapper">
+      
+      <!-- Dòng trên: Nút hành động -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(212, 175, 55, 0.2); flex-wrap: wrap; gap: 8px;">
+        <div style="font-weight: bold; color: var(--text-bright); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+          🛠️ BẢNG ĐIỀU KHIỂN
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span id="upload-status" style="color: var(--accent-gold); font-size: 0.8rem; display: none;"></span>
+          <button type="button" class="btn btn-sm" onclick="FormHandler.importBuildCode()">📥 Nhập Mã Build</button>
+          <button type="button" class="btn btn-sm" onclick="FormHandler.saveDraft()">💾 Lưu Nháp</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="FormHandler.deleteDraft()">🗑️ Xóa Nháp</button>
+          <button type="button" class="btn btn-sm btn-primary" onclick="FormHandler.openPreviewModal()">👁️ Xem Trước Bài Viết</button>
+        </div>
+      </div>
+
+      <!-- Dòng dưới: Thanh công cụ BBCode -->
       <div class="bb-toolbar">
         <button type="button" class="bb-btn" title="In đậm" onmousedown="event.preventDefault(); FormHandler.execCmd('bold');"><b>B</b></button>
         <button type="button" class="bb-btn" title="In nghiêng" onmousedown="event.preventDefault(); FormHandler.execCmd('italic');"><i>I</i></button>
@@ -77,7 +84,7 @@
           <option value="26px">26px - Tiêu đề</option>
         </select>
 
-        <!-- BẢNG MÀU SẮC (ĐÃ BỔ SUNG MÀU TRẮNG NGUYÊN BẢN #FFFFFF) -->
+        <!-- BẢNG MÀU SẮC -->
         <select class="bb-select" title="Màu chữ" onchange="FormHandler.applyTextColor(this.value); this.selectedIndex=0;">
           <option value="" disabled selected>🎨 Chọn màu</option>
           <option value="#ffffff" style="color:#ffffff; background:#222; font-weight:bold;">⚪ Trắng (Nguyên bản)</option>
@@ -258,7 +265,7 @@
         </div>
       </div>
 
-      <!-- NÚT ĐĂNG BÀI (Có gọi hàm dọn rác) -->
+      <!-- NÚT ĐĂNG BÀI -->
       <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
         <button type="button" class="btn" onclick="FormHandler.cancelEdit()">Hủy bỏ</button>
         <button type="submit" id="btn-save" class="btn btn-primary" style="padding: 10px 32px; font-size: 1rem; font-weight: bold;">
@@ -272,7 +279,7 @@
   <div id="modal-preview-full" class="modal">
     <div class="modal-preview-container">
       <button class="preview-close-btn" onclick="FormHandler.closePreviewModal()">✖ Đóng Xem Trước</button>
-      <div id="preview-modal-body"></div>
+      <div id="preview-modal-body" style="margin-top: 10px;"></div>
     </div>
   </div>
 
