@@ -142,7 +142,7 @@ const FormHandler = {
       if (e.key === 'Escape') {
         this.closePreviewModal();
         this.closeItemModal();
-        ItemTooltipManager.closePickerModal(true);
+        if(typeof ItemTooltipManager !== 'undefined') ItemTooltipManager.closePickerModal(true);
       }
     });
   },
@@ -278,6 +278,123 @@ const FormHandler = {
         }
       }
     }
+  },
+
+  // KHÔI PHỤC HÀM NHẬP MÃ BUILD TỪ JSON CŨ
+  importBuildCode() {
+    const code = prompt('Dán mã JSON của bài viết vào đây để khôi phục:');
+    if (!code) return;
+    try {
+      const d = JSON.parse(code);
+      if (d.title) document.getElementById('build-title').value = d.title;
+      if (d.class_name) document.getElementById('build-class').value = d.class_name;
+      if (d.season) document.getElementById('build-season').value = d.season;
+      if (d.patch) document.getElementById('build-patch').value = d.patch;
+      if (d.purpose) document.getElementById('build-purpose').value = d.purpose;
+      if (d.difficulty) document.getElementById('build-difficulty').value = d.difficulty;
+      if (d.intro) document.getElementById('build-intro').innerHTML = this.bbcodeToHTML(d.intro);
+      if (d.pros) document.getElementById('build-pros').innerHTML = this.bbcodeToHTML(d.pros);
+      if (d.cons) document.getElementById('build-cons').innerHTML = this.bbcodeToHTML(d.cons);
+      if (d.str) document.getElementById('stat-str').value = d.str;
+      if (d.dex) document.getElementById('stat-dex').value = d.dex;
+      if (d.vit) document.getElementById('stat-vit').value = d.vit;
+      if (d.ene) document.getElementById('stat-ene').value = d.ene;
+      if (d.skills) document.getElementById('build-skills-text').innerHTML = this.bbcodeToHTML(d.skills);
+      if (d.gear_lv0_50) document.getElementById('gear-lv0-50').innerHTML = this.bbcodeToHTML(d.gear_lv0_50);
+      if (d.gear_lv50_135) document.getElementById('gear-lv50-135').innerHTML = this.bbcodeToHTML(d.gear_lv50_135);
+      if (d.gear_lv135plus) document.getElementById('gear-lv135plus').innerHTML = this.bbcodeToHTML(d.gear_lv135plus);
+      if (d.strategy) document.getElementById('build-strategy').innerHTML = this.bbcodeToHTML(d.strategy);
+      if (d.video) document.getElementById('build-video').value = d.video;
+      alert('✅ Đã nạp mã bài viết thành công!');
+    } catch(e) {
+      alert('❌ Mã JSON không hợp lệ hoặc bị lỗi!');
+    }
+  },
+
+  // KHÔI PHỤC & CẬP NHẬT HÀM XEM TRƯỚC BÀI VIẾT (FULL PREVIEW)
+  openPreviewModal() {
+    const d = this.collectFormData();
+    const modal = document.getElementById('modal-preview-full');
+    const body = document.getElementById('preview-modal-body');
+    if (!modal || !body) return;
+
+    let seasonDisplay = d.season || d.patch || 'Mới nhất';
+    if (seasonDisplay && !seasonDisplay.toLowerCase().startsWith('mùa') && !seasonDisplay.toLowerCase().startsWith('season')) {
+      seasonDisplay = 'Mùa ' + seasonDisplay;
+    }
+
+    let videoHTML = '';
+    if (d.video) {
+      const match = d.video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (match) {
+        videoHTML = `<div class="bb-video-embed" style="margin-top:14px;"><iframe src="https://www.youtube.com/embed/${match[1]}" allowfullscreen></iframe></div>`;
+      }
+    }
+
+    body.innerHTML = `
+      <div style="border-bottom: 2px solid var(--accent-gold); padding-bottom: 14px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+          <span style="background: rgba(199, 156, 94, 0.15); color: var(--accent-gold); padding: 2px 8px; border-radius: 4px; font-weight: bold; border: 1px solid var(--accent-gold);">${this.escapeHTML(d.class_name) || 'Class'}</span>
+          <span style="background: #1c1f24; color: var(--text-bright); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--border-color);">${this.escapeHTML(seasonDisplay)}</span>
+          <span style="background: rgba(72, 187, 120, 0.15); color: var(--accent-green); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-green);">${this.escapeHTML(d.purpose)}</span>
+          <span style="background: rgba(237, 137, 54, 0.15); color: var(--accent-orange); padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--accent-orange);">${this.escapeHTML(d.difficulty)}</span>
+        </div>
+        <h1 style="color: var(--accent-gold); font-size: 1.85rem; margin-bottom: 8px; font-weight: 700;">${this.escapeHTML(d.title) || 'Chưa có tiêu đề'}</h1>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-card-title">📖 1. TỔNG QUAN & LỐI CHƠI</div>
+        <div class="markdown-rendered" style="margin-bottom: 16px;">${this.bbcodeToHTML(d.intro) || '<span style="color:var(--text-muted)">Chưa có dữ liệu</span>'}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div><strong style="color: var(--accent-green); font-size: 0.95rem; display: block; margin-bottom: 6px;">2.1 ƯU ĐIỂM (PROS)</strong><div class="markdown-rendered">${this.bbcodeToHTML(d.pros)}</div></div>
+          <div><strong style="color: #ff6b6b; font-size: 0.95rem; display: block; margin-bottom: 6px;">2.2 NHƯỢC ĐIỂM (CONS)</strong><div class="markdown-rendered">${this.bbcodeToHTML(d.cons)}</div></div>
+        </div>
+      </div>
+
+      <details class="section-accordion" open>
+        <summary>📊 3. PHÂN BỔ ĐIỂM THUỘC TÍNH (STATS)</summary>
+        <div class="section-accordion-body">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">STRENGTH</div><div style="color:var(--text-bright); font-size:0.9rem; font-weight:500;">${this.escapeHTML(d.str) || '0'}</div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">DEXTERITY</div><div style="color:var(--text-bright); font-size:0.9rem; font-weight:500;">${this.escapeHTML(d.dex) || '0'}</div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">VITALITY</div><div style="color:var(--text-bright); font-size:0.9rem; font-weight:500;">${this.escapeHTML(d.vit) || '0'}</div></div>
+            <div class="stat-pill"><div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">ENERGY</div><div style="color:var(--text-bright); font-size:0.9rem; font-weight:500;">${this.escapeHTML(d.ene) || '0'}</div></div>
+          </div>
+        </div>
+      </details>
+
+      <details class="section-accordion" open>
+        <summary>⚡ 4. KỸ NĂNG & THỨ TỰ NÂNG ĐIỂM</summary>
+        <div class="section-accordion-body"><div class="markdown-rendered">${this.bbcodeToHTML(d.skills)}</div></div>
+      </details>
+
+      <details class="section-accordion" open>
+        <summary>🛡️ 5. LỘ TRÌNH TRANG BỊ</summary>
+        <div class="section-accordion-body">
+          <details class="gear-accordion-item" open><summary class="gear-accordion-header">🔰 Mức 1: Level 1 - 115</summary><div class="gear-accordion-body"><div class="markdown-rendered">${this.bbcodeToHTML(d.gear_lv0_50)}</div></div></details>
+          ${d.gear_lv50_135 ? `<details class="gear-accordion-item" open style="margin-top:10px;"><summary class="gear-accordion-header">⚔️ Mức 2: Level 115 - 135</summary><div class="gear-accordion-body"><div class="markdown-rendered">${this.bbcodeToHTML(d.gear_lv50_135)}</div></div></details>` : ''}
+          ${d.gear_lv135plus ? `<details class="gear-accordion-item" open style="margin-top:10px;"><summary class="gear-accordion-header">👑 Mức 3: Level 135+</summary><div class="gear-accordion-body"><div class="markdown-rendered">${this.bbcodeToHTML(d.gear_lv135plus)}</div></div></details>` : ''}
+        </div>
+      </details>
+
+      ${(d.strategy || videoHTML) ? `
+      <div class="detail-card">
+        <div class="detail-card-title">🎬 6. CHIẾN THUẬT BOSS & VIDEO GAMEPLAY</div>
+        ${d.strategy ? `<div class="markdown-rendered">${this.bbcodeToHTML(d.strategy)}</div>` : ''}
+        ${videoHTML}
+      </div>` : ''}
+    `;
+
+    modal.classList.add('active');
+  },
+
+  closePreviewModal() {
+    const modal = document.getElementById('modal-preview-full');
+    if (modal) modal.classList.remove('active');
+  },
+
+  escapeHTML(str) { 
+    return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; 
   },
 
   execCmd(command, value = null) {
@@ -425,9 +542,11 @@ const FormHandler = {
     this.saveSelection();
     this.insertCursorMarker();
     
-    ItemTooltipManager.openPickerModal((selectedItemName) => {
-      this.insertItemAtMarker(selectedItemName);
-    });
+    if(typeof ItemTooltipManager !== 'undefined'){
+      ItemTooltipManager.openPickerModal((selectedItemName) => {
+        this.insertItemAtMarker(selectedItemName);
+      });
+    }
   },
 
   insertItemAtMarker(selectedItemName) {
@@ -512,13 +631,15 @@ const FormHandler = {
         });
 
         if (res && res.status === 'success') {
-          ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
-            name: itemName,
-            category: 'Sacred Unique',
-            url: res.url,
-            patch: patch,
-            by: user.username
-          };
+          if(typeof ItemTooltipManager !== 'undefined'){
+            ItemTooltipManager.itemsDb[itemName.toLowerCase()] = {
+              name: itemName,
+              category: 'Sacred Unique',
+              url: res.url,
+              patch: patch,
+              by: user.username
+            };
+          }
 
           this.closeItemModal();
           if (statusEl) {
@@ -526,18 +647,22 @@ const FormHandler = {
             setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
           }
 
-          ItemTooltipManager.openPickerModal((name) => {
-            this.insertItemAtMarker(name);
-          }, itemName, itemName);
+          if(typeof ItemTooltipManager !== 'undefined'){
+            ItemTooltipManager.openPickerModal((name) => {
+              this.insertItemAtMarker(name);
+            }, itemName, itemName);
+          }
 
         } else if (res && res.status === 'pending') {
           this.closeItemModal();
           alert('Đề xuất của bạn đã được gửi và đang chờ duyệt. Trong lúc này bạn vẫn có thể dùng ảnh hiện tại của món đồ.');
           if (statusEl) statusEl.style.display = 'none';
 
-          ItemTooltipManager.openPickerModal((name) => {
-            this.insertItemAtMarker(name);
-          }, itemName, itemName);
+          if(typeof ItemTooltipManager !== 'undefined'){
+            ItemTooltipManager.openPickerModal((name) => {
+              this.insertItemAtMarker(name);
+            }, itemName, itemName);
+          }
         } else {
           alert('Lỗi: ' + (res?.message || 'Không thể lưu ảnh'));
           if (statusEl) statusEl.style.display = 'none';
@@ -626,7 +751,6 @@ const FormHandler = {
     return color;
   },
 
-  // HÀM ĐÃ ĐƯỢC CHỮA LỖI ĐỆ QUY CHUẨN XÁC 100% NHƯ BÊN DETAIL.JS
   bbcodeToHTML(text) {
     if (!text) return '';
     let str = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
