@@ -280,7 +280,6 @@ const FormHandler = {
     }
   },
 
-  // KHÔI PHỤC HÀM NHẬP MÃ BUILD TỪ JSON CŨ
   importBuildCode() {
     const code = prompt('Dán mã JSON của bài viết vào đây để khôi phục:');
     if (!code) return;
@@ -311,7 +310,6 @@ const FormHandler = {
     }
   },
 
-  // KHÔI PHỤC & CẬP NHẬT HÀM XEM TRƯỚC BÀI VIẾT (FULL PREVIEW)
   openPreviewModal() {
     const d = this.collectFormData();
     const modal = document.getElementById('modal-preview-full');
@@ -802,6 +800,7 @@ const FormHandler = {
     return str.replace(/\n/g, '<br>');
   },
 
+  // ĐÃ FIX LỖI MẤT DẤU XUỐNG DÒNG (ENTER) KHI XUẤT RA BBCODE
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -831,24 +830,24 @@ const FormHandler = {
       }
 
       if (node.classList.contains('bb-indent') || tag === 'blockquote') {
-        return `[indent]${inner}[/indent]`;
+        return `\n[indent]${inner}[/indent]\n`;
       }
       if (node.classList.contains('bb-quote-container')) {
         const body = node.querySelector('.bb-quote-body');
         const quoteText = body ? serializeNode(body) : inner;
-        return `[quote]${quoteText}[/quote]`;
+        return `\n[quote]${quoteText}[/quote]\n`;
       }
       if (node.classList.contains('bb-spoiler-box') || tag === 'details') {
         const titleEl = node.querySelector('.bb-spoiler-title') || node.querySelector('summary');
         const title = titleEl ? titleEl.textContent.trim() : 'Chi tiết';
         const contentEl = node.querySelector('.bb-spoiler-content') || node.querySelector('div');
         const content = contentEl ? serializeNode(contentEl) : inner;
-        return `[spoiler=${title}]${content}[/spoiler]`;
+        return `\n[spoiler=${title}]${content}[/spoiler]\n`;
       }
       if (node.classList.contains('bb-video-embed')) {
         const iframe = node.querySelector('iframe');
         const src = iframe ? iframe.getAttribute('src') : '';
-        return `[youtube]${src}[/youtube]`;
+        return `\n[youtube]${src}[/youtube]\n`;
       }
 
       let res = inner;
@@ -914,7 +913,7 @@ const FormHandler = {
           node.querySelectorAll(':scope > li').forEach(li => {
             listItems += `[*] ${serializeNode(li).trim()}\n`;
           });
-          return `[list]\n${listItems}[/list]`;
+          return `\n[list]\n${listItems}[/list]\n`;
         }
         case 'li':
           return res;
@@ -922,7 +921,7 @@ const FormHandler = {
           return '\n';
         case 'p':
         case 'div':
-          return res + '\n';
+          return '\n' + res; // Chuyển '\n' lên phía trước để ngắt tách dòng hoàn hảo
         default:
           return res;
       }
