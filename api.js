@@ -44,7 +44,9 @@ const API = {
   saveCloudDraft(username, draft) { return this.post({ action: 'saveCloudDraft', username, draft }); },
   deleteCloudDraft(username) { return this.post({ action: 'deleteCloudDraft', username }); },
   
-  // 2 Lệnh mới cho việc khôi phục mật khẩu & cập nhật Email
   updateEmail(username, email) { return this.post({ action: 'updateEmail', username, email }); },
-  forgotPassword(email) { return this.post({ action: 'forgotPassword', email }); }
+  forgotPassword(email) { return this.post({ action: 'forgotPassword', email }); },
+  
+  // Lệnh MỚI: Đổi mật khẩu
+  changePassword(username, oldPassword, newPassword) { return this.post({ action: 'changePassword', username, oldPassword, newPassword }); }
 };
