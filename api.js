@@ -46,7 +46,8 @@ const API = {
   
   updateEmail(username, email) { return this.post({ action: 'updateEmail', username, email }); },
   forgotPassword(email) { return this.post({ action: 'forgotPassword', email }); },
+  changePassword(username, oldPassword, newPassword) { return this.post({ action: 'changePassword', username, oldPassword, newPassword }); },
   
-  // Lệnh MỚI: Đổi mật khẩu
-  changePassword(username, oldPassword, newPassword) { return this.post({ action: 'changePassword', username, oldPassword, newPassword }); }
+  // Lệnh MỚI: Gửi góp ý / Báo lỗi
+  sendFeedback(feedback) { return this.post({ action: 'sendFeedback', feedback }); }
 };
