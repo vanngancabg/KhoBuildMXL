@@ -323,7 +323,7 @@ const FormHandler = {
 
     let videoHTML = '';
     if (d.video) {
-      const match = d.video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const match = d.video.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
       if (match) {
         videoHTML = `<div class="bb-video-embed" style="margin-top:14px;"><iframe src="https://www.youtube.com/embed/${match[1]}" allowfullscreen></iframe></div>`;
       }
@@ -509,7 +509,8 @@ const FormHandler = {
     this.restoreSelection();
     const url = prompt('Dán link video YouTube:');
     if (!url) return;
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    // Cập nhật Regex cho Youtube Shorts
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
     const videoId = match ? match[1] : null;
     if (videoId) {
       const vHTML = `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div><p><br></p>`;
@@ -774,10 +775,11 @@ const FormHandler = {
       return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
     });
 
+    // Bắt link youtube shorts
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
       const raw = urlOrId.trim();
       let videoId = raw;
-      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
       if (yMatch) videoId = yMatch[1];
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
@@ -797,10 +799,14 @@ const FormHandler = {
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    return str.replace(/\n/g, '<br>');
+    // DỌN RÁC THẺ <br> ĐỂ CHỐNG PHÌNH KHOẢNG TRẮNG
+    let finalHtml = str.replace(/\n/g, '<br>');
+    finalHtml = finalHtml.replace(/(?:<br\s*\/?>\s*)+(<\/?(?:div|ul|li|details|summary|p)[^>]*>)/gi, '$1');
+    finalHtml = finalHtml.replace(/(<\/?(?:div|ul|li|details|summary|p)[^>]*>)\s*(?:<br\s*\/?>\s*)+/gi, '$1');
+
+    return finalHtml;
   },
 
-  // ĐÃ FIX LỖI MẤT DẤU XUỐNG DÒNG (ENTER) KHI XUẤT RA BBCODE
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -921,7 +927,7 @@ const FormHandler = {
           return '\n';
         case 'p':
         case 'div':
-          return '\n' + res; // Chuyển '\n' lên phía trước để ngắt tách dòng hoàn hảo
+          return '\n' + res; 
         default:
           return res;
       }
