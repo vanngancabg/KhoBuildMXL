@@ -8,6 +8,8 @@ const Auth = {
       try { this.currentUser = JSON.parse(saved); } catch (e) { this.currentUser = null; }
     }
     this.renderNavbar();
+    this.injectFeedbackWidget(); // Tự động gắn nút nổi Góp ý vào mọi trang
+
     if (this.currentUser) {
       setTimeout(() => this.loadNotifications(), 600);
 
@@ -22,6 +24,98 @@ const Auth = {
 
   getCurrentUser() {
     return this.currentUser;
+  },
+
+  // HÀM TẠO NÚT NỔI & MODAL GÓP Ý
+  injectFeedbackWidget() {
+    if (document.getElementById('feedback-floating-btn')) return;
+
+    const btn = document.createElement('div');
+    btn.id = 'feedback-floating-btn';
+    btn.className = 'feedback-floating-btn';
+    btn.title = 'Góp ý / Báo lỗi tính năng';
+    btn.innerHTML = '💡';
+    btn.onclick = () => Auth.openFeedbackModal();
+    document.body.appendChild(btn);
+  },
+
+  openFeedbackModal() {
+    const existing = document.getElementById('feedback-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'feedback-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 440px; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="color: var(--accent-gold); margin: 0; font-family: var(--font-body); font-weight: 700;">💡 GÓP Ý & BÁO LỖI</h3>
+          <button class="btn btn-sm" onclick="document.getElementById('feedback-modal').remove()" style="background: transparent; border: none; font-size: 1.2rem;">✖</button>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">Ý kiến của bạn sẽ được gửi thẳng đến Quản trị viên để giúp trang web ngày càng hoàn thiện hơn!</p>
+
+        <div class="form-group">
+          <label>Phân loại góp ý</label>
+          <select id="fb-category" class="form-control">
+            <option value="Báo lỗi giao diện / Tính năng">🐛 Báo lỗi giao diện / Chức năng</option>
+            <option value="Lỗi dữ liệu Item / Build">⚔️ Lỗi dữ liệu Item / Bài viết</option>
+            <option value="Góp ý tính năng mới">✨ Góp ý tính năng mới</option>
+            <option value="Ý kiến khác">💬 Ý kiến khác</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Nội dung chi tiết (*)</label>
+          <textarea id="fb-content" class="form-control" placeholder="Mô tả chi tiết lỗi bạn gặp hoặc ý kiến của bạn..." style="min-height: 110px;"></textarea>
+        </div>
+
+        <button id="btn-submit-fb" class="btn btn-primary" style="width: 100%; font-weight: bold; margin-top: 6px;" onclick="Auth.submitFeedback()">Gửi Góp Ý</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+  },
+
+  async submitFeedback() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+      alert('Vui lòng đăng nhập để gửi góp ý!');
+      Auth.openModal('login');
+      return;
+    }
+
+    const category = document.getElementById('fb-category').value;
+    const content = document.getElementById('fb-content').value.trim();
+    if (!content) return alert('Vui lòng nhập nội dung góp ý!');
+
+    const btn = document.getElementById('btn-submit-fb');
+    btn.disabled = true;
+    btn.innerText = 'Đang gửi...';
+
+    try {
+      const res = await API.sendFeedback({
+        username: user.username,
+        user_name: user.display_name,
+        category: category,
+        content: content
+      });
+
+      if (res && res.status === 'success') {
+        alert('✅ ' + res.message);
+        document.getElementById('feedback-modal').remove();
+      } else {
+        alert(res?.message || 'Lỗi gửi góp ý!');
+        btn.disabled = false;
+        btn.innerText = 'Gửi Góp Ý';
+      }
+    } catch(e) {
+      alert('Lỗi kết nối máy chủ!');
+      btn.disabled = false;
+      btn.innerText = 'Gửi Góp Ý';
+    }
   },
 
   renderNavbar() {
@@ -120,6 +214,8 @@ const Auth = {
             </div>
           `;
         }
+      } else if (n.type === 'feedback') {
+        messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${this.escapeHTML(n.build_title)}`;
       } else {
         messageTitle = `<strong style="color: var(--accent-gold);">${this.escapeHTML(n.sender_name)}</strong> ${this.escapeHTML(n.build_title)}`;
       }
@@ -127,7 +223,7 @@ const Auth = {
       div.innerHTML = `
         <div style="font-size: 0.8rem; color: var(--text-bright); margin-bottom: 2px;">
           ${messageTitle}
-          ${n.type !== 'item_proposal' && n.type !== 'item_approved' && n.type !== 'item_rejected' ? `<div style="color: #90a4ae; font-weight: 500;">${this.escapeHTML(n.build_title)}</div>` : ''}
+          ${n.type !== 'item_proposal' && n.type !== 'item_approved' && n.type !== 'item_rejected' && n.type !== 'feedback' ? `<div style="color: #90a4ae; font-weight: 500;">${this.escapeHTML(n.build_title)}</div>` : ''}
           ${actionButtons}
         </div>
         <div style="font-size: 0.7rem; color: var(--text-muted);">${n.created_at || ''}</div>
@@ -472,7 +568,6 @@ const Auth = {
     btn.innerText = 'Gửi Mật Khẩu Mới';
   },
 
-  // ĐÃ SỬA: Hiệu ứng nút Đang lưu...
   async updateEmail() {
     const e = document.getElementById('update-email-val').value.trim();
     if (!e || !e.includes('@')) return alert('Email không hợp lệ!');
