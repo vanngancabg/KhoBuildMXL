@@ -10,9 +10,6 @@ const DetailHandler = {
       return;
     }
 
-    // ĐÃ GỠ BỎ ĐOẠN RÀO CHẮN ĐĂNG NHẬP Ở ĐÂY.
-    // Mọi người (dù chưa đăng nhập) đều có thể xem bài thoải mái!
-
     await this.loadBuild();
     
     setTimeout(() => {
@@ -157,7 +154,8 @@ const DetailHandler = {
         document.getElementById('detail-strategy').innerHTML = this.parseBBCode(statsObj.strategy);
       }
       if (hasVideo) {
-        const match = b.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        // Cập nhật Regex để nhận diện được link youtube.com/shorts/...
+        const match = b.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
         if (match) {
           const vContainer = document.getElementById('video-container');
           vContainer.style.display = 'block';
@@ -329,10 +327,11 @@ const DetailHandler = {
       return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
     });
 
+    // Nhận diện Youtube Shorts
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
       const raw = urlOrId.trim();
       let videoId = raw;
-      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const yMatch = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
       if (yMatch) videoId = yMatch[1];
       return `<div class="bb-video-embed"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
     });
@@ -352,7 +351,12 @@ const DetailHandler = {
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    return str.replace(/\n/g, '<br>');
+    // DỌN RÁC THẺ <br> ĐỂ CHỐNG PHÌNH KHOẢNG TRẮNG XUNG QUANH THẺ KHỐI
+    let finalHtml = str.replace(/\n/g, '<br>');
+    finalHtml = finalHtml.replace(/(?:<br\s*\/?>\s*)+(<\/?(?:div|ul|li|details|summary|p)[^>]*>)/gi, '$1');
+    finalHtml = finalHtml.replace(/(<\/?(?:div|ul|li|details|summary|p)[^>]*>)\s*(?:<br\s*\/?>\s*)+/gi, '$1');
+    
+    return finalHtml;
   },
 
   escapeHTML(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
