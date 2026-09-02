@@ -264,10 +264,6 @@ const Auth = {
     } catch(e) {}
   },
 
-  // ==========================================
-  // PHẦN MỚI THÊM VÀO ĐÚNG CHUẨN: CHỈ CHÈN Ở ĐÂY, KHÔNG XÓA CODE TRÊN
-  // ==========================================
-
   switchMode(mode) {
     document.getElementById('form-login').style.display = 'none';
     document.getElementById('form-register').style.display = 'none';
@@ -300,7 +296,8 @@ const Auth = {
     modal.innerHTML = `
       <div class="modal-content" style="max-width: 420px; padding: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 id="auth-modal-title" style="color: var(--accent-gold); font-family: var(--font-heading); margin: 0; font-size: 1.35rem;">ĐĂNG NHẬP</h2>
+          <!-- CHỈNH SỬA Ở ĐÂY: var(--font-body) thay vì var(--font-heading) -->
+          <h2 id="auth-modal-title" style="color: var(--accent-gold); font-family: var(--font-body); margin: 0; font-size: 1.35rem; font-weight: bold;">ĐĂNG NHẬP</h2>
           <button class="btn btn-sm" onclick="document.getElementById('auth-modal').remove()" style="background: transparent; border: none; font-size: 1.2rem;">✖</button>
         </div>
 
