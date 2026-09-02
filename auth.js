@@ -47,12 +47,18 @@ const Auth = {
             </div>
           </div>
 
-          <div class="user-badge">
+          <!-- AVATAR & DROPDOWN MENU -->
+          <div class="user-badge" style="position: relative; cursor: pointer;" onclick="document.getElementById('auth-dropdown').classList.toggle('active')">
             <img src="${this.currentUser.avatar || 'https://i.imgur.com/6VBx3io.png'}" alt="Avatar">
             <a href="profile.html?user=${encodeURIComponent(this.currentUser.username)}" style="color: var(--accent-gold); text-decoration: none; font-weight: 600; font-size: 0.9rem;">${this.escapeHTML(this.currentUser.display_name)}</a>
             ${this.currentUser.role === 'Admin' ? '<span style="background:var(--accent-red); color:#fff; font-size:0.65rem; padding:1px 5px; border-radius:3px; font-weight:bold;">Admin</span>' : ''}
           </div>
-          <button class="btn btn-sm" onclick="Auth.logout()">Đăng Xuất</button>
+          
+          <div id="auth-dropdown" class="notif-popup" style="width: 160px; right: 0; top: 100%;">
+            <div class="notif-item" onclick="Auth.openChangePasswordModal()" style="text-align: center; color: var(--text-bright);">🔑 Đổi mật khẩu</div>
+            <div class="notif-item" onclick="Auth.logout()" style="text-align: center; color: #ff6b6b;">🚪 Đăng xuất</div>
+          </div>
+
         </div>
       `;
     } else {
@@ -247,6 +253,10 @@ const Auth = {
     e.stopPropagation();
     const p = document.getElementById('notif-popup');
     if (p) p.classList.toggle('active');
+    
+    // Đóng dropdown avatar nếu đang mở
+    const ad = document.getElementById('auth-dropdown');
+    if (ad) ad.classList.remove('active');
   },
 
   async markAllRead() {
@@ -296,12 +306,10 @@ const Auth = {
     modal.innerHTML = `
       <div class="modal-content" style="max-width: 420px; padding: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <!-- CHỈNH SỬA Ở ĐÂY: var(--font-body) thay vì var(--font-heading) -->
           <h2 id="auth-modal-title" style="color: var(--accent-gold); font-family: var(--font-body); margin: 0; font-size: 1.35rem; font-weight: bold;">ĐĂNG NHẬP</h2>
           <button class="btn btn-sm" onclick="document.getElementById('auth-modal').remove()" style="background: transparent; border: none; font-size: 1.2rem;">✖</button>
         </div>
 
-        <!-- FORM ĐĂNG NHẬP -->
         <form id="form-login" onsubmit="Auth.handleAuthSubmit(event, 'login')" style="display: block;">
           <div class="form-group">
             <label>Tên đăng nhập (*)</label>
@@ -320,7 +328,6 @@ const Auth = {
           </div>
         </form>
 
-        <!-- FORM ĐĂNG KÝ -->
         <form id="form-register" onsubmit="Auth.handleAuthSubmit(event, 'register')" style="display: none;">
           <div class="form-group">
             <label>Tên đăng nhập (*)</label>
@@ -344,7 +351,6 @@ const Auth = {
           </div>
         </form>
 
-        <!-- FORM QUÊN MẬT KHẨU -->
         <div id="form-forgot" style="display: none;">
           <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 14px;">Nhập Email của bạn, hệ thống sẽ tạo mật khẩu ngẫu nhiên và gửi thẳng vào Email đó.</p>
           <div class="form-group">
@@ -358,13 +364,11 @@ const Auth = {
             Vui lòng nhắn tin cho Admin qua Zalo để được cấp lại mật khẩu ngay lập tức: <br>
             <a href="https://zalo.me/0936559126" target="_blank" style="color: var(--accent-gold); font-weight: bold; display: inline-block; margin-top: 4px;">Zalo: 0936.559.126</a>
           </div>
-
           <div style="text-align: center; font-size: 0.85rem;">
             <a href="#" onclick="Auth.switchMode('login'); return false;" style="color: var(--accent-gold);">⬅ Quay lại Đăng nhập</a>
           </div>
         </div>
 
-        <!-- FORM CẬP NHẬT EMAIL (Cho User cũ) -->
         <div id="form-update-email" style="display: none;">
           <h3 style="color: var(--accent-green); margin-bottom: 10px;">Bảo Mật Tài Khoản</h3>
           <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 14px;">Hệ thống phát hiện tài khoản của bạn chưa liên kết Email. Vui lòng nhập Email để sau này có thể tự khôi phục mật khẩu nhé!</p>
@@ -493,6 +497,67 @@ const Auth = {
     }
   },
 
+  // THÊM MỚI: Mở giao diện đổi mật khẩu
+  openChangePasswordModal() {
+    const d = document.getElementById('auth-dropdown');
+    if (d) d.classList.remove('active');
+
+    const existing = document.getElementById('auth-modal');
+    if (existing) existing.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'auth-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 400px; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: var(--accent-gold); font-family: var(--font-body); margin: 0; font-size: 1.35rem; font-weight: bold;">ĐỔI MẬT KHẨU</h2>
+          <button class="btn btn-sm" onclick="document.getElementById('auth-modal').remove()" style="background: transparent; border: none; font-size: 1.2rem;">✖</button>
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu hiện tại</label>
+          <input type="password" id="cp-old-pass" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu mới</label>
+          <input type="password" id="cp-new-pass" class="form-control" required>
+        </div>
+        <button id="btn-cp-submit" class="btn btn-primary" style="width: 100%; font-weight: bold; margin-top: 10px;" onclick="Auth.submitChangePassword()">Xác Nhận Đổi</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.remove();
+    });
+  },
+
+  // THÊM MỚI: Gửi lệnh đổi mật khẩu lên máy chủ
+  async submitChangePassword() {
+    const oldP = document.getElementById('cp-old-pass').value;
+    const newP = document.getElementById('cp-new-pass').value;
+    if (!oldP || !newP) return alert('Vui lòng nhập đầy đủ thông tin!');
+    
+    const btn = document.getElementById('btn-cp-submit');
+    btn.disabled = true;
+    btn.innerText = 'Đang xử lý...';
+
+    try {
+      const res = await API.changePassword(this.currentUser.username, oldP, newP);
+      if (res && res.status === 'success') {
+        alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        this.logout();
+      } else {
+        alert(res.message || 'Lỗi đổi mật khẩu!');
+        btn.disabled = false;
+        btn.innerText = 'Xác Nhận Đổi';
+      }
+    } catch(e) {
+      alert('Lỗi kết nối máy chủ!');
+      btn.disabled = false;
+      btn.innerText = 'Xác Nhận Đổi';
+    }
+  },
+
   logout() {
     this.currentUser = null;
     localStorage.removeItem('d2_current_user');
@@ -511,6 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = document.getElementById('notif-popup');
     if (p && !e.target.closest('#notif-popup') && !e.target.closest('.notif-badge') && !e.target.closest('button[title="Thông báo"]')) {
       p.classList.remove('active');
+    }
+    const d = document.getElementById('auth-dropdown');
+    if (d && !e.target.closest('#auth-dropdown') && !e.target.closest('.user-badge')) {
+      d.classList.remove('active');
     }
   });
 });
