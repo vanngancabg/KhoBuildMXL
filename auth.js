@@ -254,9 +254,8 @@ const Auth = {
     const p = document.getElementById('notif-popup');
     if (p) p.classList.toggle('active');
     
-    // Đóng dropdown avatar nếu đang mở
-    const ad = document.getElementById('auth-dropdown');
-    if (ad) ad.classList.remove('active');
+    const d = document.getElementById('auth-dropdown');
+    if (d) d.classList.remove('active');
   },
 
   async markAllRead() {
@@ -473,11 +472,15 @@ const Auth = {
     btn.innerText = 'Gửi Mật Khẩu Mới';
   },
 
+  // ĐÃ SỬA: Hiệu ứng nút Đang lưu...
   async updateEmail() {
     const e = document.getElementById('update-email-val').value.trim();
     if (!e || !e.includes('@')) return alert('Email không hợp lệ!');
     const btn = document.getElementById('btn-update-email');
+    const originalText = btn.innerText;
+    
     btn.disabled = true;
+    btn.innerText = 'Đang lưu...';
 
     try {
       const res = await API.updateEmail(this.currentUser.username, e);
@@ -490,14 +493,15 @@ const Auth = {
       } else {
         alert(res.message || 'Lỗi cập nhật!');
         btn.disabled = false;
+        btn.innerText = originalText;
       }
     } catch (err) { 
       alert('Lỗi mạng!'); 
       btn.disabled = false;
+      btn.innerText = originalText;
     }
   },
 
-  // THÊM MỚI: Mở giao diện đổi mật khẩu
   openChangePasswordModal() {
     const d = document.getElementById('auth-dropdown');
     if (d) d.classList.remove('active');
@@ -531,7 +535,6 @@ const Auth = {
     });
   },
 
-  // THÊM MỚI: Gửi lệnh đổi mật khẩu lên máy chủ
   async submitChangePassword() {
     const oldP = document.getElementById('cp-old-pass').value;
     const newP = document.getElementById('cp-new-pass').value;
