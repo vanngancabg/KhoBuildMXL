@@ -595,7 +595,7 @@ body {
   text-align: center;
 }
 
-/* HOVER ITEM TOOLTIP (ĐÃ THÊM AUTO-CAPITALIZE CHỐNG LỖI VIẾT THƯỜNG) */
+/* HOVER ITEM TOOLTIP (Đã loại bỏ text-transform: capitalize để giữ đúng từ viết tắt) */
 .item-hover-trigger {
   color: inherit;
   font-weight: 600;
@@ -603,7 +603,6 @@ body {
   border-bottom: 1px dashed currentColor;
   display: inline;
   transition: opacity 0.2s;
-  text-transform: capitalize; /* Tự động viết hoa chữ cái đầu tiên của mỗi từ */
 }
 
 .item-hover-trigger:hover {
