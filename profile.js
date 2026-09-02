@@ -15,7 +15,7 @@ const ProfileHandler = {
     try {
       const res = await API.getBuilds();
       if (res.status === 'success' && res.data) {
-        const userBuilds = res.data.filter(b => String(b.author_id).toLowerCase() === targetUser);
+        const userBuilds = res.data.filter(b => String(b.author_username || b.author_id).toLowerCase() === targetUser);
         const displayName = userBuilds[0]?.author_name || this.authorUsername;
         let totalVotes = 0;
 
