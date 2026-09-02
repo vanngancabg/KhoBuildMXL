@@ -10,19 +10,8 @@ const DetailHandler = {
       return;
     }
 
-    const saved = localStorage.getItem('d2_current_user');
-    let user = null;
-    if (saved) {
-      try { user = JSON.parse(saved); } catch (e) {}
-    }
-
-    if (!user) {
-      const gate = document.getElementById('detail-login-gate');
-      const loading = document.getElementById('detail-loading');
-      if (loading) loading.style.display = 'none';
-      if (gate) gate.style.display = 'block';
-      return;
-    }
+    // ĐÃ GỠ BỎ ĐOẠN RÀO CHẮN ĐĂNG NHẬP Ở ĐÂY.
+    // Mọi người (dù chưa đăng nhập) đều có thể xem bài thoải mái!
 
     await this.loadBuild();
     
@@ -35,14 +24,14 @@ const DetailHandler = {
   async trackView() {
     if (!this.buildId) return;
     const viewKey = `d2_viewed_${this.buildId}`;
-    if (sessionStorage.getItem(viewKey)) return; // Đã xem trong tab này thì không tăng nữa
+    if (sessionStorage.getItem(viewKey)) return; 
 
     try {
       const res = await API.trackBuildView(this.buildId);
       if (res && res.status === 'success') {
         const vEl = document.getElementById('detail-views');
         if (vEl) vEl.innerText = res.views_count;
-        sessionStorage.setItem(viewKey, 'true'); // Đánh dấu đã xem
+        sessionStorage.setItem(viewKey, 'true'); 
       }
     } catch(e) {}
   },
