@@ -3,9 +3,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwPUxNUaYGUTSWGT4vvFBeu
 const API = {
   async get(params) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_URL}?${query}`, {
-      method: 'GET'
-    });
+    const res = await fetch(`${API_URL}?${query}`, { method: 'GET' });
     return await res.json();
   },
 
@@ -44,5 +42,9 @@ const API = {
   rejectPendingItem(pending_id, username, role) { return this.post({ action: 'rejectPendingItem', pending_id, username, role }); },
   markNotificationRead(username) { return this.post({ action: 'markNotificationRead', username }); },
   saveCloudDraft(username, draft) { return this.post({ action: 'saveCloudDraft', username, draft }); },
-  deleteCloudDraft(username) { return this.post({ action: 'deleteCloudDraft', username }); }
+  deleteCloudDraft(username) { return this.post({ action: 'deleteCloudDraft', username }); },
+  
+  // 2 Lệnh mới cho việc khôi phục mật khẩu & cập nhật Email
+  updateEmail(username, email) { return this.post({ action: 'updateEmail', username, email }); },
+  forgotPassword(email) { return this.post({ action: 'forgotPassword', email }); }
 };
