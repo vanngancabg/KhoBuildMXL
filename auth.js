@@ -16,17 +16,39 @@ const Auth = {
 
     if (this.currentUser) {
       section.innerHTML = `
-        <div class="user-badge" style="position: relative; cursor: pointer;" onclick="document.getElementById('auth-dropdown').classList.toggle('active')">
-          <img src="${this.currentUser.avatar || 'https://i.imgur.com/6VBx3io.png'}" alt="Avatar">
-          <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2;">
-            <strong style="color: var(--accent-gold); font-size: 0.85rem;">${this.escapeHTML(this.currentUser.display_name || this.currentUser.username)}</strong>
-            <span style="font-size: 0.65rem; color: #fff; background: ${this.currentUser.role === 'Admin' ? 'var(--accent-red)' : 'var(--border-focus)'}; padding: 1px 4px; border-radius: 3px;">${this.currentUser.role || 'Member'}</span>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <!-- CHUÔNG THÔNG BÁO (Đã được khôi phục) -->
+          <div style="position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #1a1d24; border: 1px solid rgba(255,255,255,0.08);" onclick="if(typeof App !== 'undefined') App.toggleNotifications(event)">
+            <span style="font-size: 1.1rem;">🔔</span>
+            <span id="notif-badge" class="notif-badge" style="position: absolute; top: -4px; right: -4px; display: none;">0</span>
+            <div id="notif-popup" class="notif-popup">
+              <div class="notif-header">
+                <span>Thông báo</span>
+                <span style="color: var(--accent-gold); font-size: 0.75rem; cursor: pointer;" onclick="if(typeof App !== 'undefined') App.markAllNotifRead(event)">Đánh dấu đã đọc</span>
+              </div>
+              <div id="notif-list" class="notif-list"></div>
+            </div>
+          </div>
+
+          <!-- USER BADGE -->
+          <div class="user-badge" style="position: relative; cursor: pointer;" onclick="document.getElementById('auth-dropdown').classList.toggle('active')">
+            <img src="${this.currentUser.avatar || 'https://i.imgur.com/6VBx3io.png'}" alt="Avatar">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2;">
+              <strong style="color: var(--accent-gold); font-size: 0.85rem;">${this.escapeHTML(this.currentUser.display_name || this.currentUser.username)}</strong>
+              <span style="font-size: 0.65rem; color: #fff; background: ${this.currentUser.role === 'Admin' ? 'var(--accent-red)' : 'var(--border-focus)'}; padding: 1px 4px; border-radius: 3px;">${this.currentUser.role || 'Member'}</span>
+            </div>
+          </div>
+          <div id="auth-dropdown" class="notif-popup" style="width: 150px; right: 0;">
+            <div class="notif-item" onclick="Auth.logout()" style="text-align: center; color: #ff6b6b;">Đăng xuất</div>
           </div>
         </div>
-        <div id="auth-dropdown" class="notif-popup" style="width: 150px;">
-          <div class="notif-item" onclick="Auth.logout()" style="text-align: center; color: #ff6b6b;">Đăng xuất</div>
-        </div>
       `;
+
+      // Kích hoạt lại bộ đếm chuông thông báo
+      if (typeof App !== 'undefined' && App.loadNotifications) {
+        App.loadNotifications();
+        if (!window.notifInterval) window.notifInterval = setInterval(() => App.loadNotifications(), 30000);
+      }
     } else {
       section.innerHTML = `<button class="btn btn-primary" onclick="Auth.openModal('login')">🔑 Đăng nhập</button>`;
     }
