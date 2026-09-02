@@ -56,14 +56,9 @@ const App = {
     }
   },
 
+  // ĐÃ SỬA: Cho phép khách thoải mái click vào bài viết mà không bị chặn
   handleCardClick(event, buildId) {
     event.preventDefault();
-    const user = Auth.getCurrentUser();
-    if (!user) {
-      alert('Bạn cần đăng nhập để xem chi tiết hướng dẫn Build này!');
-      Auth.openModal('login');
-      return;
-    }
     window.location.href = `build-detail.html?id=${encodeURIComponent(buildId)}`;
   },
 
@@ -280,7 +275,6 @@ const App = {
           localStorage.setItem('d2_last_read_chat_count', String(this.totalMessagesCount));
           if (badge) badge.style.display = 'none';
         } else {
-          // Fix lỗi đếm số ảo khi chuyển thiết bị
           let lastReadStr = localStorage.getItem('d2_last_read_chat_count');
           if (lastReadStr === null) {
             lastReadStr = String(this.totalMessagesCount);
