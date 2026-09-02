@@ -1,6 +1,9 @@
 const DetailHandler = {
   buildId: null,
   currentBuild: null,
+  activeEditor: null,
+  savedRange: null,
+  markerId: 'comment-item-cursor-marker',
 
   async init() {
     this.buildId = new URLSearchParams(window.location.search).get('id');
@@ -15,7 +18,60 @@ const DetailHandler = {
     setTimeout(() => {
       this.trackView();
       this.loadComments();
+      this.setupCommentEditor();
     }, 400);
+  },
+
+  setupCommentEditor() {
+    const ed = document.getElementById('comment-wysiwyg');
+    if (!ed) return;
+    this.activeEditor = ed;
+
+    const updateSelection = () => {
+      this.activeEditor = ed;
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        this.savedRange = sel.getRangeAt(0);
+      }
+    };
+
+    ed.addEventListener('focus', updateSelection);
+    ed.addEventListener('mouseup', updateSelection);
+    ed.addEventListener('keyup', updateSelection);
+  },
+
+  toggleCommentBox() {
+    const user = Auth.getCurrentUser();
+    if (!user) return Auth.openModal('login');
+
+    const box = document.getElementById('comment-editor-container');
+    const btn = document.getElementById('btn-toggle-comment-box');
+    if (!box) return;
+
+    if (box.style.display === 'none' || !box.style.display) {
+      box.style.display = 'block';
+      if (btn) btn.innerText = '✖ Đóng Khung Viết';
+      setTimeout(() => document.getElementById('comment-wysiwyg')?.focus(), 100);
+    } else {
+      box.style.display = 'none';
+      document.getElementById('comment-preview-box').style.display = 'none';
+      if (btn) btn.innerText = '💬 Viết Bình Luận';
+    }
+  },
+
+  toggleCommentPreview() {
+    const box = document.getElementById('comment-preview-box');
+    const contentBox = document.getElementById('comment-preview-content');
+    const ed = document.getElementById('comment-wysiwyg');
+    if (!box || !contentBox || !ed) return;
+
+    if (box.style.display === 'none' || !box.style.display) {
+      const bbcode = this.htmlToBBCode(ed.innerHTML);
+      contentBox.innerHTML = this.parseBBCode(bbcode) || '<span style="color:var(--text-muted)">Chưa có nội dung để xem trước</span>';
+      box.style.display = 'block';
+    } else {
+      box.style.display = 'none';
+    }
   },
 
   async trackView() {
@@ -154,7 +210,6 @@ const DetailHandler = {
         document.getElementById('detail-strategy').innerHTML = this.parseBBCode(statsObj.strategy);
       }
       if (hasVideo) {
-        // Cập nhật Regex để nhận diện được link youtube.com/shorts/...
         const match = b.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
         if (match) {
           const vContainer = document.getElementById('video-container');
@@ -249,7 +304,7 @@ const DetailHandler = {
           ${isCmtAuthor ? `<button class="btn btn-sm btn-danger" style="padding: 1px 6px; font-size: 0.65rem;" onclick="DetailHandler.deleteComment('${c.comment_id}')">Xóa</button>` : ''}
         </div>
         <div style="font-size: 0.9rem; color: var(--text-bright); line-height: 1.5; padding-left: 32px;">
-          ${this.escapeHTML(c.content)}
+          ${this.parseBBCode(c.content)}
         </div>
       `;
       box.appendChild(div);
@@ -260,11 +315,14 @@ const DetailHandler = {
     const user = Auth.getCurrentUser();
     if (!user) return Auth.openModal('login');
 
-    const inp = document.getElementById('comment-input');
-    const content = inp ? inp.value.trim() : '';
-    if (!content) return;
+    const ed = document.getElementById('comment-wysiwyg');
+    if (!ed) return;
+    const bbcodeContent = this.htmlToBBCode(ed.innerHTML).trim();
+    if (!bbcodeContent) return alert('Vui lòng nhập nội dung bình luận!');
 
-    inp.disabled = true;
+    const btn = document.getElementById('btn-submit-comment');
+    btn.disabled = true;
+    btn.innerText = 'Đang gửi...';
 
     try {
       const res = await API.addComment({
@@ -272,18 +330,19 @@ const DetailHandler = {
         username: user.username,
         user_name: user.display_name,
         avatar: user.avatar,
-        content: content
+        content: bbcodeContent
       });
 
       if (res && res.status === 'success') {
-        inp.value = '';
+        ed.innerHTML = '';
+        this.toggleCommentBox();
         await this.loadComments();
       }
     } catch (e) {
       alert('Lỗi gửi bình luận!');
     } finally {
-      inp.disabled = false;
-      inp.focus();
+      btn.disabled = false;
+      btn.innerText = '🚀 Gửi Bình Luận';
     }
   },
 
@@ -299,6 +358,137 @@ const DetailHandler = {
     } catch (e) {
       alert('Lỗi xóa bình luận!');
     }
+  },
+
+  // Hỗ trợ công cụ soạn thảo cho bình luận
+  execCmd(command, value = null) {
+    this.restoreSelection();
+    document.execCommand(command, false, value);
+    this.saveSelection();
+  },
+
+  applyTextColor(colorHex) {
+    this.restoreSelection();
+    document.execCommand('foreColor', false, colorHex);
+    this.saveSelection();
+  },
+
+  insertTextAtCursor(text) {
+    this.restoreSelection();
+    document.execCommand('insertText', false, text);
+    this.saveSelection();
+  },
+
+  insertLink() {
+    this.restoreSelection();
+    let url = prompt('Nhập đường link liên kết (URL):', 'https://');
+    if (!url) return;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+    const sel = window.getSelection();
+    let linkText = sel.toString().trim() || url;
+    const linkHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-gold); text-decoration:underline;">${linkText}</a>&nbsp;`;
+    document.execCommand('insertHTML', false, linkHTML);
+  },
+
+  handleTriggerItemTag() {
+    this.saveSelection();
+    this.insertCursorMarker();
+    if(typeof ItemTooltipManager !== 'undefined'){
+      ItemTooltipManager.openPickerModal((selectedItemName) => {
+        this.insertItemAtMarker(selectedItemName);
+      });
+    }
+  },
+
+  insertItemAtMarker(selectedItemName) {
+    const marker = document.getElementById(this.markerId);
+    const cleanKey = selectedItemName.replace(/"/g, '').trim().toLowerCase();
+    const itemSpan = document.createElement('span');
+    itemSpan.className = 'item-hover-trigger';
+    itemSpan.setAttribute('data-item-key', cleanKey);
+    itemSpan.innerText = selectedItemName;
+    const space = document.createTextNode('\u00A0');
+
+    if (marker && marker.parentNode) {
+      marker.parentNode.insertBefore(itemSpan, marker);
+      marker.parentNode.insertBefore(space, marker);
+      marker.remove();
+    } else if (this.activeEditor) {
+      this.activeEditor.appendChild(itemSpan);
+      this.activeEditor.appendChild(space);
+    }
+    this.saveSelection();
+  },
+
+  insertCursorMarker() {
+    this.removeCursorMarker();
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      const marker = document.createElement('span');
+      marker.id = this.markerId;
+      marker.style.display = 'none';
+      range.insertNode(marker);
+    }
+  },
+
+  removeCursorMarker() {
+    const m = document.getElementById(this.markerId);
+    if (m) m.remove();
+  },
+
+  async handleCommentImageUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const statusEl = document.getElementById('comment-upload-status');
+      if (statusEl) { statusEl.style.display = 'inline'; statusEl.innerText = '⏳ Đang tải ảnh...'; }
+      
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Data = reader.result.split(',')[1];
+        try {
+          const res = await API.uploadImage(base64Data, file.name, file.type);
+          if (res && res.status === 'success' && res.url) {
+            this.restoreSelection();
+            const imgHTML = `<img src="${res.url}" alt="Image" style="max-width:100%; border-radius:4px; margin:6px 0;"><p><br></p>`;
+            document.execCommand('insertHTML', false, imgHTML);
+            if (statusEl) statusEl.style.display = 'none';
+          } else {
+            alert('Lỗi tải ảnh!');
+            if (statusEl) statusEl.style.display = 'none';
+          }
+        } catch(err) {
+          alert('Lỗi mạng!');
+          if (statusEl) statusEl.style.display = 'none';
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+  },
+
+  saveSelection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) this.savedRange = sel.getRangeAt(0);
+  },
+
+  restoreSelection() {
+    if (this.activeEditor) this.activeEditor.focus();
+    if (this.savedRange) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(this.savedRange);
+    }
+  },
+
+  rgbToHex(color) {
+    if (!color) return '';
+    if (color.startsWith('#')) return color;
+    const rgb = color.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+      return '#' + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+    }
+    return color;
   },
 
   parseBBCode(text) {
@@ -327,7 +517,6 @@ const DetailHandler = {
       return `<ul class="bb-list">${items.map(it => `<li>${it.trim()}</li>`).join('')}</ul>`;
     });
 
-    // Nhận diện Youtube Shorts
     str = str.replace(/\[youtube\]([\s\S]*?)\[\/youtube\]/gi, (match, urlOrId) => {
       const raw = urlOrId.trim();
       let videoId = raw;
@@ -351,12 +540,63 @@ const DetailHandler = {
       return `<span class="item-hover-trigger" data-item-key="${cleanKey}">${innerContent}</span>`;
     });
 
-    // DỌN RÁC THẺ <br> ĐỂ CHỐNG PHÌNH KHOẢNG TRẮNG XUNG QUANH THẺ KHỐI
     let finalHtml = str.replace(/\n/g, '<br>');
     finalHtml = finalHtml.replace(/(?:<br\s*\/?>\s*)+(<\/?(?:div|ul|li|details|summary|p)[^>]*>)/gi, '$1');
     finalHtml = finalHtml.replace(/(<\/?(?:div|ul|li|details|summary|p)[^>]*>)\s*(?:<br\s*\/?>\s*)+/gi, '$1');
     
     return finalHtml;
+  },
+
+  htmlToBBCode(html) {
+    if (!html) return '';
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    const serializeNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) return node.nodeValue;
+      if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+      const tag = node.tagName.toLowerCase();
+      let inner = '';
+      node.childNodes.forEach(child => { inner += serializeNode(child); });
+
+      if (node.classList.contains('item-hover-trigger')) {
+        let resItem = `[item]${inner.trim()}[/item]`;
+        if (node.style && node.style.color) {
+          const hex = this.rgbToHex(node.style.color);
+          if (hex) resItem = `[color=${hex}]${resItem}[/color]`;
+        }
+        return resItem;
+      }
+
+      let res = inner;
+      if (node.style) {
+        if (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight, 10) >= 700) res = `[b]${res}[/b]`;
+        if (node.style.fontStyle === 'italic') res = `[i]${res}[/i]`;
+        if (node.style.textDecoration && node.style.textDecoration.includes('underline')) res = `[u]${res}[/u]`;
+        if (node.style.textDecoration && node.style.textDecoration.includes('line-through')) res = `[s]${res}[/s]`;
+        if (node.style.color) {
+          const hex = this.rgbToHex(node.style.color);
+          if (hex) res = `[color=${hex}]${res}[/color]`;
+        }
+      }
+
+      switch (tag) {
+        case 'strong': case 'b': return `[b]${res}[/b]`;
+        case 'em': case 'i': return `[i]${res}[/i]`;
+        case 'u': return `[u]${res}[/u]`;
+        case 's': case 'strike': return `[s]${res}[/s]`;
+        case 'a': return `[url=${node.getAttribute('href') || ''}]${res}[/url]`;
+        case 'img': return `[img]${node.getAttribute('src') || ''}[/img]`;
+        case 'br': return '\n';
+        case 'p': case 'div': return '\n' + res;
+        default: return res;
+      }
+    };
+
+    let result = '';
+    temp.childNodes.forEach(child => { result += serializeNode(child); });
+    return result.replace(/\n{3,}/g, '\n\n').trim();
   },
 
   escapeHTML(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
