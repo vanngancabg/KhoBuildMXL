@@ -547,6 +547,7 @@ const DetailHandler = {
     return finalHtml;
   },
 
+  // ĐÃ SỬA: Bổ sung bộ nhận diện màu sắc (style.color và thẻ font) để không bị mất màu khi Preview & Đăng
   htmlToBBCode(html) {
     if (!html) return '';
     const temp = document.createElement('div');
@@ -588,6 +589,13 @@ const DetailHandler = {
         case 's': case 'strike': return `[s]${res}[/s]`;
         case 'a': return `[url=${node.getAttribute('href') || ''}]${res}[/url]`;
         case 'img': return `[img]${node.getAttribute('src') || ''}[/img]`;
+        case 'font': {
+          let fontRes = res;
+          if (node.hasAttribute('color')) {
+            fontRes = `[color=${this.rgbToHex(node.getAttribute('color'))}]${fontRes}[/color]`;
+          }
+          return fontRes;
+        }
         case 'br': return '\n';
         case 'p': case 'div': return '\n' + res;
         default: return res;
