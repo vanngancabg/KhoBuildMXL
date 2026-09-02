@@ -239,7 +239,7 @@ body {
   border-color: var(--accent-gold);
 }
 
-/* CỬA SỔ CHAT NỔI */
+/* CỬA SỔ CHAT NỔI & NÚT GÓP Ý NỔI (MỚI) */
 .chat-floating-btn {
   position: fixed;
   bottom: 24px;
@@ -263,6 +263,32 @@ body {
 .chat-floating-btn:hover {
   transform: scale(1.1);
   background: var(--accent-gold-hover);
+}
+
+/* Nút Góp ý / Báo lỗi nổi ở góc dưới bên trái */
+.feedback-floating-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #161920;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8);
+  z-index: 999;
+  transition: all 0.25s ease;
+}
+
+.feedback-floating-btn:hover {
+  transform: scale(1.1);
+  background: rgba(212, 175, 55, 0.15);
 }
 
 .chat-badge-count {
@@ -595,7 +621,6 @@ body {
   text-align: center;
 }
 
-/* HOVER ITEM TOOLTIP (Đã loại bỏ text-transform: capitalize để giữ đúng từ viết tắt) */
 .item-hover-trigger {
   color: inherit;
   font-weight: 600;
